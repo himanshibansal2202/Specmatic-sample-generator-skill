@@ -7,7 +7,7 @@ A generated sample is "done" when ALL of the following are true.
 - [ ] `npm test` (or equivalent) exits with code 0
 - [ ] All Specmatic contract tests pass (0 failures)
 - [ ] No manual intervention needed after generation
-- [ ] Generated behavior matches `references/contracts.md`
+- [ ] Generated behavior matches the applicable files in `contracts/`
 
 ## Required Files
 
@@ -16,7 +16,7 @@ A generated sample is "done" when ALL of the following are true.
 | `specmatic.yaml` | Points to central contract repo, defines test config |
 | Build file (`package.json` / `pom.xml` / `build.gradle` / `requirements.txt`) | Dependencies including Specmatic |
 | Source code (controllers/routes) | Implements all endpoints from the contract |
-| Data layer (db/store) | In-memory store with seed data |
+| Data layer (db/store) | In-memory store with seed data when the role needs local state |
 | Contract test file | Adapter that starts app + runs Specmatic |
 | `Dockerfile` | Production container image |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
@@ -50,12 +50,12 @@ Single command, green output.
 ## What "Green" Means
 
 Specmatic output shows:
-```
+```text
 Tests run: N, Successes: N, Failures: 0, Errors: 0
 ```
 
 Or in Jest format:
-```
+```text
 Test Suites: 1 passed, 1 total
 Tests:       N passed, N total
 ```

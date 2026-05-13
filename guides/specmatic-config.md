@@ -120,16 +120,11 @@ Specmatic() \
     .run()
 ```
 
-## How Specmatic Tests Work (for context)
+## How Specmatic Tests Work
 
 1. Specmatic reads `specmatic.yaml`
-2. Clones the central contract repo (git) — first run is slow (~1-3 min), subsequent runs are cached
+2. Clones the central contract repo
 3. Parses the OpenAPI spec
-4. For each named example in the spec, generates a test:
-   - Constructs an HTTP request from the example values
-   - Sends it to your app at `baseUrl`
-   - Validates the response STATUS CODE matches what the example maps to
-   - Validates the response BODY matches the schema (types + required fields)
-5. Reports pass/fail
-
-**Specmatic validates schema structure, NOT exact values.** Your app can return any valid data — it just needs correct types and required fields.
+4. Sends example requests to your app at `baseUrl`
+5. Validates response status and schema
+6. Reports pass/fail

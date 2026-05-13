@@ -3,7 +3,7 @@
 To use this skill in Kiro, start a new session and say:
 
 ```
-Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, references/*, assets/*). 
+Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, contracts/*, guides/*, test-data/*, config/*).
 Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + in-memory. 
 Generate files in the current directory, install deps, and run tests until green.
 ```
@@ -11,7 +11,7 @@ Generate files in the current directory, install deps, and run tests until green
 Or for the interactive flow:
 
 ```
-Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, references/*, assets/*).
+Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, contracts/*, guides/*, test-data/*, config/*).
 Then follow the SKILL.md workflow — ask me for the inputs interactively.
 ```
 

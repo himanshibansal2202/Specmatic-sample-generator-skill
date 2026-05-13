@@ -1,4 +1,4 @@
-Read all files in the `generate-specmatic-sample/` directory (SKILL.md and everything under references/ and assets/). Follow the SKILL.md instructions.
+Read all files in the `generate-specmatic-sample/` directory (SKILL.md and everything under contracts/, guides/, test-data/, and config/). Follow the SKILL.md instructions.
 
 If $ARGUMENTS is provided, parse it as the target combination (e.g., "backend rest express javascript in-memory"). Otherwise, ask the user interactively for each input.
 
