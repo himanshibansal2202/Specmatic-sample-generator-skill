@@ -52,6 +52,12 @@ For a **BFF** sample, see `references/bff-role.md`. Key differences:
 - The BFF app reads the Backend URL from an environment variable (e.g., `STUB_URL`)
 - No seed data needed — the Specmatic mock handles Backend responses automatically
 
+For a **Frontend** sample, see the Frontend Contracts section in `references/contracts.md`. Key differences:
+- The Frontend provides no API contract
+- The Frontend consumes the Product and Order BFF API
+- The BFF URL must be configurable
+- Contract consumption is verified against a Specmatic mock of the BFF API
+
 ### Step 4: Verify
 
 After generating all files:
@@ -72,13 +78,14 @@ Only report "done" when tests are green.
 
 - **Seed data is critical.** The OpenAPI spec's examples reference specific IDs. Your data store MUST contain those entries at startup. See `references/seed-data.md`.
 - **Content-Type matters.** Some endpoints return `text/plain`, others `application/json`. The spec defines which.
+- **Contract behavior lives in `references/contracts.md`.** Implement those endpoints, statuses, headers, and schemas exactly.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **The contract test adapter is ~5 lines.** Don't overcomplicate it. Pattern: start app → run specmatic → stop app.
 - **specmatic.yaml is the same for every language.** Only the port/baseUrl changes.
 
 ## References
 
-- `references/contracts.md` — The API endpoints and schemas to implement
+- `references/contracts.md` — Backend, BFF, and Frontend contract responsibilities
 - `references/specmatic-config.md` — specmatic.yaml template and contract test patterns per language
 - `references/seed-data.md` — Required data entries for tests to pass
 - `references/acceptance-criteria.md` — What files must exist, what "done" looks like

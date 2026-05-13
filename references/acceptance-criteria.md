@@ -7,6 +7,7 @@ A generated sample is "done" when ALL of the following are true.
 - [ ] `npm test` (or equivalent) exits with code 0
 - [ ] All Specmatic contract tests pass (0 failures)
 - [ ] No manual intervention needed after generation
+- [ ] Generated behavior matches `references/contracts.md`
 
 ## Required Files
 
