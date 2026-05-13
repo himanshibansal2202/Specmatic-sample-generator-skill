@@ -35,7 +35,29 @@ Only proceed to Step 2 after ALL answers are collected.
 
 Read `config/stack-matrix.yaml`. If the combination is not in `supported_combinations`, reject it and suggest the nearest supported alternative.
 
-### Step 3: Resolve the Output Folder
+### Step 3: Resolve Contract Source Of Truth
+
+Before generating source code, determine the executable contract that Specmatic will use.
+
+Source-of-truth order:
+
+1. Passing Specmatic tests is the final definition of correctness.
+2. The OpenAPI/contract file referenced by `specmatic.yaml` is the behavioral source of truth.
+3. Official Specmatic v3 and OpenAPI documentation should be consulted when configuration syntax or contract semantics are unclear.
+4. Local markdown files under `contracts/`, `guides/`, and `test-data/` are helper summaries. They must not override the executable contract.
+
+For every sample type, inspect the applicable role contract and the Specmatic configuration before coding. When the referenced executable OpenAPI contract is available locally or can be fetched during verification, use it to confirm:
+
+- Methods and paths
+- Status codes
+- Request and response content types
+- Required, optional, and forbidden response fields
+- Example IDs, request examples, and response examples used by Specmatic
+- Stub/provider dependency behavior for consumer-side samples
+
+If the executable contract contradicts a local markdown summary, implement the executable contract and record the discrepancy in the final response.
+
+### Step 4: Resolve the Output Folder
 
 Use the `id` from the matched `supported_combinations` entry as the sample folder name.
 
@@ -45,7 +67,7 @@ Use the `id` from the matched `supported_combinations` entry as the sample folde
 - Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
 - Each generated sample folder must be self-contained and include every file needed to run, test, build, and understand that sample independently.
 
-### Step 4: Generate the Project
+### Step 5: Generate the Project
 
 For a **Backend** sample, generate these files:
 
@@ -57,7 +79,7 @@ For a **Backend** sample, generate these files:
 6. **Dockerfile** — Multi-stage production build
 7. **CI workflow** — GitHub Actions: setup JRE 17 + language runtime, run tests, build Docker
 8. **README.md** — Prerequisites, how to run locally, how it works
-9. **.specmatic-sample-manifest.json** — Records files owned by this generated sample
+9. **.specmatic-sample-manifest.json** — Records files owned by this generated sample, including generated lockfiles
 
 For a **BFF** sample, see `contracts/bff.md` and `guides/bff-generation.md`. Key differences:
 - The BFF has NO local database — it calls the Backend API
@@ -71,29 +93,36 @@ For a **Frontend** sample, see `contracts/frontend.md` and `guides/frontend-gene
 - The BFF URL must be configurable
 - Contract consumption is verified against a Specmatic mock of the BFF API
 
-### Step 5: Verify
+### Step 6: Verify And Converge
 
 After generating all files, run verification from inside the generated sample folder:
 1. Install dependencies
 2. Run the test command (e.g., `npm test`)
 3. **First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
-4. If tests fail, read the error output, fix the code, and re-run
+4. If tests fail, read the error output and the generated Specmatic/JUnit/report files, fix the code to match the executable contract, and re-run
 5. Repeat until ALL tests pass (max 3 retries)
+6. Run the generated build/package command when the sample includes compiled output or Docker
 
 **Timeout guidance:** If the test command runs for more than 5 minutes, something is wrong. Cancel and check:
 - Is Java 17+ available? (`java -version`)
 - Is there network access? (Specmatic needs to clone from GitHub)
 - Is the port already in use?
+- Did the app fail to bind its configured port?
+- Did the test adapter swallow process startup errors?
 
 Only report "done" when tests are green.
 
 ## Key Rules
 
+- **Executable contract wins.** Generate from the actual OpenAPI/contract used by Specmatic whenever it is available. Local markdown files are useful summaries, but the executable contract and Specmatic test results decide final behavior.
 - **Seed data is critical.** The OpenAPI spec's examples reference specific IDs. Backend data stores MUST contain those entries at startup. See `test-data/backend-seed-data.md`.
 - **Content-Type matters.** Some endpoints return `text/plain`, others `application/json`. The spec defines which.
-- **Contract behavior lives in `contracts/`.** Implement the applicable role contract exactly.
+- **Role intent lives in `contracts/`.** Use the applicable role contract to understand the sample's responsibilities, then verify exact behavior against the executable contract used by Specmatic.
 - **Samples are self-contained.** Copy or create the required contracts, tests, CI, README, and config inside the generated sample folder. Do not depend on shared files outside the sample folder.
 - **The destination root is only a container.** Generate under `<provided-location>/<sample-id>/`, never directly into `<provided-location>/`.
+- **Ports must be configurable.** Keep documented default ports stable, but let tests override ports/base URLs so samples can run when defaults are occupied.
+- **Startup failures must fail fast.** Test adapters must surface listen/bind errors, dependency startup failures, and Specmatic failures clearly.
+- **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **The contract test adapter is ~5 lines.** Don't overcomplicate it. Pattern: start app → run specmatic → stop app.
 - **specmatic.yaml is the same for every language.** Only the port/baseUrl changes.

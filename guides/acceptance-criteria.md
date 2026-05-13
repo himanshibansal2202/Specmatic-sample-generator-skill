@@ -8,10 +8,12 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 
 - [ ] `npm test` (or equivalent) exits with code 0
 - [ ] All Specmatic contract tests pass (0 failures)
+- [ ] Generated behavior matches the executable OpenAPI/contract used by Specmatic
 - [ ] No manual intervention needed after generation
-- [ ] Generated behavior matches the applicable files in `contracts/`
+- [ ] Any mismatch between local markdown summaries and the executable contract is resolved in favor of the executable contract
 - [ ] No generated files are written at the provided location root except the sample folder itself
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
+- [ ] Ports and dependency base URLs used by tests can be overridden from environment variables
 
 ## Required Files
 
@@ -19,6 +21,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 |------|---------|
 | `specmatic.yaml` | Points to central contract repo, defines test config |
 | Build file (`package.json` / `pom.xml` / `build.gradle` / `requirements.txt`) | Dependencies including Specmatic |
+| Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
 | Source code (controllers/routes) | Implements all endpoints from the contract |
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
 | Contract test file | Adapter that starts app + runs Specmatic |
@@ -52,6 +55,8 @@ pip install -r requirements.txt && pytest test -v -s
 
 Single command, green output.
 
+If the default service port is occupied, the test command may use documented environment overrides such as `SUT_PORT`, `SUT_BASE_URL`, or stack-equivalent names. Normal service startup should still use the documented default port unless the user overrides it.
+
 ## What "Green" Means
 
 Specmatic output shows:
@@ -66,3 +71,5 @@ Tests:       N passed, N total
 ```
 
 Any failures = not done. Fix and re-run.
+
+When tests fail, use the generated Specmatic/JUnit/report files to identify the exact contract mismatch. Fix status codes, content types, request/response shape, examples, stubs, or startup configuration until the report has zero failures.
