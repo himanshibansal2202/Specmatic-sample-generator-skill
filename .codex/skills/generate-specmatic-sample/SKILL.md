@@ -14,4 +14,4 @@ Before generating anything, read the canonical instructions in `../../../SKILL.m
 - `../../../guides/`
 - `../../../test-data/`
 
-Follow the root `SKILL.md` workflow exactly. Generate the sample project in the current working directory unless the user provides a target directory. Install dependencies and run the documented tests until they pass before reporting completion.
+Follow the root `SKILL.md` workflow exactly. Ask for a destination local path or repository link if one is not already provided, then generate the self-contained sample project under `<destination>/<sample-id>/`. Install dependencies and run the documented tests from inside that generated sample folder before reporting completion.

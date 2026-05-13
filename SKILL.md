@@ -26,6 +26,8 @@ Ask each question separately. Wait for the user's answer before asking the next.
    - Wait for answer.
 5. Then ask: "What data layer? (in-memory)"
    - Wait for answer.
+6. Then ask: "Where should I create the sample folder? Provide a local path or repository link."
+   - Wait for answer.
 
 Only proceed to Step 2 after ALL answers are collected.
 
@@ -33,7 +35,17 @@ Only proceed to Step 2 after ALL answers are collected.
 
 Read `config/stack-matrix.yaml`. If the combination is not in `supported_combinations`, reject it and suggest the nearest supported alternative.
 
-### Step 3: Generate the Project
+### Step 3: Resolve the Output Folder
+
+Use the `id` from the matched `supported_combinations` entry as the sample folder name.
+
+- If the destination is a local path, create or update the sample at `<destination>/<sample-id>/`.
+- If the destination is a repository link, clone or locate a local checkout of that repository first, then create or update the sample at `<checkout>/<sample-id>/`.
+- Do not write generated sample files directly into the destination root.
+- Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
+- Each generated sample folder must be self-contained and include every file needed to run, test, build, and understand that sample independently.
+
+### Step 4: Generate the Project
 
 For a **Backend** sample, generate these files:
 
@@ -45,6 +57,7 @@ For a **Backend** sample, generate these files:
 6. **Dockerfile** — Multi-stage production build
 7. **CI workflow** — GitHub Actions: setup JRE 17 + language runtime, run tests, build Docker
 8. **README.md** — Prerequisites, how to run locally, how it works
+9. **.specmatic-sample-manifest.json** — Records files owned by this generated sample
 
 For a **BFF** sample, see `contracts/bff.md` and `guides/bff-generation.md`. Key differences:
 - The BFF has NO local database — it calls the Backend API
@@ -58,9 +71,9 @@ For a **Frontend** sample, see `contracts/frontend.md` and `guides/frontend-gene
 - The BFF URL must be configurable
 - Contract consumption is verified against a Specmatic mock of the BFF API
 
-### Step 4: Verify
+### Step 5: Verify
 
-After generating all files:
+After generating all files, run verification from inside the generated sample folder:
 1. Install dependencies
 2. Run the test command (e.g., `npm test`)
 3. **First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
@@ -79,6 +92,8 @@ Only report "done" when tests are green.
 - **Seed data is critical.** The OpenAPI spec's examples reference specific IDs. Backend data stores MUST contain those entries at startup. See `test-data/backend-seed-data.md`.
 - **Content-Type matters.** Some endpoints return `text/plain`, others `application/json`. The spec defines which.
 - **Contract behavior lives in `contracts/`.** Implement the applicable role contract exactly.
+- **Samples are self-contained.** Copy or create the required contracts, tests, CI, README, and config inside the generated sample folder. Do not depend on shared files outside the sample folder.
+- **The destination root is only a container.** Generate under `<provided-location>/<sample-id>/`, never directly into `<provided-location>/`.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **The contract test adapter is ~5 lines.** Don't overcomplicate it. Pattern: start app → run specmatic → stop app.
 - **specmatic.yaml is the same for every language.** Only the port/baseUrl changes.

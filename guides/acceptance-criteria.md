@@ -2,12 +2,16 @@
 
 A generated sample is "done" when ALL of the following are true.
 
+All checks apply inside the generated sample folder at `<provided-location>/<sample-id>/`.
+
 ## Must Pass
 
 - [ ] `npm test` (or equivalent) exits with code 0
 - [ ] All Specmatic contract tests pass (0 failures)
 - [ ] No manual intervention needed after generation
 - [ ] Generated behavior matches the applicable files in `contracts/`
+- [ ] No generated files are written at the provided location root except the sample folder itself
+- [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
 
 ## Required Files
 
@@ -22,6 +26,7 @@ A generated sample is "done" when ALL of the following are true.
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Prerequisites, how to run, how it works |
 | `.gitignore` | Ignore node_modules/build/target/.specmatic |
+| `.specmatic-sample-manifest.json` | Records generated files owned by this sample |
 
 ## CI Workflow Must Include
 
