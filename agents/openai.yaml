@@ -1,0 +1,10 @@
+name: generate-specmatic-sample
+description: >
+  Generate a working Specmatic v3 sample project for a given tech stack.
+  Creates Backend, BFF, or Frontend samples with contract testing, Docker, and CI.
+icon: 🧪
+tags:
+  - specmatic
+  - contract-testing
+  - code-generation
+  - api
