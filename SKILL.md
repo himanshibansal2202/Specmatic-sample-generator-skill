@@ -82,6 +82,7 @@ Use the `id` from the matched `supported_combinations` entry as the sample folde
 - If the destination is a repository link, clone or locate a local checkout of that repository first, then create or update the sample at `<checkout>/<sample-id>/`.
 - Do not write generated sample files directly into the destination root.
 - Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
+- If the destination root already has `.github/workflows/samples-ci.yml`, update it to include the generated sample.
 - Each generated sample folder must be self-contained and include every file needed to run, test, build, and understand that sample independently.
 
 ### Step 5: Generate the Project

@@ -11,8 +11,9 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] Generated behavior matches the executable OpenAPI/contract used by Specmatic
 - [ ] No manual intervention needed after generation
 - [ ] Any mismatch between local guides/test data and the executable contract is resolved in favor of the executable contract
-- [ ] No generated files are written at the provided location root except the sample folder itself
+- [ ] No generated files are written at the provided location root except the sample folder itself, unless updating an existing root `.github/workflows/samples-ci.yml`
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
+- [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
 - [ ] Ports and dependency base URLs used by tests can be overridden from environment variables
 
 ## Required Files
@@ -39,6 +40,16 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 4. Run tests
 5. Upload test report artifact
 6. (On main branch) Build and push Docker image
+
+## Root Samples CI
+
+When the destination root already has `.github/workflows/samples-ci.yml`, add or update one job for the generated sample:
+
+- Use the sample id as the job name.
+- Run commands with `working-directory: <sample-id>`.
+- Use the matched stack's install and test commands from `config/stack-matrix.yaml`.
+- Set up JRE 17 before running Specmatic tests.
+- Set up the language runtime required by the matched stack.
 
 ## Local Run Must Work With
 
