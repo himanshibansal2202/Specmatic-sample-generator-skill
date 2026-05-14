@@ -2,7 +2,7 @@
 
 ## specmatic.yaml
 
-Place this at the project root. Only change the `baseUrl` port to match your app's port.
+Place this at the project root. Keep the documented service default stable, but allow test runs to override the base URL when a local port is already occupied.
 
 **Inline format (works across all languages):**
 ```yaml
@@ -19,12 +19,35 @@ systemUnderTest:
     runOptions:
       openapi:
         type: test
-        baseUrl: http://localhost:8080
+        baseUrl: "{SUT_BASE_URL:http://localhost:8080}"
 ```
+
+## Contract Source Of Truth
+
+The OpenAPI/contract file referenced by `specmatic.yaml` is the behavioral source of truth. The local `contracts/` markdown files are role summaries that help generation, but they must not override the executable contract.
+
+Before finalizing generated behavior, use the executable contract or Specmatic report output to confirm:
+
+- HTTP methods and paths
+- Status codes
+- Request and response content types
+- Required and forbidden response fields
+- Example IDs and request/response examples
+- Provider stubs or dependency contracts for consumer samples
+
+If the local markdown summary and executable contract disagree, implement the executable contract because Specmatic will verify that behavior.
 
 ## Contract Test Adapter Patterns
 
-The contract test adapter starts your app, tells Specmatic to test it, then stops the app. It's ~5-10 lines per language.
+The contract test adapter starts your app, tells Specmatic to test it, then stops the app. It must surface startup/listen errors and Specmatic failures clearly.
+
+Adapter requirements for every language:
+
+- Use configurable host, port, and base URL values for test runs.
+- Default to the documented service port for normal local runs.
+- Fail fast if the app cannot bind its test port.
+- Always stop the app/stubs in teardown, even when Specmatic fails.
+- Assert the Specmatic result has zero failures instead of only printing results.
 
 ### Node.js / JavaScript (Jest + specmatic npm package)
 
@@ -49,16 +72,21 @@ import { test } from "@jest/globals";
 import specmatic from "specmatic";
 import http from "node:http";
 
-const PORT = 8080;
+const PORT = Number(process.env.SUT_PORT ?? 18080);
+process.env.SUT_BASE_URL = process.env.SUT_BASE_URL ?? `http://127.0.0.1:${PORT}`;
 
 const app = (await import("../../src/app.js")).default || require("../../src/app.js");
 const server = http.createServer(app);
 await new Promise((resolve) => server.listen(PORT, "0.0.0.0", resolve));
 
-await specmatic.testWithApiCoverage(app);
-specmatic.showTestResults(test);
-
-await new Promise((resolve) => server.close(resolve));
+try {
+  const result = await specmatic.testWithApiCoverage(app, "127.0.0.1", PORT);
+  if (!result || result.failure > 0) {
+    throw new Error(`Specmatic contract tests failed: ${JSON.stringify(result)}`);
+  }
+} finally {
+  await new Promise((resolve) => server.close(resolve));
+}
 ```
 
 ### Java / Kotlin (JUnit 5 + specmatic junit5-support)
@@ -120,16 +148,13 @@ Specmatic() \
     .run()
 ```
 
-## How Specmatic Tests Work (for context)
+## How Specmatic Tests Work
 
 1. Specmatic reads `specmatic.yaml`
-2. Clones the central contract repo (git) — first run is slow (~1-3 min), subsequent runs are cached
+2. Clones the central contract repo
 3. Parses the OpenAPI spec
-4. For each named example in the spec, generates a test:
-   - Constructs an HTTP request from the example values
-   - Sends it to your app at `baseUrl`
-   - Validates the response STATUS CODE matches what the example maps to
-   - Validates the response BODY matches the schema (types + required fields)
-5. Reports pass/fail
+4. Sends example requests to your app at `baseUrl`
+5. Validates response status and schema
+6. Reports pass/fail
 
-**Specmatic validates schema structure, NOT exact values.** Your app can return any valid data — it just needs correct types and required fields.
+When tests fail, read the generated report files before changing code. Prefer the JUnit XML or Specmatic report output because it identifies the exact status, content type, schema, and example mismatches that must be fixed.
