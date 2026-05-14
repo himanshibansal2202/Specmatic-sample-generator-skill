@@ -27,6 +27,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
 | Contract test file | Adapter that starts app + runs Specmatic |
 | `Dockerfile` | Production container image |
+| `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, reports, caches, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Prerequisites, how to run, how it works |
 | `.gitignore` | Ignore node_modules/build/target/.specmatic |
@@ -50,6 +51,8 @@ When the destination root already has `.github/workflows/samples-ci.yml`, add or
 - Use the matched stack's install and test commands from `config/stack-matrix.yaml`.
 - Set up JRE 17 before running Specmatic tests.
 - Set up the language runtime required by the matched stack.
+- Upload the generated Specmatic/JUnit report artifact when the test command
+  produces one.
 
 ## Local Run Must Work With
 

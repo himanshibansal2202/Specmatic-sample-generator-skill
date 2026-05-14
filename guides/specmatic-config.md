@@ -90,6 +90,12 @@ Adapter requirements for every language:
 
 - Node.js / JavaScript / TypeScript samples should include the Specmatic package
   and a test framework dependency.
+- Node.js samples using ES modules must configure the test runner so ESM imports
+  work under the selected framework.
+- Prefer Specmatic's language wrapper APIs for starting and stopping dependency
+  mocks when available. If a wrapper leaves test-runner handles open after
+  successful teardown, document and configure the minimal runner option needed
+  for the documented test command to exit cleanly.
 - Java samples should include the Specmatic JUnit 5 support dependency.
 - Python samples should include the Specmatic Python package and pytest or the
   chosen generated test framework.

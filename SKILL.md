@@ -11,6 +11,10 @@ You are a code generator that creates working Specmatic sample projects. The gen
 
 ### Step 1: Collect Inputs (ONE AT A TIME)
 
+Before asking questions, read `config/stack-matrix.yaml` and derive the valid
+choices from `supported_combinations`. Do not offer options that are not
+supported by the matrix for the answers already collected.
+
 Ask each question separately. Wait for the user's answer before asking the next. Do NOT ask all questions at once.
 
 1. First ask: "What application type? (Backend / BFF / Frontend)"
@@ -21,12 +25,12 @@ Ask each question separately. Wait for the user's answer before asking the next.
    - Wait for answer.
 4. Then ask: "What language? (JavaScript / TypeScript / Java / Python)"
    - Wait for answer.
-5. Then ask: "What framework?" — offer only valid options for the chosen language:
-   - JavaScript/TypeScript → Express
-   - Java → Spring Boot
-   - Python → Flask
+5. Then ask: "What framework?" — offer only frameworks valid for the selected
+   application type, protocol, and language according to `config/stack-matrix.yaml`.
    - Wait for answer.
-6. Then ask: "What data layer? (in-memory)"
+6. Then ask: "What data layer?" — offer only data-fetch/data-layer values valid
+   for the selected application type, protocol, language, and framework
+   according to `config/stack-matrix.yaml`.
    - Wait for answer.
 7. Then ask: "Where should I create the sample folder? Provide a local path or repository link."
    - Wait for answer.
@@ -35,7 +39,10 @@ Only proceed to Step 2 after ALL answers are collected.
 
 ### Step 2: Validate Combination
 
-Read `config/stack-matrix.yaml`. If the combination is not in `supported_combinations`, reject it and suggest the nearest supported alternative.
+Read `config/stack-matrix.yaml`. If the combination is not in
+`supported_combinations`, reject it and suggest the nearest supported
+alternatives from the matrix. Prefer alternatives that keep the user's
+application type and protocol, then language, then framework, then data layer.
 
 ### Step 3: Resolve Contract Source Of Truth
 
@@ -57,6 +64,12 @@ Read the matched combination's `contract_source` and `config/contract-resolution
 5. If multiple candidates match the same role/version, fail with a clear error instead of guessing.
 6. If no compatible spec is found, fail before generating source code.
 
+Before fetching from the network, check whether the contract repository is
+already available in a nearby generated sample cache such as
+`.specmatic/repos/<repo-name>`. If it is available, inspect the local executable
+OpenAPI files directly. If not, rely on Specmatic's fetch during verification or
+clone/fetch only when needed to inspect the contracts.
+
 Resolve these executable specs by sample type:
 
 - Backend: Backend system-under-test OpenAPI spec.
@@ -71,6 +84,13 @@ For every sample type, inspect the applicable generation guide, the Specmatic co
 - Required, optional, and forbidden response fields
 - Example IDs, request examples, and response examples used by Specmatic
 - Stub/provider dependency behavior for consumer-side samples
+
+For consumer-side samples such as BFF and Frontend, inspect both the
+system-under-test contract and every dependency mock contract. Do not assume a
+consumer-facing API can blindly proxy to a provider API. If the contracts differ
+in paths, required fields, status codes, headers, content types, or response
+schemas, implement the minimal adapter behavior required by the executable
+contracts and confirm it with Specmatic.
 
 If the executable contract contradicts local guide or test-data notes, implement the executable contract and record the discrepancy in the final response.
 
@@ -125,6 +145,17 @@ After generating all files, run verification from inside the generated sample fo
 - Did the app fail to bind its configured port?
 - Did the test adapter swallow process startup errors?
 
+When tests fail, classify the failure before changing code:
+- status mismatch
+- content type mismatch
+- request or response schema mismatch
+- missing route or method
+- dependency mock mismatch
+- startup or port binding failure
+
+Use the classification to make the smallest behavior change needed to match the
+executable contract, then re-run the documented test command.
+
 Only report "done" when tests are green.
 
 ## Key Rules
@@ -138,6 +169,9 @@ Only report "done" when tests are green.
 - **Ports must be configurable.** Keep documented default ports stable, but let tests override ports/base URLs so samples can run when defaults are occupied.
 - **Startup failures must fail fast.** Test adapters must surface listen/bind errors, dependency startup failures, and Specmatic failures clearly.
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
+- **Prompts must be matrix-driven.** User-facing stack choices must come from `config/stack-matrix.yaml`, not hardcoded language/framework/data-layer assumptions.
+- **Consumer samples may need adapters.** For samples with dependency mocks, compare the SUT and dependency contracts and implement contract-derived translation only where the executable contracts require it.
+- **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **The contract test adapter is ~5 lines.** Don't overcomplicate it. Pattern: start app → run specmatic → stop app.
 - **specmatic.yaml structure is the same for every language.** Resolved contract paths, dependency specs, ports, and base URLs vary by role and stack.

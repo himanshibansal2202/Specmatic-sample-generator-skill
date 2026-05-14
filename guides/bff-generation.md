@@ -28,7 +28,11 @@ started by Specmatic.
 - Forward `Idempotency-Key`, auth headers, and `pageSize` when present.
 - Catch backend errors and return their status and response body.
 - BFF samples have no seed data.
-- Create product calls the Backend product creation API with the request body, auth header, and `Idempotency-Key`.
-- Find available products calls the Backend product search API with the `type` query and `pageSize` header.
-- Create order calls the Backend order creation API with the request body, auth header, and `Idempotency-Key`.
+- Implement BFF endpoints from the BFF system-under-test contract, then map
+  those calls to Backend dependency endpoints from the Backend mock contract.
+- Do not assume BFF requests and Backend requests have identical paths,
+  required fields, status codes, headers, content types, or response schemas.
+- When the contracts differ, implement the smallest adapter transformation
+  required by the executable contracts and verify it with Specmatic.
+- Preserve request headers and query parameters needed by either contract.
 - Do not re-create schema definitions from markdown; read exact request and response fields from the executable OpenAPI contracts or Specmatic report output.
