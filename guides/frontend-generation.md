@@ -5,13 +5,12 @@ consume the Product and Order BFF API through a configurable base URL. Exact
 consumed API behavior, schemas, examples, content types, and status codes must
 be verified against the executable contract referenced by `specmatic.yaml`.
 
-## Required Pieces
+## Role-Specific Requirements
 
 - Client application with create product, find available products, and create order workflows.
 - Configurable BFF base URL.
 - Client API module for BFF calls.
 - Contract consumption tests using a Specmatic mock of the BFF API.
-- Build file, README, CI workflow, Dockerfile when applicable, and `.gitignore`.
 
 ## Implementation Notes
 

@@ -9,17 +9,15 @@ executable contracts referenced by `specmatic.yaml`.
 During tests, the Frontend calls the BFF, and the BFF calls a Backend API stub
 started by Specmatic.
 
-## Required Pieces
+## Role-Specific Requirements
 
-- `specmatic.yaml` with the BFF contract as the system under test.
 - A Specmatic dependency mock for the Backend API.
 - Source code with no local database.
 - Backend base URL from configuration such as `STUB_URL`.
-- Contract test adapter that starts the Backend mock before testing the BFF.
 
 ## Specmatic Requirements
 
-- Use `guides/specmatic-config.md` for exact `specmatic.yaml` syntax and contract test adapter patterns.
+- Use `guides/specmatic-config.md` for Specmatic config assembly and contract test adapter behavior.
 - Configure the BFF OpenAPI contract as the system under test.
 - Configure the Backend OpenAPI contract as a Specmatic mock dependency.
 - Start the Backend mock before running BFF contract tests and always stop it afterward.

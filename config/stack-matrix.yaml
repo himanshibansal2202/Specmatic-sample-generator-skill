@@ -1,7 +1,3 @@
-specmatic:
-  supported_versions: [v3]
-  default_version: v3
-
 supported_combinations:
   - id: backend-rest-js-express-inmemory
     application_type: backend
@@ -9,6 +5,7 @@ supported_combinations:
     language: javascript
     framework: express
     data_fetch: in-memory
+    contract_source: store_rest
     port: 8080
     test_command: "npm test"
     install_command: "npm install"
@@ -19,6 +16,7 @@ supported_combinations:
     language: typescript
     framework: express
     data_fetch: in-memory
+    contract_source: store_rest
     port: 8080
     test_command: "npm test"
     install_command: "npm install"
@@ -29,6 +27,7 @@ supported_combinations:
     language: java
     framework: spring-boot
     data_fetch: in-memory
+    contract_source: store_rest
     port: 8080
     test_command: "./mvnw test"
     install_command: "./mvnw compile"
@@ -39,6 +38,7 @@ supported_combinations:
     language: python
     framework: flask
     data_fetch: in-memory
+    contract_source: store_rest
     port: 8080
     test_command: "pytest test -v -s"
     install_command: "pip install -r requirements.txt"
@@ -49,6 +49,7 @@ supported_combinations:
     language: javascript
     framework: express
     data_fetch: rest-api
+    contract_source: store_rest
     port: 8080
     stub_port: 8090
     test_command: "npm test"
@@ -60,6 +61,7 @@ supported_combinations:
     language: typescript
     framework: express
     data_fetch: rest-api
+    contract_source: store_rest
     port: 8080
     stub_port: 8090
     test_command: "npm test"

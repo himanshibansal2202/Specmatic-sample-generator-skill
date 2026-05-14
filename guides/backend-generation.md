@@ -5,15 +5,11 @@ service when creating products, reading products, and creating orders. Exact API
 behavior, schemas, examples, content types, and status codes must be verified
 against the executable contract referenced by `specmatic.yaml`.
 
-## Required Pieces
+## Role-Specific Requirements
 
-- `specmatic.yaml` using the backend contract under test.
-- Build file with the language runtime, test framework, and Specmatic dependency.
 - Source code implementing Products and Orders APIs.
 - In-memory product/order store seeded from `test-data/backend-seed-data.md`.
 - Inventory client boundary with an in-memory implementation for local tests unless the stack selection says otherwise.
-- Contract test adapter using `guides/specmatic-config.md`.
-- Dockerfile, GitHub Actions workflow, README, and `.gitignore`.
 
 ## Implementation Notes
 
