@@ -22,9 +22,46 @@ systemUnderTest:
         baseUrl: "{SUT_BASE_URL:http://localhost:8080}"
 ```
 
+### BFF With Backend Mock Dependency
+
+BFF samples use the BFF OpenAPI contract as the system under test and the
+Backend OpenAPI contract as a mock dependency. Keep service and mock URLs
+configurable so tests can avoid occupied ports.
+
+```yaml
+version: 3
+systemUnderTest:
+  service:
+    definitions:
+      - definition:
+          source:
+            git:
+              url: https://github.com/specmatic/specmatic-order-contracts.git
+          specs:
+            - io/specmatic/examples/store/openapi/product_search_bff_v3.yaml
+    runOptions:
+      openapi:
+        type: test
+        baseUrl: "{SUT_BASE_URL:http://localhost:8080}"
+dependencies:
+  services:
+    - service:
+        definitions:
+          - definition:
+              source:
+                git:
+                  url: https://github.com/specmatic/specmatic-order-contracts.git
+              specs:
+                - io/specmatic/examples/store/openapi/api_order_v3.yaml
+        runOptions:
+          openapi:
+            type: mock
+            baseUrl: "{BACKEND_MOCK_BASE_URL:http://localhost:8090}"
+```
+
 ## Contract Source Of Truth
 
-The OpenAPI/contract file referenced by `specmatic.yaml` is the behavioral source of truth. The local `contracts/` markdown files are role summaries that help generation, but they must not override the executable contract.
+The OpenAPI/contract file referenced by `specmatic.yaml` is the behavioral source of truth. The local `guides/` and `test-data/` markdown files help generation, but they must not override the executable contract.
 
 Before finalizing generated behavior, use the executable contract or Specmatic report output to confirm:
 
@@ -35,7 +72,7 @@ Before finalizing generated behavior, use the executable contract or Specmatic r
 - Example IDs and request/response examples
 - Provider stubs or dependency contracts for consumer samples
 
-If the local markdown summary and executable contract disagree, implement the executable contract because Specmatic will verify that behavior.
+If local guide/test-data notes and the executable contract disagree, implement the executable contract because Specmatic will verify that behavior.
 
 ## Contract Test Adapter Patterns
 

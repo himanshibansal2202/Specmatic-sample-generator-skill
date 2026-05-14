@@ -44,9 +44,9 @@ Source-of-truth order:
 1. Passing Specmatic tests is the final definition of correctness.
 2. The OpenAPI/contract file referenced by `specmatic.yaml` is the behavioral source of truth.
 3. Official Specmatic v3 and OpenAPI documentation should be consulted when configuration syntax or contract semantics are unclear.
-4. Local markdown files under `contracts/`, `guides/`, and `test-data/` are helper summaries. They must not override the executable contract.
+4. Local markdown files under `guides/` and `test-data/` are helper summaries. They must not override the executable contract.
 
-For every sample type, inspect the applicable role contract and the Specmatic configuration before coding. When the referenced executable OpenAPI contract is available locally or can be fetched during verification, use it to confirm:
+For every sample type, inspect the applicable generation guide and the Specmatic configuration before coding. When the referenced executable OpenAPI contract is available locally or can be fetched during verification, use it to confirm:
 
 - Methods and paths
 - Status codes
@@ -55,7 +55,7 @@ For every sample type, inspect the applicable role contract and the Specmatic co
 - Example IDs, request examples, and response examples used by Specmatic
 - Stub/provider dependency behavior for consumer-side samples
 
-If the executable contract contradicts a local markdown summary, implement the executable contract and record the discrepancy in the final response.
+If the executable contract contradicts local guide or test-data notes, implement the executable contract and record the discrepancy in the final response.
 
 ### Step 4: Resolve the Output Folder
 
@@ -73,7 +73,7 @@ For a **Backend** sample, generate these files:
 
 1. **specmatic.yaml** — See `guides/specmatic-config.md` for the exact template
 2. **Build file** (package.json / pom.xml / etc.) — Include Specmatic as a test dependency
-3. **Source code** — Implement `contracts/backend.md` and consume `contracts/inventory.md`
+3. **Source code** — Implement the backend role behavior and Inventory dependency boundary described in `guides/backend-generation.md`, and verify exact API behavior against the executable contract referenced by `specmatic.yaml`
 4. **Seed data** — Pre-populate the data store with required entries. See `test-data/backend-seed-data.md`
 5. **Contract test adapter** — See `guides/specmatic-config.md` for the pattern per language
 6. **Dockerfile** — Multi-stage production build
@@ -81,13 +81,13 @@ For a **Backend** sample, generate these files:
 8. **README.md** — Prerequisites, how to run locally, how it works
 9. **.specmatic-sample-manifest.json** — Records files owned by this generated sample, including generated lockfiles
 
-For a **BFF** sample, see `contracts/bff.md` and `guides/bff-generation.md`. Key differences:
+For a **BFF** sample, use `guides/bff-generation.md` for role behavior, then verify exact API behavior against the executable contract referenced by `specmatic.yaml`. Key differences:
 - The BFF has NO local database — it calls the Backend API
 - specmatic.yaml has a `dependencies` section that starts a mock of the Backend
 - The BFF app reads the Backend URL from an environment variable (e.g., `STUB_URL`)
 - No seed data needed — the Specmatic mock handles Backend responses automatically
 
-For a **Frontend** sample, see `contracts/frontend.md` and `guides/frontend-generation.md`. Key differences:
+For a **Frontend** sample, use `guides/frontend-generation.md` for client workflow behavior, then verify exact API behavior against the executable contract referenced by `specmatic.yaml`. Key differences:
 - The Frontend provides no API contract
 - The Frontend consumes the Product and Order BFF API
 - The BFF URL must be configurable
@@ -114,11 +114,11 @@ Only report "done" when tests are green.
 
 ## Key Rules
 
-- **Executable contract wins.** Generate from the actual OpenAPI/contract used by Specmatic whenever it is available. Local markdown files are useful summaries, but the executable contract and Specmatic test results decide final behavior.
+- **Executable contract wins.** Generate from the actual OpenAPI/contract used by Specmatic whenever it is available. Local guides and test data are useful summaries, but the executable contract and Specmatic test results decide final behavior.
 - **Seed data is critical.** The OpenAPI spec's examples reference specific IDs. Backend data stores MUST contain those entries at startup. See `test-data/backend-seed-data.md`.
 - **Content-Type matters.** Some endpoints return `text/plain`, others `application/json`. The spec defines which.
-- **Role intent lives in `contracts/`.** Use the applicable role contract to understand the sample's responsibilities, then verify exact behavior against the executable contract used by Specmatic.
-- **Samples are self-contained.** Copy or create the required contracts, tests, CI, README, and config inside the generated sample folder. Do not depend on shared files outside the sample folder.
+- **Role intent lives in `guides/`.** Use the applicable generation guide to understand the sample's responsibilities, then verify exact behavior against the executable contract used by Specmatic.
+- **Samples are self-contained.** Copy or create the required tests, CI, README, config, and executable contract references inside the generated sample folder. Do not depend on shared files outside the sample folder.
 - **The destination root is only a container.** Generate under `<provided-location>/<sample-id>/`, never directly into `<provided-location>/`.
 - **Ports must be configurable.** Keep documented default ports stable, but let tests override ports/base URLs so samples can run when defaults are occupied.
 - **Startup failures must fail fast.** Test adapters must surface listen/bind errors, dependency startup failures, and Specmatic failures clearly.
@@ -129,7 +129,6 @@ Only report "done" when tests are green.
 
 ## References
 
-- `contracts/` — Backend, BFF, Frontend, Inventory, and shared schema contracts
 - `guides/` — Role generation notes, Specmatic config, and acceptance criteria
 - `test-data/backend-seed-data.md` — Required backend data entries for tests to pass
 - `config/stack-matrix.yaml` — Supported combinations

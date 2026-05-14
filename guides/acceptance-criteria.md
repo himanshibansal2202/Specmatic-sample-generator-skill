@@ -10,7 +10,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] All Specmatic contract tests pass (0 failures)
 - [ ] Generated behavior matches the executable OpenAPI/contract used by Specmatic
 - [ ] No manual intervention needed after generation
-- [ ] Any mismatch between local markdown summaries and the executable contract is resolved in favor of the executable contract
+- [ ] Any mismatch between local guides/test data and the executable contract is resolved in favor of the executable contract
 - [ ] No generated files are written at the provided location root except the sample folder itself
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
 - [ ] Ports and dependency base URLs used by tests can be overridden from environment variables

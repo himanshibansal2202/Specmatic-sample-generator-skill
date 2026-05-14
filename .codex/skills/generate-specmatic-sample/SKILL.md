@@ -10,7 +10,6 @@ This is the Codex project-skill entrypoint for the portable skill stored at the 
 Before generating anything, read the canonical instructions in `../../../SKILL.md`. Then load only the supporting files needed for the requested sample from:
 
 - `../../../config/stack-matrix.yaml`
-- `../../../contracts/`
 - `../../../guides/`
 - `../../../test-data/`
 
