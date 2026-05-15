@@ -172,6 +172,7 @@ Only report "done" when tests are green.
 - **Prompts must be matrix-driven.** User-facing stack choices must come from `config/stack-matrix.yaml`, not hardcoded language/framework/data-layer assumptions.
 - **Consumer samples may need adapters.** For samples with dependency mocks, compare the SUT and dependency contracts and implement contract-derived translation only where the executable contracts require it.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
+- **Never read existing generated samples.** Do not read or copy from other sample folders already present in the destination repository. Every file must be generated from the skill's `contracts/`, `guides/`, and `test-data/` sources only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **The contract test adapter is ~5 lines.** Don't overcomplicate it. Pattern: start app → run specmatic → stop app.
 - **specmatic.yaml structure is the same for every language.** Resolved contract paths, dependency specs, ports, and base URLs vary by role and stack.
