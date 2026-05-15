@@ -1,0 +1,33 @@
+contract_resolution:
+  default_version: v3
+  sources:
+    store_rest:
+      source:
+        git:
+          url: https://github.com/specmatic/specmatic-order-contracts.git
+      openapi_root: io/specmatic/examples/store/openapi
+      explicit_specs:
+        v3:
+          backend:
+            system_under_test: io/specmatic/examples/store/openapi/api_order_v3.yaml
+          bff:
+            system_under_test: io/specmatic/examples/store/openapi/product_search_bff_v3.yaml
+            dependencies:
+              backend: io/specmatic/examples/store/openapi/api_order_v3.yaml
+          frontend:
+            dependencies:
+              bff: io/specmatic/examples/store/openapi/product_search_bff_v3.yaml
+      discovery:
+        backend:
+          system_under_test_patterns:
+            - api_order_v{version}.yaml
+        bff:
+          system_under_test_patterns:
+            - product_search_bff_v{version}.yaml
+          dependency_patterns:
+            backend:
+              - api_order_v{version}.yaml
+        frontend:
+          dependency_patterns:
+            bff:
+              - product_search_bff_v{version}.yaml

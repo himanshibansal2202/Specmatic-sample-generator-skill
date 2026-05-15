@@ -1,10 +1,31 @@
 # Specmatic Configuration & Contract Test Patterns
 
+This guide describes how generated samples should assemble Specmatic
+configuration. It is generator guidance only: do not copy it verbatim into a
+sample, and do not use it to define API behavior.
+
+Concrete contract repository URLs, OpenAPI spec paths, and default ports come
+from `config/contract-resolution.yaml`, `config/stack-matrix.yaml`, user input,
+or runtime contract discovery.
+
+## Required Inputs
+
+Resolve these values before writing a generated sample's `specmatic.yaml`:
+
+- `<CONTRACT_REPO_URL>`
+- `<SUT_OPENAPI_SPEC_PATH>`
+- `<SUT_BASE_URL_ENV>`
+- `<SUT_DEFAULT_BASE_URL>`
+- `<DEPENDENCY_CONTRACT_REPO_URL>` when a dependency mock is needed
+- `<DEPENDENCY_OPENAPI_SPEC_PATH>` when a dependency mock is needed
+- `<DEPENDENCY_BASE_URL_ENV>` when a dependency mock is needed
+- `<DEPENDENCY_DEFAULT_BASE_URL>` when a dependency mock is needed
+
 ## specmatic.yaml
 
-Place this at the project root. Keep the documented service default stable, but allow test runs to override the base URL when a local port is already occupied.
+Place the generated `specmatic.yaml` at the generated sample root. Keep base
+URLs configurable so tests can avoid occupied ports.
 
-**Inline format (works across all languages):**
 ```yaml
 version: 3
 systemUnderTest:
@@ -13,148 +34,81 @@ systemUnderTest:
       - definition:
           source:
             git:
-              url: https://github.com/specmatic/specmatic-order-contracts.git
+              url: <CONTRACT_REPO_URL>
           specs:
-            - io/specmatic/examples/store/openapi/api_order_v3.yaml
+            - <SUT_OPENAPI_SPEC_PATH>
     runOptions:
       openapi:
         type: test
-        baseUrl: "{SUT_BASE_URL:http://localhost:8080}"
+        baseUrl: "{<SUT_BASE_URL_ENV>:<SUT_DEFAULT_BASE_URL>}"
+```
+
+### With Dependency Mocks
+
+Consumer samples such as BFF or Frontend samples may need one or more Specmatic
+mock dependencies. Add each dependency under `dependencies.services`.
+
+```yaml
+dependencies:
+  services:
+    - service:
+        definitions:
+          - definition:
+              source:
+                git:
+                  url: <DEPENDENCY_CONTRACT_REPO_URL>
+              specs:
+                - <DEPENDENCY_OPENAPI_SPEC_PATH>
+        runOptions:
+          openapi:
+            type: mock
+            baseUrl: "{<DEPENDENCY_BASE_URL_ENV>:<DEPENDENCY_DEFAULT_BASE_URL>}"
 ```
 
 ## Contract Source Of Truth
 
-The OpenAPI/contract file referenced by `specmatic.yaml` is the behavioral source of truth. The local `contracts/` markdown files are role summaries that help generation, but they must not override the executable contract.
-
-Before finalizing generated behavior, use the executable contract or Specmatic report output to confirm:
-
-- HTTP methods and paths
-- Status codes
-- Request and response content types
-- Required and forbidden response fields
-- Example IDs and request/response examples
-- Provider stubs or dependency contracts for consumer samples
-
-If the local markdown summary and executable contract disagree, implement the executable contract because Specmatic will verify that behavior.
+See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
+This file only describes how to assemble Specmatic configuration after the
+executable contract paths have been resolved.
 
 ## Contract Test Adapter Patterns
 
-The contract test adapter starts your app, tells Specmatic to test it, then stops the app. It must surface startup/listen errors and Specmatic failures clearly.
+The contract test adapter starts the generated app, runs Specmatic, then stops
+the app. It must surface startup/listen errors and Specmatic failures clearly.
 
 Adapter requirements for every language:
 
-- Use configurable host, port, and base URL values for test runs.
-- Default to the documented service port for normal local runs.
-- Fail fast if the app cannot bind its test port.
-- Always stop the app/stubs in teardown, even when Specmatic fails.
+- Resolve host, port, and base URL from generated config or environment.
+- Start dependency mocks before running consumer-side contract tests.
+- Start the generated app on the configured host and port.
+- Fail fast if the app or any dependency mock cannot bind its configured port.
+- Run Specmatic against the configured base URL.
 - Assert the Specmatic result has zero failures instead of only printing results.
+- Stop the app and all dependency mocks in teardown, even when Specmatic fails.
 
-### Node.js / JavaScript (Jest + specmatic npm package)
+### Language Notes
 
-**Required dependencies:** `specmatic` (devDep), `jest` (devDep), `cross-env` (devDep), `axios` (peer dep of specmatic)
-
-**jest.config.json:**
-```json
-{
-  "testMatch": ["**/test/**/*.test.mjs"],
-  "transform": {}
-}
-```
-
-**Test script in package.json:**
-```json
-"test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest --detectOpenHandles"
-```
-
-**test/contract/contract.test.mjs:**
-```javascript
-import { test } from "@jest/globals";
-import specmatic from "specmatic";
-import http from "node:http";
-
-const PORT = Number(process.env.SUT_PORT ?? 18080);
-process.env.SUT_BASE_URL = process.env.SUT_BASE_URL ?? `http://127.0.0.1:${PORT}`;
-
-const app = (await import("../../src/app.js")).default || require("../../src/app.js");
-const server = http.createServer(app);
-await new Promise((resolve) => server.listen(PORT, "0.0.0.0", resolve));
-
-try {
-  const result = await specmatic.testWithApiCoverage(app, "127.0.0.1", PORT);
-  if (!result || result.failure > 0) {
-    throw new Error(`Specmatic contract tests failed: ${JSON.stringify(result)}`);
-  }
-} finally {
-  await new Promise((resolve) => server.close(resolve));
-}
-```
-
-### Java / Kotlin (JUnit 5 + specmatic junit5-support)
-
-**Dependency (pom.xml):**
-```xml
-<dependency>
-  <groupId>io.specmatic</groupId>
-  <artifactId>junit5-support</artifactId>
-  <version>LATEST</version>
-  <scope>test</scope>
-</dependency>
-```
-
-**ContractTest.java:**
-```java
-package com.example;
-
-import io.specmatic.test.SpecmaticContractTest;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-
-public class ContractTest implements SpecmaticContractTest {
-    private static ConfigurableApplicationContext context;
-
-    @BeforeAll
-    public static void setUp() {
-        context = SpringApplication.run(Application.class);
-    }
-
-    @AfterAll
-    public static void tearDown() {
-        context.close();
-    }
-}
-```
-
-### Python (pytest + specmatic pip package)
-
-**Dependency:** `pip install specmatic`
-
-**test/test_contract.py:**
-```python
-import os
-from specmatic.core.specmatic import Specmatic
-from your_app import app
-
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-
-class TestContract:
-    pass
-
-Specmatic() \
-    .with_project_root(PROJECT_ROOT) \
-    .with_wsgi_app(app, "127.0.0.1", 8080) \
-    .test(TestContract) \
-    .run()
-```
+- Node.js / JavaScript / TypeScript samples should include the Specmatic package
+  and a test framework dependency.
+- Node.js samples using ES modules must configure the test runner so ESM imports
+  work under the selected framework.
+- Prefer Specmatic's language wrapper APIs for starting and stopping dependency
+  mocks when available. If a wrapper leaves test-runner handles open after
+  successful teardown, document and configure the minimal runner option needed
+  for the documented test command to exit cleanly.
+- Java samples should include the Specmatic JUnit 5 support dependency.
+- Python samples should include the Specmatic Python package and pytest or the
+  chosen generated test framework.
 
 ## How Specmatic Tests Work
 
-1. Specmatic reads `specmatic.yaml`
-2. Clones the central contract repo
-3. Parses the OpenAPI spec
-4. Sends example requests to your app at `baseUrl`
-5. Validates response status and schema
-6. Reports pass/fail
+1. Specmatic reads the generated `specmatic.yaml`.
+2. Specmatic fetches the configured contract source.
+3. Specmatic parses the resolved OpenAPI spec.
+4. Specmatic sends example requests to the generated app at the configured base URL.
+5. Specmatic validates response status, content type, and schema.
+6. Specmatic reports pass/fail results.
 
-When tests fail, read the generated report files before changing code. Prefer the JUnit XML or Specmatic report output because it identifies the exact status, content type, schema, and example mismatches that must be fixed.
+When tests fail, read the generated report files before changing code. Prefer
+the JUnit XML or Specmatic report output because it identifies the exact status,
+content type, schema, and example mismatches that must be fixed.

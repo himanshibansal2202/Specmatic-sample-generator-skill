@@ -1,17 +1,15 @@
 # Backend Generation Guide
 
-Backend samples implement `contracts/backend.md` and consume
-`contracts/inventory.md`.
+Backend samples provide the Products and Orders APIs and consume an Inventory
+service when creating products, reading products, and creating orders. Exact API
+behavior, schemas, examples, content types, and status codes must be verified
+against the executable contract referenced by `specmatic.yaml`.
 
-## Required Pieces
+## Role-Specific Requirements
 
-- `specmatic.yaml` using the backend contract under test.
-- Build file with the language runtime, test framework, and Specmatic dependency.
 - Source code implementing Products and Orders APIs.
 - In-memory product/order store seeded from `test-data/backend-seed-data.md`.
-- Inventory client boundary; use an in-memory implementation for local tests unless the stack selection says otherwise.
-- Contract test adapter using `guides/specmatic-config.md`.
-- Dockerfile, GitHub Actions workflow, README, and `.gitignore`.
+- Inventory client boundary with an in-memory implementation for local tests unless the stack selection says otherwise.
 
 ## Implementation Notes
 
@@ -20,3 +18,7 @@ Backend samples implement `contracts/backend.md` and consume
 - Read product calls Inventory `getInventory`.
 - Create order calls Inventory `reduceInventory`.
 - Store `Idempotency-Key` values for create requests during the process lifetime.
+- Authenticated operations should accept an auth header without requiring local credential setup.
+- Unknown resource reads should return the executable contract's error response.
+- Use a multipart parser for product image uploads when the executable contract includes that endpoint.
+- Do not re-create schema definitions from markdown; read exact request and response fields from the executable OpenAPI contract or Specmatic report output.
