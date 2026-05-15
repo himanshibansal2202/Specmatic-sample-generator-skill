@@ -71,6 +71,34 @@ See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
 This file only describes how to assemble Specmatic configuration after the
 executable contract paths have been resolved.
 
+## Test-Library / Runtime-Framework Dependency Conflicts
+
+The Specmatic test library ships transitive dependencies at specific versions.
+Runtime frameworks chosen by the user often pin the same transitives at
+different versions through a dependency-management block, lockfile, or
+equivalent. When the chosen stack's pinned version is older than what the
+Specmatic test library was built against, the test command fails at runtime
+with a linkage / missing-method / class-not-found error referencing a
+third-party class.
+
+Resolve generically:
+
+1. Pick a Specmatic test-library version that supports the `specmatic.yaml`
+   schema version chosen by the user. Each language binding (JVM, Node.js,
+   Python, etc.) publishes its own schema-version-to-library-version mapping
+   in its release notes.
+2. Run the generated test command once as part of Step 6 of the workflow.
+3. If the command fails with a JVM/runtime linkage error pointing at a
+   third-party class, identify the conflicting transitive and override it
+   using the chosen stack's standard override mechanism (the package manager
+   and build file's property, resolution, or override syntax).
+4. Pin only to the version the Specmatic test library declares; do not
+   over-pin or upgrade unrelated dependencies.
+
+Treat this as a build-fix step, not a content-generation step. The broader
+rule already lives in Step 6 of the workflow: a generated sample is not done
+until its test command exits cleanly.
+
 ## Contract Test Adapter Patterns
 
 The contract test adapter starts the generated app, runs Specmatic, then stops

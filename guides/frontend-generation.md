@@ -14,10 +14,9 @@ be verified against the executable contract referenced by `specmatic.yaml`.
 
 ## Implementation Notes
 
-- Generate `Idempotency-Key` values for create product and create order requests.
-- Send `pageSize` when searching for available products.
+- Send every request header and query parameter declared by the BFF executable contract for each call (for example idempotency, auth, pagination). Do not hardcode header or query parameter names the contract does not declare.
 - Keep BFF URL configuration environment-specific.
 - Create product calls the BFF product creation API.
-- Find available products calls the BFF product search API with `type` and `pageSize` when provided.
+- Find available products calls the BFF product search API with the query parameters the contract declares for that operation.
 - Create order calls the BFF order creation API.
 - Do not re-create schema definitions from markdown; read exact request and response fields from the executable OpenAPI contract or Specmatic report output.
