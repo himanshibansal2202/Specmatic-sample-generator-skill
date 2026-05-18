@@ -17,7 +17,7 @@ against the executable contract referenced by `specmatic.yaml`.
 - Create product calls Inventory `addInventory`.
 - Read product calls Inventory `getInventory`.
 - Create order calls Inventory `reduceInventory`.
-- Store `Idempotency-Key` values for create requests during the process lifetime.
+- Accept every request header the executable contract declares for an operation (for example idempotency, auth, pagination). Headers not declared by the contract should not be required.
 - Authenticated operations should accept an auth header without requiring local credential setup.
 - Unknown resource reads should return the executable contract's error response.
 - Use a multipart parser for product image uploads when the executable contract includes that endpoint.

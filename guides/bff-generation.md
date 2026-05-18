@@ -25,7 +25,7 @@ started by Specmatic.
 
 ## Implementation Notes
 
-- Forward `Idempotency-Key`, auth headers, and `pageSize` when present.
+- Forward every request header and query parameter declared by both the BFF system-under-test contract and the matching Backend dependency contract (for example idempotency, auth, pagination). Do not hardcode header or query parameter names that the executable contracts do not declare.
 - Catch backend errors and return their status and response body.
 - BFF samples have no seed data.
 - Implement BFF endpoints from the BFF system-under-test contract, then map
