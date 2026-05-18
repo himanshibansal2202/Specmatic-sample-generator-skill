@@ -48,9 +48,9 @@ When the destination root already has `.github/workflows/samples-ci.yml`, add or
 
 - Use the sample id as the job name.
 - Run commands with `working-directory: <sample-id>`.
-- Use the matched stack's install and test commands from `config/stack-matrix.yaml`.
+- Use the install and test commands generated for the selected language and framework.
 - Set up JRE 17 before running Specmatic tests.
-- Set up the language runtime required by the matched stack.
+- Set up the language runtime required by the selected language.
 - Upload the generated Specmatic/JUnit report artifact when the test command
   produces one.
 

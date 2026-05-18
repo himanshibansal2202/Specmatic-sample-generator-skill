@@ -1,74 +1,22 @@
-supported_combinations:
-  - id: backend-rest-js-express-inmemory
-    application_type: backend
-    protocol: rest
-    language: javascript
-    framework: express
-    data_fetch: in-memory
-    contract_source: store_rest
-    port: 8080
-    test_command: "npm test"
-    install_command: "npm install"
+application_types:
+  - backend
+  - bff
+  - frontend
 
-  - id: backend-rest-ts-express-inmemory
-    application_type: backend
-    protocol: rest
-    language: typescript
-    framework: express
-    data_fetch: in-memory
-    contract_source: store_rest
-    port: 8080
-    test_command: "npm test"
-    install_command: "npm install"
+protocols:
+  - rest
 
-  - id: backend-rest-java-spring-inmemory
-    application_type: backend
-    protocol: rest
-    language: java
-    framework: spring-boot
-    data_fetch: in-memory
-    contract_source: store_rest
-    port: 8080
-    test_command: "./mvnw test"
-    install_command: "./mvnw compile"
+languages:
+  - javascript
+  - typescript
+  - java
+  - python
 
-  - id: backend-rest-python-flask-inmemory
-    application_type: backend
-    protocol: rest
-    language: python
-    framework: flask
-    data_fetch: in-memory
-    contract_source: store_rest
-    port: 8080
-    test_command: "pytest test -v -s"
-    install_command: "pip install -r requirements.txt"
+frameworks:
+  - express
+  - spring-boot
+  - flask
 
-  - id: bff-rest-js-express-restapi
-    application_type: bff
-    protocol: rest
-    language: javascript
-    framework: express
-    data_fetch: rest-api
-    contract_source: store_rest
-    port: 8080
-    stub_port: 8090
-    test_command: "npm test"
-    install_command: "npm install"
-
-  - id: bff-rest-ts-express-restapi
-    application_type: bff
-    protocol: rest
-    language: typescript
-    framework: express
-    data_fetch: rest-api
-    contract_source: store_rest
-    port: 8080
-    stub_port: 8090
-    test_command: "npm test"
-    install_command: "npm install"
-
-# Invalid combinations (examples):
-# - python + spring-boot (Spring is Java/Kotlin only)
-# - javascript + flask (Flask is Python only)
-# - java + express (Express is JS/TS only)
-# - frontend + in-memory (frontends don't have data layers)
+data_fetch_modes:
+  - in-memory
+  - rest-api

@@ -4,9 +4,9 @@ This guide describes how generated samples should assemble Specmatic
 configuration. It is generator guidance only: do not copy it verbatim into a
 sample, and do not use it to define API behavior.
 
-Concrete contract repository URLs, OpenAPI spec paths, and default ports come
-from `config/contract-resolution.yaml`, `config/stack-matrix.yaml`, user input,
-or runtime contract discovery.
+Concrete contract repository URLs and OpenAPI spec paths come from
+`config/contract-resolution.yaml`, user input, or runtime contract discovery.
+Default ports come from the root `SKILL.md` generation conventions.
 
 ## Required Inputs
 

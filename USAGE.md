@@ -55,11 +55,11 @@ Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, contracts/*, gu
 Then follow the SKILL.md workflow — ask me for the inputs interactively.
 ```
 
-Generated samples are written as folders named after the supported combination id:
+Generated samples are written as folders named from the selected enum values:
 
 ```text
 <provided-location>/
-└── backend-rest-js-express-inmemory/
+└── backend-rest-javascript-express-in-memory/
     ├── specmatic.yaml
     ├── contracts/
     ├── .github/workflows/ci.yml
