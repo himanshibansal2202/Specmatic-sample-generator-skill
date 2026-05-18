@@ -95,21 +95,36 @@ Resolve these executable specs by sample type:
 - BFF: BFF system-under-test OpenAPI spec and Backend dependency mock OpenAPI spec.
 - Frontend: BFF dependency mock OpenAPI spec.
 
-For every sample type, inspect the applicable generation guide, the Specmatic configuration guidance, and the resolved executable contract before coding. When the referenced executable OpenAPI contract is available locally or can be fetched during verification, use it to confirm:
+After resolving the applicable specs, inspect the applicable generation guide,
+the Specmatic configuration guidance, and the executable OpenAPI contracts.
+Build a contract facts summary before writing source code. Use a structured
+OpenAPI parser when available; otherwise inspect the YAML directly. The summary
+must list, for every relevant operation:
 
-- Methods and paths
-- Status codes
-- Request and response content types
-- Required, optional, and forbidden response fields
-- Example IDs, request examples, and response examples used by Specmatic
+- HTTP method and path
+- request path/query/header parameters, including required flags
+- request content types and request body schemas/examples
+- response status codes, content types, schemas, and examples
+- required, optional, and forbidden response fields
+- security schemes and operation-level security requirements
+- referenced external schema/response files that must be followed
 - Stub/provider dependency behavior for consumer-side samples
 
-For consumer-side samples such as BFF and Frontend, inspect both the
-system-under-test contract and every dependency mock contract. Do not assume a
-consumer-facing API can blindly proxy to a provider API. If the contracts differ
-in paths, required fields, status codes, headers, content types, or response
-schemas, implement the minimal adapter behavior required by the executable
-contracts and confirm it with Specmatic.
+For BFF and Frontend samples, compare the SUT/consumer contract with each
+dependency contract before generating source code:
+
+1. Identify candidate dependency operations by compatible role intent, method,
+   request shape, and response shape.
+2. Record any required adapter behavior: path translation, status translation,
+   request body transformation, response body transformation, query/header
+   filtering or forwarding, and dependency-only security headers.
+3. If multiple dependency operations are equally plausible, or none can satisfy
+   the SUT/consumer operation, fail before generating source code and report the
+   ambiguous operation rather than guessing.
+4. For dependency security schemes, satisfy the dependency contract in the
+   generated client even when the SUT/consumer contract does not expose the same
+   credential input. Specmatic mocks validate contract shape, not real
+   credentials.
 
 If the executable contract contradicts local guide or test-data notes, implement the executable contract and record the discrepancy in the final response.
 
@@ -136,7 +151,12 @@ Use the selected enum values directly. For example,
 
 For every sample, generate the complete file set listed in `guides/acceptance-criteria.md`.
 
-Use `guides/specmatic-config.md` for Specmatic config structure and adapter behavior, then fill generated files with resolved contract paths and role-specific ports/base URLs.
+Use `guides/specmatic-config.md` for Specmatic config structure and adapter
+behavior, then fill generated files with resolved contract paths and
+role-specific ports/base URLs.
+Generate routes/controllers, client calls, schemas, seed data, examples, and
+adapter transformations from the contract facts summary produced in Step 3.
+Use role guides only for architecture and responsibilities.
 
 Default port conventions:
 
@@ -150,13 +170,13 @@ For a **Backend** sample, use `guides/backend-generation.md` for role behavior. 
 - The Backend keeps an Inventory dependency boundary
 - Seed data is required. See `test-data/backend-seed-data.md`
 
-For a **BFF** sample, use `guides/bff-generation.md` for role behavior, then verify exact API behavior against the executable contract referenced by `specmatic.yaml`. Key differences:
+For a **BFF** sample, use `guides/bff-generation.md` for role behavior. Key differences:
 - The BFF has NO local database — it calls the Backend API
 - specmatic.yaml has a `dependencies` section that starts a mock of the Backend
 - The BFF app reads the Backend URL from an environment variable (e.g., `STUB_URL`)
 - No seed data needed — the Specmatic mock handles Backend responses automatically
 
-For a **Frontend** sample, use `guides/frontend-generation.md` for client workflow behavior, then verify exact API behavior against the executable contract referenced by `specmatic.yaml`. Key differences:
+For a **Frontend** sample, use `guides/frontend-generation.md` for client workflow behavior. Key differences:
 - The Frontend provides no API contract
 - The Frontend consumes the Product and Order BFF API
 - The BFF URL must be configurable
@@ -166,11 +186,17 @@ For a **Frontend** sample, use `guides/frontend-generation.md` for client workfl
 
 After generating all files, run verification from inside the generated sample folder:
 1. Install dependencies
-2. Run the test command (e.g., `npm test`)
-3. **First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
-4. If tests fail, read the error output and the generated Specmatic/JUnit/report files, fix the code to match the executable contract, and re-run
-5. Repeat until ALL tests pass (max 3 retries)
-6. Run the generated build/package command when the sample includes compiled output or Docker
+2. Discover and verify the selected Specmatic package interface for the chosen
+   language: CLI command, test-library API, or bundled JAR. Confirm it supports
+   the generated `specmatic.yaml` version before relying on it.
+3. Run the test command (e.g., `npm test`)
+4. **First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
+5. If tests fail, read the error output and the generated Specmatic/JUnit/report files, fix the code to match the executable contract, and re-run
+6. Repeat until ALL tests pass (max 3 retries)
+7. Run the generated build/package command when the sample includes compiled output or Docker
+8. Remove local verification artifacts from the generated sample folder when
+   they are not source files, then re-run any build command affected by ignore
+   files or build context.
 
 **Timeout guidance:** If the test command runs for more than 5 minutes, something is wrong. Cancel and check:
 - Is Java 17+ available? (`java -version`)
@@ -185,6 +211,7 @@ When tests fail, classify the failure before changing code:
 - request or response schema mismatch
 - missing route or method
 - dependency mock mismatch
+- runtime or Specmatic package compatibility mismatch
 - startup or port binding failure
 
 Use the classification to make the smallest behavior change needed to match the
@@ -194,21 +221,18 @@ Only report "done" when tests are green.
 
 ## Key Rules
 
-- **Executable contract wins.** Generate from the actual OpenAPI/contract used by Specmatic whenever it is available. Local guides, contract-resolution config, and test data are useful inputs, but the executable contract and Specmatic test results decide final behavior.
-- **Seed data is critical.** The OpenAPI spec's examples reference specific IDs. Backend data stores MUST contain those entries at startup. See `test-data/backend-seed-data.md`.
-- **Content-Type matters.** Some endpoints return `text/plain`, others `application/json`. The spec defines which.
-- **Role intent lives in `guides/`.** Use the applicable generation guide to understand the sample's responsibilities, then verify exact behavior against the executable contract used by Specmatic.
-- **Samples are self-contained.** Copy or create the required tests, CI, README, config, and executable contract references inside the generated sample folder. Do not depend on shared files outside the sample folder.
+- **Executable contract wins.** Local guides and test data are helper context; the executable OpenAPI contract and Specmatic results decide behavior.
+- **Role intent lives in `guides/`.** Guides define responsibilities and architecture; Step 3 contract facts define API behavior.
+- **Samples are self-contained.** Include every file needed to run, test, build, and understand the sample inside the sample folder.
 - **The destination root is only a container.** Generate under `<provided-location>/<sample-id>/`, never directly into `<provided-location>/`.
 - **Ports must be configurable.** Keep documented default ports stable, but let tests override ports/base URLs so samples can run when defaults are occupied.
 - **Startup failures must fail fast.** Test adapters must surface listen/bind errors, dependency startup failures, and Specmatic failures clearly.
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
 - **Prompts must be enum-driven.** User-facing stack choices must come from `config/stack-matrix.yaml`; compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
-- **Consumer samples may need adapters.** For samples with dependency mocks, compare the SUT and dependency contracts and implement contract-derived translation only where the executable contracts require it.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
 - **Never read existing generated samples.** Do not read or copy from other sample folders already present in the destination repository. Every file must be generated from the skill's `contracts/`, `guides/`, and `test-data/` sources only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
-- **The contract test adapter is ~5 lines.** Don't overcomplicate it. Pattern: start app → run specmatic → stop app.
+- **Keep the test adapter minimal.** Let the verified Specmatic package interface determine whether it uses a CLI, library API, or bundled JAR.
 - **specmatic.yaml structure is the same for every language.** Resolved contract paths, dependency specs, ports, and base URLs vary by role and stack.
 
 ## References

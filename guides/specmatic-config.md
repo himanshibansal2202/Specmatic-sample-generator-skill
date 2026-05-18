@@ -99,6 +99,20 @@ Treat this as a build-fix step, not a content-generation step. The broader
 rule already lives in Step 6 of the workflow: a generated sample is not done
 until its test command exits cleanly.
 
+## Specmatic Package Interface Discovery
+
+After installing dependencies, verify how the selected language package invokes
+Specmatic before finalizing the generated test adapter:
+
+- Prefer the package's documented test-library API when it cleanly starts mocks,
+  starts the app, runs tests, returns failures, and shuts down.
+- If the package exposes a CLI, use that CLI in the generated test command.
+- If the package exposes a bundled Specmatic JAR rather than a CLI, invoke the
+  JAR from the generated test adapter and assert its process exit code.
+- If the installed package cannot parse the generated `specmatic.yaml` version,
+  select a compatible package/runtime combination and reinstall before changing
+  API behavior.
+
 ## Contract Test Adapter Patterns
 
 The contract test adapter starts the generated app, runs Specmatic, then stops
@@ -110,6 +124,9 @@ Adapter requirements for every language:
 - Start dependency mocks before running consumer-side contract tests.
 - Start the generated app on the configured host and port.
 - Fail fast if the app or any dependency mock cannot bind its configured port.
+- Ensure the mock process and generated app agree on the same configured mock
+  base URL; pass the dependency base URL into both sides when tests allocate a
+  dynamic port.
 - Run Specmatic against the configured base URL.
 - Assert the Specmatic result has zero failures instead of only printing results.
 - Stop the app and all dependency mocks in teardown, even when Specmatic fails.
@@ -140,3 +157,13 @@ Adapter requirements for every language:
 When tests fail, read the generated report files before changing code. Prefer
 the JUnit XML or Specmatic report output because it identifies the exact status,
 content type, schema, and example mismatches that must be fixed.
+
+Classify failures before editing generated behavior:
+
+- SUT contract mismatch: generated app response does not match the SUT spec.
+- Dependency mock mismatch: generated client call does not match a dependency
+  spec, including dependency-only security, required headers, query params, or
+  path differences.
+- Runtime/tooling mismatch: selected package, runtime, or adapter cannot run
+  the configured Specmatic version.
+- Startup/config mismatch: app, mock, or port/base URL wiring failed.

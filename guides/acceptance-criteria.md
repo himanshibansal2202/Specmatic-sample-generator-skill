@@ -15,6 +15,9 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
 - [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
 - [ ] Ports and dependency base URLs used by tests can be overridden from environment variables
+- [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
+- [ ] The generated test adapter uses the verified Specmatic package interface for the selected runtime
+- [ ] Local verification artifacts are ignored and are not left as source files in the generated sample folder
 
 ## Required Files
 
@@ -27,10 +30,10 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
 | Contract test file | Adapter that starts app + runs Specmatic |
 | `Dockerfile` | Production container image |
-| `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, reports, caches, and local files out of image build context |
+| `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, virtualenvs, reports, caches, Specmatic repos, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Prerequisites, how to run, how it works |
-| `.gitignore` | Ignore node_modules/build/target/.specmatic |
+| `.gitignore` | Ignore dependency folders, virtualenvs, build output, reports, caches, and `.specmatic` |
 | `.specmatic-sample-manifest.json` | Records generated files owned by this sample |
 
 ## CI Workflow Must Include
