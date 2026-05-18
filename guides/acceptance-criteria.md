@@ -15,6 +15,9 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
 - [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
 - [ ] Ports and dependency base URLs used by tests can be overridden from environment variables
+- [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
+- [ ] The generated test adapter uses the verified Specmatic package interface for the selected runtime
+- [ ] Local verification artifacts are ignored and are not left as source files in the generated sample folder
 
 ## Required Files
 
@@ -27,10 +30,10 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
 | Contract test file | Adapter that starts app + runs Specmatic |
 | `Dockerfile` | Production container image |
-| `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, reports, caches, and local files out of image build context |
+| `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, virtualenvs, reports, caches, Specmatic repos, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Prerequisites, how to run, how it works |
-| `.gitignore` | Ignore node_modules/build/target/.specmatic |
+| `.gitignore` | Ignore dependency folders, virtualenvs, build output, reports, caches, and `.specmatic` |
 | `.specmatic-sample-manifest.json` | Records generated files owned by this sample |
 
 ## CI Workflow Must Include
@@ -49,9 +52,9 @@ When the destination root already has `.github/workflows/samples-ci.yml`, add or
 
 - Use the sample id as the job name.
 - Run commands with `working-directory: <sample-id>`.
-- Use the matched stack's install and test commands from `config/stack-matrix.yaml`.
+- Use the install and test commands generated for the selected language and framework.
 - Set up JRE 17 before running Specmatic tests.
-- Set up the language runtime required by the matched stack.
+- Set up the language runtime required by the selected language.
 - Upload the generated Specmatic/JUnit report artifact when the test command
   produces one.
 

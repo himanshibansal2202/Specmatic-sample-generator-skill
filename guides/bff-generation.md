@@ -30,6 +30,13 @@ started by Specmatic.
 - BFF samples have no seed data.
 - Implement BFF endpoints from the BFF system-under-test contract, then map
   those calls to Backend dependency endpoints from the Backend mock contract.
+- Before coding the BFF adapter, build a comparison table from the two
+  executable contracts that records each BFF operation, its dependency
+  operation, and any required path, status, request body, response body,
+  query/header, or security transformation.
+- Satisfy Backend dependency security schemes in outbound calls even when the
+  BFF contract does not declare the same incoming credential. Use a sample
+  credential value only to satisfy the mock contract shape.
 - Do not assume BFF requests and Backend requests have identical paths,
   required fields, status codes, headers, content types, or response schemas.
 - When the contracts differ, implement the smallest adapter transformation

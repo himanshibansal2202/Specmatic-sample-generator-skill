@@ -16,6 +16,9 @@ be verified against the executable contract referenced by `specmatic.yaml`.
 
 - Send every request header and query parameter declared by the BFF executable contract for each call (for example idempotency, auth, pagination). Do not hardcode header or query parameter names the contract does not declare.
 - Keep BFF URL configuration environment-specific.
+- Before coding the client API module, build a consumed-operation summary from
+  the BFF executable contract that records each workflow's method, path,
+  parameters, request body, response shape, content type, and security needs.
 - Create product calls the BFF product creation API.
 - Find available products calls the BFF product search API with the query parameters the contract declares for that operation.
 - Create order calls the BFF order creation API.
