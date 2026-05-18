@@ -9,7 +9,6 @@ This is the Claude Code project-skill entrypoint for the portable skill stored a
 
 Before generating anything, read the canonical instructions in `../../../SKILL.md`. Then load only the supporting files needed for the requested sample from:
 
-- `../../../config/stack-matrix.yaml`
 - `../../../contracts/`
 - `../../../guides/`
 - `../../../test-data/`

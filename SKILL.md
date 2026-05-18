@@ -11,30 +11,29 @@ You are a code generator that creates working Specmatic sample projects. The gen
 
 ### Step 1: Collect Inputs (ONE AT A TIME)
 
-Before asking questions, read `config/stack-matrix.yaml` and derive the
-user-facing choices from its enum lists. Do not invent stack values that are not
-defined in the config. As answers are collected, use normal framework and
+Ask open-ended stack questions with a few example values in parentheses so the
+user understands the expected shape of the answer. Examples are guidance, not an
+exhaustive supported list. As answers are collected, use normal framework and
 application architecture knowledge to avoid offering obviously incoherent later
 choices. If uncertain, keep the option available and let validation plus
 verification decide.
 
 Ask each question separately. Wait for the user's answer before asking the next. Do NOT ask all questions at once.
 
-1. First ask: "What application type?" and offer values from `application_types`.
+1. First ask: "What application type? (for example: backend, bff, frontend)"
    - Wait for answer.
-2. Then ask: "What protocol?" and offer values from `protocols`.
+2. Then ask: "What protocol? (for example: rest)"
    - Wait for answer.
 3. Then ask: "What contract version? (default v3 / latest / specific like v5)"
    - Wait for answer.
-4. Then ask: "What language?" and offer values from `languages`.
+4. Then ask: "What language? (for example: javascript, typescript, java, python)"
    - Wait for answer.
-5. Then ask: "What framework?" — offer values from `frameworks`; omit only
-   options that are obviously incoherent for the selected application type,
-   protocol, or language.
+5. Then ask: "What framework? (for example: express, spring-boot, flask)" —
+   examples may be adjusted for the selected application type, protocol, or
+   language.
    - Wait for answer.
-6. Then ask: "What data layer?" — offer values from `data_fetch_modes`; omit
-   only options that are obviously incoherent for the selected application type
-   or architecture.
+6. Then ask: "What data layer? (for example: in-memory, rest-api)" — examples
+   may be adjusted for the selected application type or architecture.
    - Wait for answer.
 7. Then ask: "Where should I create the sample folder? Provide a local path or repository link."
    - Wait for answer.
@@ -43,22 +42,20 @@ Only proceed to Step 2 after ALL answers are collected.
 
 ### Step 2: Validate Combination
 
-Read `config/stack-matrix.yaml`. Validate the selected stack in three passes:
+Validate the selected stack in two passes:
 
-1. Enum membership: every selected application type, protocol, language,
-   framework, and data-fetch mode must exist in the corresponding config enum.
-2. Reasoned feasibility: decide whether the selected framework, language,
+1. Reasoned feasibility: decide whether the selected framework, language,
    application type, protocol, and data-fetch mode are coherent using general
    framework ecosystem knowledge, the selected role guide, and the architecture
    implied by the data-fetch mode. Reject only combinations that are clearly
    incoherent, and explain the reason briefly.
-3. Verification feasibility: if the combination is coherent but support is
+2. Verification feasibility: if the combination is coherent but support is
    uncertain, proceed to generation and let dependency installation, build, and
    Specmatic tests prove whether the sample is actually supported.
 
 Do not maintain a hardcoded list of valid or invalid stack combinations in this
-skill. The config defines available values; the skill reasons about whether a
-chosen set of values makes sense.
+skill. Example values in prompts are guidance only; the skill reasons about
+whether a chosen set of values makes sense.
 
 ### Step 3: Resolve Contract Source Of Truth
 
@@ -228,7 +225,7 @@ Only report "done" when tests are green.
 - **Ports must be configurable.** Keep documented default ports stable, but let tests override ports/base URLs so samples can run when defaults are occupied.
 - **Startup failures must fail fast.** Test adapters must surface listen/bind errors, dependency startup failures, and Specmatic failures clearly.
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
-- **Prompts must be enum-driven.** User-facing stack choices must come from `config/stack-matrix.yaml`; compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
+- **Prompts must be example-driven.** User-facing stack questions include a few examples in parentheses, but compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
 - **Never read existing generated samples.** Do not read or copy from other sample folders already present in the destination repository. Every file must be generated from the skill's `contracts/`, `guides/`, and `test-data/` sources only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
@@ -239,5 +236,4 @@ Only report "done" when tests are green.
 
 - `guides/` — Role generation notes, Specmatic config, and acceptance criteria
 - `test-data/backend-seed-data.md` — Required backend data entries for tests to pass
-- `config/stack-matrix.yaml` — Stack enum values
 - `config/contract-resolution.yaml` — Contract repository, known spec paths, and runtime discovery patterns
