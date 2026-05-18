@@ -35,12 +35,13 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 
 ## CI Workflow Must Include
 
-1. Setup JRE 17 (Specmatic requires Java)
-2. Setup language runtime (Node 20 / JDK 17 / Python 3.x)
-3. Install dependencies
-4. Run tests
-5. Upload test report artifact
-6. (On main branch) Build and push Docker image
+1. Multi-OS matrix strategy: `[ubuntu-latest, macos-latest, windows-latest]`
+2. Setup JRE 17 (Specmatic requires Java)
+3. Setup language runtime (Node 20 / JDK 17 / Python 3.x)
+4. Install dependencies
+5. Run tests
+6. Upload test report artifact
+7. (On main branch) Build and push Docker image
 
 ## Root Samples CI
 
