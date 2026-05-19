@@ -112,7 +112,7 @@ Resolve these executable specs by sample type:
   consumed by the generated client.
 
 After resolving the applicable specs, inspect the applicable generation guide,
-`guides/protocol-generation.md`, the Specmatic configuration guidance, and the
+`guides/protocol-generation.md`, the Specmatic runtime guidance, and the
 executable contracts. Build a contract facts summary before writing source code.
 Use a structured parser for the selected spec format when available; otherwise
 inspect the contract files directly. For OpenAPI and WSDL, the summary must
@@ -171,7 +171,7 @@ Use the selected enum values directly. For example,
 
 For every sample, generate the complete file set listed in `guides/acceptance-criteria.md`.
 
-Use `guides/specmatic-config.md` for Specmatic config structure and adapter
+Use `guides/specmatic-runtime.md` for Specmatic runtime structure and adapter
 behavior, then fill generated files with resolved contract paths, spec format,
 run option key, and role-specific ports/base URLs/broker settings.
 Generate routes/controllers, message handlers, RPC services, GraphQL resolvers,
@@ -267,6 +267,6 @@ Only report "done" when tests are green.
 
 ## References
 
-- `guides/` — Role generation notes, Specmatic config, and acceptance criteria
+- `guides/` — Role generation notes, Specmatic runtime guidance, and acceptance criteria
 - `test-data/backend-seed-data.md` — Required backend data entries for tests to pass
 - `config/contract-resolution.yaml` — Contract repositories, protocol roots, and runtime discovery patterns

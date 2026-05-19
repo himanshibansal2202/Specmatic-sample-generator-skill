@@ -1,8 +1,8 @@
-# Specmatic Configuration & Contract Test Patterns
+# Specmatic Runtime & Contract Test Patterns
 
-This guide describes how generated samples should assemble Specmatic
-configuration. It is generator guidance only: do not copy it verbatim into a
-sample, and do not use it to define contract behavior.
+This guide describes how generated samples should assemble Specmatic runtime
+configuration and contract test adapters. It is generator guidance only: do not
+copy it verbatim into a sample, and do not use it to define contract behavior.
 
 Concrete contract repository URLs, spec formats, run option keys, and spec paths
 come from `config/contract-resolution.yaml`, user input, or runtime contract
@@ -82,7 +82,7 @@ dependencies:
 ## Contract Source Of Truth
 
 See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
-This file only describes how to assemble Specmatic configuration after the
+This file only describes how to assemble Specmatic runtime wiring after the
 executable contract paths have been resolved.
 
 ## Test-Library / Runtime-Framework Dependency Conflicts

@@ -19,7 +19,7 @@ mock/stub started by Specmatic.
 
 ## Specmatic Requirements
 
-- Use `guides/specmatic-config.md` for Specmatic config assembly and contract test adapter behavior.
+- Use `guides/specmatic-runtime.md` for Specmatic runtime assembly and contract test adapter behavior.
 - Configure the BFF contract as the system under test.
 - Configure the Backend contract as a Specmatic mock/stub dependency.
 - Start the Backend mock before running BFF contract tests and always stop it afterward.
