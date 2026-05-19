@@ -2,29 +2,45 @@
 
 This guide describes how generated samples should assemble Specmatic
 configuration. It is generator guidance only: do not copy it verbatim into a
-sample, and do not use it to define API behavior.
+sample, and do not use it to define contract behavior.
 
-Concrete contract repository URLs and OpenAPI spec paths come from
-`config/contract-resolution.yaml`, user input, or runtime contract discovery.
-Default ports come from the root `SKILL.md` generation conventions.
+Concrete contract repository URLs, spec formats, run option keys, and spec paths
+come from `config/contract-resolution.yaml`, user input, or runtime contract
+discovery. Default ports come from the root `SKILL.md` generation conventions.
 
 ## Required Inputs
 
 Resolve these values before writing a generated sample's `specmatic.yaml`:
 
 - `<CONTRACT_REPO_URL>`
-- `<SUT_OPENAPI_SPEC_PATH>`
-- `<SUT_BASE_URL_ENV>`
-- `<SUT_DEFAULT_BASE_URL>`
+- `<SPEC_FORMAT>` (`openapi`, `asyncapi`, `protobuf`, `graphqlsdl`, or `wsdl`)
+- `<RUN_OPTION_KEY>` (`openapi`, `asyncapi`, `protobuf`, `graphqlsdl`, or `wsdl`)
+- `<SUT_SPEC_PATH>`
+- `<SUT_ENDPOINT_ENV>`
+- `<SUT_DEFAULT_ENDPOINT>`
 - `<DEPENDENCY_CONTRACT_REPO_URL>` when a dependency mock is needed
-- `<DEPENDENCY_OPENAPI_SPEC_PATH>` when a dependency mock is needed
-- `<DEPENDENCY_BASE_URL_ENV>` when a dependency mock is needed
-- `<DEPENDENCY_DEFAULT_BASE_URL>` when a dependency mock is needed
+- `<DEPENDENCY_SPEC_PATH>` when a dependency mock is needed
+- `<DEPENDENCY_ENDPOINT_ENV>` when a dependency mock is needed
+- `<DEPENDENCY_DEFAULT_ENDPOINT>` when a dependency mock is needed
+- protocol-specific values such as broker URL, host, port, import paths,
+  protoc version, request timeout, or examples directories when required
 
 ## specmatic.yaml
 
 Place the generated `specmatic.yaml` at the generated sample root. Keep base
-URLs configurable so tests can avoid occupied ports.
+URLs, service endpoints, broker URLs, ports, import paths, and examples
+directories configurable so tests can avoid occupied resources.
+
+Use the resolved `run_option_key` from `config/contract-resolution.yaml` rather
+than duplicating protocol-specific examples in this guide.
+
+| Protocol | Spec format | Run option key | Endpoint/config shape |
+|---|---|---|---|
+| REST/OpenAPI | `openapi` | `openapi` | HTTP `baseUrl` |
+| Kafka/AsyncAPI | `asyncapi` | `asyncapi` | broker/server settings from the resolved contract |
+| gRPC | `protobuf` | `protobuf` | host, port, import paths, protoc version |
+| GraphQL | `graphqlsdl` | `graphqlsdl` | host, port, examples directory when required |
+| SOAP/WSDL | `wsdl` | `wsdl` | HTTP `baseUrl` plus WSDL SOAP metadata |
 
 ```yaml
 version: 3
@@ -36,14 +52,12 @@ systemUnderTest:
             git:
               url: <CONTRACT_REPO_URL>
           specs:
-            - <SUT_OPENAPI_SPEC_PATH>
+            - <SUT_SPEC_PATH>
     runOptions:
-      openapi:
+      <RUN_OPTION_KEY>:
         type: test
-        baseUrl: "{<SUT_BASE_URL_ENV>:<SUT_DEFAULT_BASE_URL>}"
+        <PROTOCOL_SPECIFIC_OPTIONS>: <VALUES_FROM_RESOLVED_CONTRACT>
 ```
-
-### With Dependency Mocks
 
 Consumer samples such as BFF or Frontend samples may need one or more Specmatic
 mock dependencies. Add each dependency under `dependencies.services`.
@@ -58,11 +72,11 @@ dependencies:
                 git:
                   url: <DEPENDENCY_CONTRACT_REPO_URL>
               specs:
-                - <DEPENDENCY_OPENAPI_SPEC_PATH>
+                - <DEPENDENCY_SPEC_PATH>
         runOptions:
-          openapi:
+          <RUN_OPTION_KEY>:
             type: mock
-            baseUrl: "{<DEPENDENCY_BASE_URL_ENV>:<DEPENDENCY_DEFAULT_BASE_URL>}"
+            <PROTOCOL_SPECIFIC_OPTIONS>: <VALUES_FROM_RESOLVED_CONTRACT>
 ```
 
 ## Contract Source Of Truth
@@ -111,7 +125,7 @@ Specmatic before finalizing the generated test adapter:
   JAR from the generated test adapter and assert its process exit code.
 - If the installed package cannot parse the generated `specmatic.yaml` version,
   select a compatible package/runtime combination and reinstall before changing
-  API behavior.
+  contract behavior.
 
 ## Contract Test Adapter Patterns
 
@@ -120,14 +134,17 @@ the app. It must surface startup/listen errors and Specmatic failures clearly.
 
 Adapter requirements for every language:
 
-- Resolve host, port, and base URL from generated config or environment.
-- Start dependency mocks before running consumer-side contract tests.
-- Start the generated app on the configured host and port.
+- Resolve host, port, base URL, and service endpoint from generated config or
+  environment.
+- Resolve broker URL, service endpoint, import paths, examples directories, and
+  protocol-specific timeouts from generated config or environment.
+- Start dependency mocks/stubs before running consumer-side contract tests.
+- Start the generated app on the configured host, port, endpoint, or broker.
 - Fail fast if the app or any dependency mock cannot bind its configured port.
 - Ensure the mock process and generated app agree on the same configured mock
-  base URL; pass the dependency base URL into both sides when tests allocate a
-  dynamic port.
-- Run Specmatic against the configured base URL.
+  endpoint or broker; pass the dependency endpoint into both sides when tests
+  allocate dynamic resources.
+- Run Specmatic against the configured endpoint.
 - Assert the Specmatic result has zero failures instead of only printing results.
 - Stop the app and all dependency mocks in teardown, even when Specmatic fails.
 
@@ -144,14 +161,18 @@ Adapter requirements for every language:
 - Java samples should include the Specmatic JUnit 5 support dependency.
 - Python samples should include the Specmatic Python package and pytest or the
   chosen generated test framework.
+- Non-REST protocols that require `specmatic/enterprise` should run that Docker
+  image or the matching Enterprise language artifact in local tests and CI.
 
 ## How Specmatic Tests Work
 
 1. Specmatic reads the generated `specmatic.yaml`.
 2. Specmatic fetches the configured contract source.
-3. Specmatic parses the resolved OpenAPI spec.
-4. Specmatic sends example requests to the generated app at the configured base URL.
-5. Specmatic validates response status, content type, and schema.
+3. Specmatic parses the resolved contract for the selected protocol.
+4. Specmatic sends requests, RPC calls, GraphQL operations, SOAP messages, or
+   broker messages to the generated app at the configured endpoint.
+5. Specmatic validates response status, content type, schema, message payload,
+   metadata, or protocol-specific output.
 6. Specmatic reports pass/fail results.
 
 When tests fail, read the generated report files before changing code. Prefer
@@ -166,4 +187,5 @@ Classify failures before editing generated behavior:
   path differences.
 - Runtime/tooling mismatch: selected package, runtime, or adapter cannot run
   the configured Specmatic version.
-- Startup/config mismatch: app, mock, or port/base URL wiring failed.
+- Startup/config mismatch: app, mock, port, base URL, endpoint, or broker
+  wiring failed.

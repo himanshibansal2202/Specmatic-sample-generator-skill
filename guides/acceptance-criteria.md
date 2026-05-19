@@ -8,13 +8,14 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 
 - [ ] `npm test` (or equivalent) exits with code 0
 - [ ] All Specmatic contract tests pass (0 failures)
-- [ ] Generated behavior matches the executable OpenAPI/contract used by Specmatic
+- [ ] Generated behavior matches the executable contract used by Specmatic
 - [ ] No manual intervention needed after generation
 - [ ] Any mismatch between local guides/test data and the executable contract is resolved in favor of the executable contract
 - [ ] No generated files are written at the provided location root except the sample folder itself, unless updating an existing root `.github/workflows/samples-ci.yml`
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
 - [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
-- [ ] Ports and dependency base URLs used by tests can be overridden from environment variables
+- [ ] Ports, dependency base URLs, service endpoints, broker URLs, and
+  protocol-specific test settings can be overridden from environment variables
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
 - [ ] The generated test adapter uses the verified Specmatic package interface for the selected runtime
 - [ ] Local verification artifacts are ignored and are not left as source files in the generated sample folder
@@ -26,7 +27,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | `specmatic.yaml` | Points to central contract repo, defines test config |
 | Build file (`package.json` / `pom.xml` / `build.gradle` / `requirements.txt`) | Dependencies including Specmatic |
 | Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
-| Source code (controllers/routes) | Implements all endpoints from the contract |
+| Source code (controllers/routes/services/resolvers/handlers) | Implements all operations from the contract |
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
 | Contract test file | Adapter that starts app + runs Specmatic |
 | `Dockerfile` | Production container image |
@@ -44,6 +45,10 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 4. Run tests
 5. Upload test report artifact
 6. (On main branch) Build and push Docker image
+
+For non-REST protocols that require Specmatic Enterprise, CI must also install
+or run the documented Enterprise Docker image/artifact and expose any required
+license or setup variables through the generated README.
 
 ## Root Samples CI
 
@@ -72,7 +77,10 @@ pip install -r requirements.txt && pytest test -v -s
 
 Single command, green output.
 
-If the default service port is occupied, the test command may use documented environment overrides such as `SUT_PORT`, `SUT_BASE_URL`, or stack-equivalent names. Normal service startup should still use the documented default port unless the user overrides it.
+If the default service port or broker port is occupied, the test command may use
+documented environment overrides such as `SUT_PORT`, `SUT_BASE_URL`,
+`BROKER_PORT`, `BROKER_URL`, or stack-equivalent names. Normal service startup
+should still use the documented default endpoint unless the user overrides it.
 
 ## What "Green" Means
 
@@ -89,4 +97,7 @@ Tests:       N passed, N total
 
 Any failures = not done. Fix and re-run.
 
-When tests fail, use the generated Specmatic/JUnit/report files to identify the exact contract mismatch. Fix status codes, content types, request/response shape, examples, stubs, or startup configuration until the report has zero failures.
+When tests fail, use the generated Specmatic/JUnit/report files to identify the
+exact contract mismatch. Fix status codes, content types, request/response
+shape, RPC/message shape, GraphQL selection/variables, SOAP XML, examples,
+stubs, or startup configuration until the report has zero failures.

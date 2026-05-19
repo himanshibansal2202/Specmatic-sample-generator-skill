@@ -44,8 +44,16 @@ To use this skill in Kiro, start a new session and say:
 
 ```
 Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, contracts/*, guides/*, test-data/*, config/*).
-Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + in-memory. 
+Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + in-memory.
 Ask me for the destination path or repository link, create the sample as a self-contained folder under that location, install deps, and run tests until green.
+```
+
+For non-REST protocols, name the protocol in the same prompt:
+
+```text
+Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, config/*, guides/*, test-data/*).
+Then follow the SKILL.md workflow to generate a Backend gRPC sample using Kotlin + Spring Boot.
+Use official Specmatic sample/contract sources when configured, ask for a destination path, install deps, and run tests until green.
 ```
 
 Or for the interactive flow:
@@ -65,6 +73,18 @@ Generated samples are written as folders named from the selected enum values:
     ├── .github/workflows/ci.yml
     └── ...
 ```
+
+Protocol aliases are normalized by the skill:
+
+- `rest` / `openapi`
+- `kafka` / `asyncapi`
+- `grpc`
+- `graphql`
+- `soap` / `wsdl`
+
+Some non-REST protocols use Specmatic Enterprise in the official docs and sample
+projects. Generated samples for those protocols should document the required
+Docker image/artifact and any license/setup prerequisites.
 
 The provided location is only a container for sample folders. The skill should not create shared contracts, workflows, or metadata at that root.
 

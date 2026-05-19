@@ -1,22 +1,24 @@
 contract_resolution:
   default_version: v3
+  protocol_aliases:
+    rest: store_rest
+    openapi: store_rest
+    kafka: store_asyncapi_kafka
+    asyncapi: store_asyncapi_kafka
+    grpc: store_grpc
+    graphql: store_graphql
+    soap: store_soap
+    wsdl: store_soap
   sources:
     store_rest:
+      protocol: rest
+      spec_format: openapi
+      run_option_key: openapi
+      requires_enterprise: false
       source:
         git:
           url: https://github.com/specmatic/specmatic-order-contracts.git
-      openapi_root: io/specmatic/examples/store/openapi
-      explicit_specs:
-        v3:
-          backend:
-            system_under_test: io/specmatic/examples/store/openapi/api_order_v3.yaml
-          bff:
-            system_under_test: io/specmatic/examples/store/openapi/product_search_bff_v3.yaml
-            dependencies:
-              backend: io/specmatic/examples/store/openapi/api_order_v3.yaml
-          frontend:
-            dependencies:
-              bff: io/specmatic/examples/store/openapi/product_search_bff_v3.yaml
+      spec_root: io/specmatic/examples/store/openapi
       discovery:
         backend:
           system_under_test_patterns:
@@ -31,3 +33,129 @@ contract_resolution:
           dependency_patterns:
             bff:
               - product_search_bff_v{version}.yaml
+    store_asyncapi_kafka:
+      protocol: kafka
+      spec_format: asyncapi
+      run_option_key: asyncapi
+      requires_enterprise: true
+      official_samples:
+        - https://github.com/specmatic/specmatic-kafka-sample.git
+        - https://github.com/specmatic/specmatic-kafka-sample-asyncapi3.git
+        - https://github.com/specmatic/specmatic-order-bff-java.git
+        - https://github.com/specmatic/specmatic-order-bff-nodejs.git
+      source:
+        git:
+          url: https://github.com/specmatic/specmatic-order-contracts.git
+      spec_root: io/specmatic/examples/store/asyncapi
+      discovery:
+        backend:
+          system_under_test_patterns:
+            - "**/*api*_v{version}.{yaml,yml,json}"
+            - "**/*order*_v{version}.{yaml,yml,json}"
+            - "**/*asyncapi*.{yaml,yml,json}"
+        bff:
+          system_under_test_patterns:
+            - "**/*bff*_v{version}.{yaml,yml,json}"
+            - "**/*asyncapi*.{yaml,yml,json}"
+          dependency_patterns:
+            backend:
+              - "**/*api*_v{version}.{yaml,yml,json}"
+              - "**/*order*_v{version}.{yaml,yml,json}"
+        frontend:
+          dependency_patterns:
+            bff:
+              - "**/*bff*_v{version}.{yaml,yml,json}"
+              - "**/*asyncapi*.{yaml,yml,json}"
+    store_grpc:
+      protocol: grpc
+      spec_format: protobuf
+      run_option_key: protobuf
+      requires_enterprise: true
+      official_samples:
+        - https://github.com/specmatic/specmatic-order-api-grpc-kotlin.git
+        - https://github.com/specmatic/specmatic-order-bff-grpc-kotlin.git
+        - https://github.com/specmatic/specmatic-order-bff-grpc-go.git
+      source:
+        git:
+          url: https://github.com/specmatic/specmatic-order-contracts.git
+      spec_root: io/specmatic/examples/store/grpc
+      discovery:
+        backend:
+          system_under_test_patterns:
+            - "**/*api*_v{version}.proto"
+            - "**/*order*_v{version}.proto"
+            - "**/*.proto"
+        bff:
+          system_under_test_patterns:
+            - "**/*bff*_v{version}.proto"
+            - "**/*.proto"
+          dependency_patterns:
+            backend:
+              - "**/*api*_v{version}.proto"
+              - "**/*order*_v{version}.proto"
+        frontend:
+          dependency_patterns:
+            bff:
+              - "**/*bff*_v{version}.proto"
+              - "**/*.proto"
+    store_graphql:
+      protocol: graphql
+      spec_format: graphqlsdl
+      run_option_key: graphqlsdl
+      requires_enterprise: true
+      official_samples:
+        - https://github.com/specmatic/specmatic-order-graphql-ui-react.git
+        - https://github.com/specmatic/specmatic-order-bff-graphql.git
+        - https://github.com/specmatic/specmatic-order-graphql-consumer.git
+      source:
+        git:
+          url: https://github.com/specmatic/specmatic-order-contracts.git
+      spec_root: io/specmatic/examples/store/graphql
+      discovery:
+        backend:
+          system_under_test_patterns:
+            - "**/*api*_v{version}.{graphql,graphqls,gql}"
+            - "**/*schema*.{graphql,graphqls,gql}"
+        bff:
+          system_under_test_patterns:
+            - "**/*bff*_v{version}.{graphql,graphqls,gql}"
+            - "**/*schema*.{graphql,graphqls,gql}"
+          dependency_patterns:
+            backend:
+              - "**/*api*_v{version}.{graphql,graphqls,gql}"
+              - "**/*schema*.{graphql,graphqls,gql}"
+        frontend:
+          dependency_patterns:
+            bff:
+              - "**/*bff*_v{version}.{graphql,graphqls,gql}"
+              - "**/*schema*.{graphql,graphqls,gql}"
+    store_soap:
+      protocol: soap
+      spec_format: wsdl
+      run_option_key: wsdl
+      requires_enterprise: true
+      official_samples:
+        - https://github.com/specmatic/specmatic-order-bff-wsdl.git
+      source:
+        git:
+          url: https://github.com/specmatic/specmatic-order-contracts.git
+      spec_root: wsdls
+      discovery:
+        backend:
+          system_under_test_patterns:
+            - "**/*api*_v{version}.wsdl"
+            - "**/*order*.wsdl"
+            - "**/*.wsdl"
+        bff:
+          system_under_test_patterns:
+            - "**/*bff*_v{version}.wsdl"
+            - "**/*.wsdl"
+          dependency_patterns:
+            backend:
+              - "**/*api*_v{version}.wsdl"
+              - "**/*order*.wsdl"
+        frontend:
+          dependency_patterns:
+            bff:
+              - "**/*bff*_v{version}.wsdl"
+              - "**/*.wsdl"
