@@ -33,7 +33,7 @@ validates them across OS/environment matrix.
    a. Run the full generation workflow (Steps 2–6 from the main workflow) using
       the combination's inputs. Skip Step 1 (inputs are predefined).
    b. Verify green locally.
-   c. If generation or verification exceeds 5 minutes for a single
+   c. If generation or verification exceeds 10 minutes for a single
       combination, abandon it, record as timed out, and move to the next.
    d. If verification fails after max retries, record the failure and continue
       to the next combination.
@@ -43,7 +43,7 @@ validates them across OS/environment matrix.
    Regression complete:
    ✅ backend-rest-javascript-express-in-memory (passed, 34s)
    ✅ backend-rest-java-spring-boot-in-memory (passed, 52s)
-   ⏱️ backend-rest-python-flask-in-memory (timed out after 5m)
+   ⏱️ backend-rest-python-flask-in-memory (timed out after 10m)
    ❌ bff-rest-javascript-express-rest-api (failed: dependency conflict)
    ...
    5/7 passed. 1 timed out. 1 failed. Pushed to <repo>. CI will validate across OS matrix.

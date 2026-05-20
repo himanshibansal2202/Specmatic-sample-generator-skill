@@ -176,7 +176,7 @@ Use the selected enum values directly. For example,
 - If the destination is a repository link, clone or locate a local checkout of that repository first, then create or update the sample at `<checkout>/<sample-id>/`.
 - Do not write generated sample files directly into the destination root.
 - Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
-- If the destination root already has `.github/workflows/samples-ci.yml`, update it to include the generated sample.
+- If the destination root already has `.github/workflows/verify-all.yml`, update its language-grouped matrix to include the generated sample.
 - Each generated sample folder must be self-contained and include every file needed to run, test, build, and understand that sample independently.
 
 ### Step 5: Generate the Project
@@ -268,7 +268,7 @@ Use this workflow when the user selects "regression" mode. See
 3. For each combination in the matrix:
    a. Run Steps 2–6 using the combination's inputs (skip Step 1).
    b. If verification fails after max retries, record the failure and continue.
-   c. If generation or verification exceeds 5 minutes for a single
+   c. If generation or verification exceeds 10 minutes for a single
       combination, abandon it, record as timed out, and move to the next.
 4. Push all successfully generated samples to the destination repo.
 5. Report: which passed, which failed, which timed out, total count, and

@@ -2,6 +2,7 @@ regression:
   contract_version: v3
   destination:
     default_repo: https://github.com/specmatic/specmatic-order-samples.git
+    samples_directory: samples
   combinations:
     - application_type: backend
       protocol: rest
