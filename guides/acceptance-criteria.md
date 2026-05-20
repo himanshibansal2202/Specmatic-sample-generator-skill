@@ -11,9 +11,9 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] Generated behavior matches the executable contract used by Specmatic
 - [ ] No manual intervention needed after generation
 - [ ] Any mismatch between local guides/test data and the executable contract is resolved in favor of the executable contract
-- [ ] No generated files are written at the provided location root except the sample folder itself, unless updating an existing root `.github/workflows/samples-ci.yml`
+- [ ] No generated files are written at the provided location root except the sample folder itself, unless updating an existing root `.github/workflows/verify-all.yml`
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
-- [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
+- [ ] If the destination root has `.github/workflows/verify-all.yml`, it includes the sample in the appropriate language matrix
 - [ ] Ports, dependency base URLs, service endpoints, broker URLs, and
   protocol-specific test settings can be overridden from environment variables
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
@@ -35,7 +35,32 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Prerequisites, how to run, how it works |
 | `.gitignore` | Ignore dependency folders, virtualenvs, build output, reports, caches, and `.specmatic` |
-| `.specmatic-sample-manifest.json` | Records generated files owned by this sample |
+| `.specmatic-sample-manifest.json` | Records generated files and generation inputs |
+
+## Manifest Schema
+
+The manifest enables maintain mode to identify the sample's stack and test
+command without re-asking the user.
+
+```json
+{
+  "schema_version": 1,
+  "generated_at": "<ISO-8601 timestamp>",
+  "inputs": {
+    "application_type": "<backend|bff|frontend>",
+    "protocol": "<rest|kafka|grpc|graphql|soap>",
+    "contract_version": "<v3|...>",
+    "language": "<javascript|typescript|java|python|...>",
+    "framework": "<express|spring-boot|flask|...>",
+    "data_fetch": "<in-memory|rest-api|...>"
+  },
+  "contract_source": {
+    "url": "<contract-repo-git-url>",
+    "spec_path": "<resolved-spec-path>"
+  },
+  "files": ["<list of all skill-generated file paths relative to sample root>"]
+}
+```
 
 ## CI Workflow Must Include
 
@@ -51,17 +76,110 @@ For non-REST protocols that require Specmatic Enterprise, CI must also install
 or run the documented Enterprise Docker image/artifact and expose any required
 license or setup variables through the generated README.
 
-## Root Samples CI
+## Root Samples CI (verify-all.yml)
 
-When the destination root already has `.github/workflows/samples-ci.yml`, add or update one job for the generated sample:
+When the destination is a monorepo with multiple samples, the skill must
+generate or update a root-level `.github/workflows/verify-all.yml` that
+verifies all samples. Per-sample `ci.yml` files do not trigger in a monorepo —
+only the root workflow runs.
 
-- Use the sample id as the job name.
-- Run commands with `working-directory: <sample-id>`.
-- Use the install and test commands generated for the selected language and framework.
-- Set up JRE 17 before running Specmatic tests.
-- Set up the language runtime required by the selected language.
-- Upload the generated Specmatic/JUnit report artifact when the test command
-  produces one.
+Structure:
+
+- Group samples by language runtime into separate jobs (e.g.,
+  `test-node-samples`, `test-java-samples`, `test-python-samples`).
+- Each job uses a `strategy.matrix.sample` listing the sample folder names for
+  that language.
+- Use `working-directory: samples/${{ matrix.sample }}` (or the configured
+  samples subdirectory).
+- Each job sets up JRE 17 + the language runtime, installs deps, runs tests,
+  verifies Docker build, and uploads the Specmatic/JUnit report artifact.
+- Add a final `regression-check` job that depends on all test jobs and confirms
+  all passed.
+
+**Multi-OS matrix is required.** Some protocols (Kafka, gRPC) and platform-
+specific path/process behaviors fail on certain OS targets. Running on all three
+OS catches issues that local-only verification misses.
+
+When a new sample is generated or an existing sample is regenerated, update the
+matrix list in the appropriate language job. If no job exists for the sample's
+language, create one following the same pattern.
+
+Example structure:
+
+```yaml
+name: Verify All Samples
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-node-samples:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        sample:
+          - backend-rest-javascript-express-in-memory
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          java-package: jre
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install and test
+        working-directory: samples/${{ matrix.sample }}
+        run: |
+          npm install
+          npm test
+      - name: Verify Docker build
+        working-directory: samples/${{ matrix.sample }}
+        run: docker build -t ${{ matrix.sample }}:test .
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.sample }}
+          path: samples/${{ matrix.sample }}/build/reports/specmatic/html
+
+  test-java-samples:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        sample:
+          - backend-rest-java-spring-boot-in-memory
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Run tests
+        working-directory: samples/${{ matrix.sample }}
+        run: ./mvnw test
+      - name: Verify Docker build
+        working-directory: samples/${{ matrix.sample }}
+        run: docker build -t ${{ matrix.sample }}:test .
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.sample }}
+          path: samples/${{ matrix.sample }}/build/reports/specmatic/html
+
+  regression-check:
+    needs: [test-node-samples, test-java-samples]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All samples passed
+        run: echo "✅ All samples verified green"
+```
 
 ## Local Run Must Work With
 
@@ -102,3 +220,22 @@ When tests fail, use the generated Specmatic/JUnit/report files to identify the
 exact contract mismatch. Fix status codes, content types, request/response
 shape, RPC/message shape, GraphQL selection/variables, SOAP XML, examples,
 stubs, or startup configuration until the report has zero failures.
+
+## Regression Mode Acceptance Criteria
+
+- [ ] All combinations in `config/regression-matrix.yaml` are attempted
+- [ ] Each combination runs the full generation workflow (Steps 2–6)
+- [ ] Each generated sample passes local verification before push
+- [ ] Failed combinations are reported with failure reason and do not block others
+- [ ] Successfully generated samples are pushed to the destination repo
+- [ ] A summary report lists pass/fail status for every combination
+
+## Maintain Mode Acceptance Criteria
+
+- [ ] All samples with a `.specmatic-sample-manifest.json` are discovered
+- [ ] Samples without a manifest are skipped and reported as unmanaged
+- [ ] Each sample's test command is run using the language/framework from the manifest
+- [ ] Failing samples are fixed using report-driven convergence (same as Step 6)
+- [ ] Fixes are committed with descriptive messages
+- [ ] Unfixable samples are reported with the failure reason
+- [ ] A summary report lists: already green, fixed, and unfixable samples

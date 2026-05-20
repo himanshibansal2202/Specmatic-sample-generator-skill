@@ -1,6 +1,6 @@
 ---
 name: generate-specmatic-sample
-description: Generate a working Specmatic v3 sample project for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", or "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests".
+description: Generate, regression-test, or maintain Specmatic v3 sample projects. Use when the user wants to create a Backend, BFF, or Frontend sample, run regression across all supported combinations, or maintain existing samples. Triggers on "generate a specmatic sample", "run regression", "maintain samples", or "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests".
 ---
 
 # Generate Specmatic Sample

@@ -1,13 +1,25 @@
 ---
 name: generate-specmatic-sample
-description: Generate a working Specmatic v3 sample project for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", or "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests".
+description: Generate, regression-test, or maintain Specmatic v3 sample projects. Use when the user wants to create a Backend, BFF, or Frontend sample, run regression across all supported combinations, or maintain existing samples. Triggers on "generate a specmatic sample", "run regression", "maintain samples", "create a sample project for Java Spring Boot", or "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests".
 ---
 
 # Generate Specmatic Sample
 
-You are a code generator that creates working Specmatic sample projects. The generated project MUST pass Specmatic contract tests — this is the only definition of "done".
+You are a code generator that creates, regression-tests, and maintains working Specmatic sample projects. Generated projects MUST pass Specmatic contract tests — this is the only definition of "done".
 
 ## Workflow
+
+### Step 0: Select Mode
+
+Ask: "What would you like to do? (generate, regression, maintain)"
+
+- **generate** — proceed to Step 1 (interactive generation of a single sample).
+- **regression** — proceed to the Regression Workflow below.
+- **maintain** — proceed to the Maintain Workflow below.
+
+If the user's request clearly implies a mode (e.g., "generate a backend sample",
+"run regression", "maintain the samples repo"), skip the question and proceed
+directly.
 
 ### Step 1: Collect Inputs (ONE AT A TIME)
 
@@ -170,7 +182,7 @@ Use the selected enum values directly. For example,
   generated sample folder.
 - Do not write generated sample files directly into the destination root.
 - Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
-- If the destination root already has `.github/workflows/samples-ci.yml`, update it to include the generated sample.
+- If the destination root already has `.github/workflows/verify-all.yml`, update its language-grouped matrix to include the generated sample.
 - Each generated sample folder must be self-contained and include every file needed to run, test, build, and understand that sample independently.
 
 ### Step 5: Generate the Project
@@ -273,6 +285,41 @@ After Step 6 passes:
 8. If the push fails because authentication, authorization, or branch protection
    blocks it, report the failure and leave the committed local branch intact.
 
+## Regression Workflow
+
+Use this workflow when the user selects "regression" mode. See
+`guides/regression-and-maintenance.md` for full details.
+
+1. Read `config/regression-matrix.yaml` for the list of combinations and
+   destination.
+2. Ask: "Where should I generate the samples? Provide a local path or
+   repository link." If the destination already contains samples, the skill
+   must handle both fresh generation and coexistence with existing samples.
+3. For each combination in the matrix:
+   a. Run Steps 2–6 using the combination's inputs (skip Step 1).
+   b. If verification fails after max retries, record the failure and continue.
+4. Push all successfully generated samples to the destination repo.
+5. Report: which passed, which failed, which timed out, total count, and
+   destination.
+
+## Maintain Workflow
+
+Use this workflow when the user selects "maintain" mode. See
+`guides/regression-and-maintenance.md` for full details.
+
+1. Ask: "Which samples repo should I maintain? (local path or git URL)"
+2. Clone or locate the local checkout.
+3. Find all `.specmatic-sample-manifest.json` files.
+4. For each sample with a manifest:
+   a. Read the manifest for language/framework/test command.
+   b. Install dependencies and run the test command.
+   c. If green → skip.
+   d. If red → read Specmatic report, classify failure, fix, re-run (max 3
+      retries using the same convergence logic as Step 6).
+   e. If still red → record as unfixable.
+5. Commit fixes and push (or open PR based on user preference).
+6. Report: which were already green, which were fixed, which are unfixable.
+
 ## Key Rules
 
 - **Executable contract wins.** Local guides and test data are helper context; the executable contract and Specmatic results decide behavior.
@@ -295,6 +342,7 @@ After Step 6 passes:
 
 ## References
 
-- `guides/` — Role generation notes, Specmatic runtime guidance, and acceptance criteria
+- `guides/` — Role generation notes, Specmatic runtime guidance, regression/maintenance, and acceptance criteria
 - `test-data/backend-seed-data.md` — Required backend data entries for tests to pass
 - `config/contract-resolution.yaml` — Contract repositories, protocol roots, and runtime discovery patterns
+- `config/regression-matrix.yaml` — Predefined combinations for regression testing
