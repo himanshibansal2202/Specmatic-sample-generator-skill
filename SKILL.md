@@ -264,12 +264,12 @@ Use this workflow when the user selects "regression" mode. See
 
 1. Read `config/regression-matrix.yaml` for the list of combinations and
    destination.
-2. Ask: "Where should I push the generated samples?" (default from config).
+2. Ask: "Where should I generate the samples? Provide a local path or
+   repository link." If the destination already contains samples, the skill
+   must handle both fresh generation and coexistence with existing samples.
 3. For each combination in the matrix:
    a. Run Steps 2–6 using the combination's inputs (skip Step 1).
    b. If verification fails after max retries, record the failure and continue.
-   c. If generation or verification exceeds 10 minutes for a single
-      combination, abandon it, record as timed out, and move to the next.
 4. Push all successfully generated samples to the destination repo.
 5. Report: which passed, which failed, which timed out, total count, and
    destination.

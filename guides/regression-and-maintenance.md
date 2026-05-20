@@ -26,9 +26,12 @@ validates them across OS/environment matrix.
 
 ### Workflow
 
-1. Read `config/regression-matrix.yaml` for the list of combinations and
-   destination repo.
-2. Ask: "Where should I push the generated samples? (default: `<configured default_repo>`)"
+1. Read `config/regression-matrix.yaml` for the list of combinations.
+2. Ask: "Where should I generate the samples? Provide a local path or
+   repository link."
+   - If the destination already contains samples (existing repo), the skill
+     generates new samples alongside them without modifying existing ones.
+   - If the destination is empty, generate fresh.
 3. For each combination in the matrix:
    a. Run the full generation workflow (Steps 2–6 from the main workflow) using
       the combination's inputs. Skip Step 1 (inputs are predefined).
@@ -37,8 +40,11 @@ validates them across OS/environment matrix.
       combination, abandon it, record as timed out, and move to the next.
    d. If verification fails after max retries, record the failure and continue
       to the next combination.
-4. Push all successfully generated samples to the destination repo.
-5. Report results:
+4. Generate or update the root `.github/workflows/verify-all.yml` to include
+   all successfully generated samples in the appropriate language matrix.
+5. Push all successfully generated samples to the destination repo.
+6. Report: which passed, which failed, which timed out, total count, and
+   destination.
    ```
    Regression complete:
    ✅ backend-rest-javascript-express-in-memory (passed, 34s)
@@ -55,7 +61,7 @@ validates them across OS/environment matrix.
 regression:
   contract_version: v3
   destination:
-    default_repo: <git-url>
+    samples_directory: samples
   combinations:
     - application_type: backend
       protocol: rest
@@ -138,15 +144,19 @@ See `guides/acceptance-criteria.md` for the manifest schema.
 
 ## CI Integration
 
-The destination repo should have a CI workflow that runs tests on all samples.
-The skill does not generate this workflow — it is maintained by the repo owner.
-A typical setup:
+The skill generates or updates a root-level `.github/workflows/verify-all.yml`
+in the destination repo (see `guides/acceptance-criteria.md` for the full
+pattern). This workflow:
 
-1. Discover all manifest files.
-2. For each sample: setup JRE 17, setup language runtime, install deps, run
-   tests.
-3. Run across OS matrix: `[ubuntu-latest, macos-latest, windows-latest]`.
-4. Report per-sample pass/fail.
+1. Groups samples by language into separate jobs with matrix strategy.
+2. Sets up JRE 17 + language runtime, installs deps, runs tests, verifies
+   Docker build, and uploads report artifacts.
+3. **Must run across multi-OS matrix: `[ubuntu-latest, macos-latest,
+   windows-latest]`.** Some protocols (Kafka, gRPC) have been observed to fail
+   on specific OS combinations — multi-OS testing catches these platform-specific
+   issues that local verification misses.
+4. Includes a final `regression-check` job that gates on all test jobs.
 
-The regression mode generates samples and pushes them. CI validates them. If CI
-fails, the maintain mode can be invoked to fix the failures.
+The regression mode generates samples and pushes them. CI validates them across
+all OS targets. If CI fails on a specific OS, the maintain mode can be invoked
+to fix the platform-specific failures.

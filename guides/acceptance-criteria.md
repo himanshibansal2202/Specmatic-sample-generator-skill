@@ -96,6 +96,10 @@ Structure:
 - Add a final `regression-check` job that depends on all test jobs and confirms
   all passed.
 
+**Multi-OS matrix is required.** Some protocols (Kafka, gRPC) and platform-
+specific path/process behaviors fail on certain OS targets. Running on all three
+OS catches issues that local-only verification misses.
+
 When a new sample is generated or an existing sample is regenerated, update the
 matrix list in the appropriate language job. If no job exists for the sample's
 language, create one following the same pattern.
@@ -112,9 +116,10 @@ on:
 
 jobs:
   test-node-samples:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         sample:
           - backend-rest-javascript-express-in-memory
     steps:
@@ -143,9 +148,10 @@ jobs:
           path: samples/${{ matrix.sample }}/build/reports/specmatic/html
 
   test-java-samples:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         sample:
           - backend-rest-java-spring-boot-in-memory
     steps:
