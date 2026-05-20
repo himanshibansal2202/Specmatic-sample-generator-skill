@@ -56,6 +56,20 @@ Then follow the SKILL.md workflow to generate a Backend gRPC sample using Kotlin
 Use official Specmatic sample/contract sources when configured, ask for a destination path, install deps, and run tests until green.
 ```
 
+For regression testing (generate all predefined combinations):
+
+```text
+Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, config/*, guides/*, test-data/*).
+Run regression — generate all combinations from config/regression-matrix.yaml, verify each locally, and push to the configured destination repo.
+```
+
+For maintaining existing samples (test and fix):
+
+```text
+Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, config/*, guides/*, test-data/*).
+Maintain the samples at /path/to/specmatic-order-samples — run tests on all samples, fix any failures, and push fixes.
+```
+
 Or for the interactive flow:
 
 ```

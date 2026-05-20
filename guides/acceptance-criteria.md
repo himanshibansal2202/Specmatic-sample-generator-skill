@@ -35,7 +35,32 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Prerequisites, how to run, how it works |
 | `.gitignore` | Ignore dependency folders, virtualenvs, build output, reports, caches, and `.specmatic` |
-| `.specmatic-sample-manifest.json` | Records generated files owned by this sample |
+| `.specmatic-sample-manifest.json` | Records generated files and generation inputs |
+
+## Manifest Schema
+
+The manifest enables maintain mode to identify the sample's stack and test
+command without re-asking the user.
+
+```json
+{
+  "schema_version": 1,
+  "generated_at": "<ISO-8601 timestamp>",
+  "inputs": {
+    "application_type": "<backend|bff|frontend>",
+    "protocol": "<rest|kafka|grpc|graphql|soap>",
+    "contract_version": "<v3|...>",
+    "language": "<javascript|typescript|java|python|...>",
+    "framework": "<express|spring-boot|flask|...>",
+    "data_fetch": "<in-memory|rest-api|...>"
+  },
+  "contract_source": {
+    "url": "<contract-repo-git-url>",
+    "spec_path": "<resolved-spec-path>"
+  },
+  "files": ["<list of all skill-generated file paths relative to sample root>"]
+}
+```
 
 ## CI Workflow Must Include
 
@@ -102,3 +127,22 @@ When tests fail, use the generated Specmatic/JUnit/report files to identify the
 exact contract mismatch. Fix status codes, content types, request/response
 shape, RPC/message shape, GraphQL selection/variables, SOAP XML, examples,
 stubs, or startup configuration until the report has zero failures.
+
+## Regression Mode Acceptance Criteria
+
+- [ ] All combinations in `config/regression-matrix.yaml` are attempted
+- [ ] Each combination runs the full generation workflow (Steps 2–6)
+- [ ] Each generated sample passes local verification before push
+- [ ] Failed combinations are reported with failure reason and do not block others
+- [ ] Successfully generated samples are pushed to the destination repo
+- [ ] A summary report lists pass/fail status for every combination
+
+## Maintain Mode Acceptance Criteria
+
+- [ ] All samples with a `.specmatic-sample-manifest.json` are discovered
+- [ ] Samples without a manifest are skipped and reported as unmanaged
+- [ ] Each sample's test command is run using the language/framework from the manifest
+- [ ] Failing samples are fixed using report-driven convergence (same as Step 6)
+- [ ] Fixes are committed with descriptive messages
+- [ ] Unfixable samples are reported with the failure reason
+- [ ] A summary report lists: already green, fixed, and unfixable samples

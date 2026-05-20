@@ -1,0 +1,40 @@
+regression:
+  contract_version: v3
+  destination:
+    default_repo: https://github.com/specmatic/specmatic-order-samples.git
+  combinations:
+    - application_type: backend
+      protocol: rest
+      language: javascript
+      framework: express
+      data_fetch: in-memory
+    - application_type: backend
+      protocol: rest
+      language: java
+      framework: spring-boot
+      data_fetch: in-memory
+    - application_type: backend
+      protocol: rest
+      language: python
+      framework: flask
+      data_fetch: in-memory
+    - application_type: backend
+      protocol: rest
+      language: typescript
+      framework: express
+      data_fetch: in-memory
+    - application_type: bff
+      protocol: rest
+      language: javascript
+      framework: express
+      data_fetch: rest-api
+    - application_type: bff
+      protocol: rest
+      language: java
+      framework: spring-boot
+      data_fetch: rest-api
+    - application_type: frontend
+      protocol: rest
+      language: javascript
+      framework: express
+      data_fetch: rest-api

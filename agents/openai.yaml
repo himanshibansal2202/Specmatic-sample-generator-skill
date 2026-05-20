@@ -1,7 +1,7 @@
 interface:
   display_name: "Generate Specmatic Sample"
-  short_description: "Generate Specmatic contract-test samples"
-  default_prompt: "Use $generate-specmatic-sample to generate a Backend REST, gRPC, GraphQL, AsyncAPI, or SOAP sample with Specmatic contract tests."
+  short_description: "Generate, regression-test, or maintain Specmatic contract-test samples"
+  default_prompt: "Use $generate-specmatic-sample to generate a Backend REST sample, run regression across all combinations, or maintain existing samples."
 
 policy:
   allow_implicit_invocation: true
