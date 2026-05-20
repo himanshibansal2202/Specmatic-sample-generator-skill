@@ -53,7 +53,7 @@ For non-REST protocols, name the protocol in the same prompt:
 ```text
 Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, config/*, guides/*, test-data/*).
 Then follow the SKILL.md workflow to generate a Backend gRPC sample using Kotlin + Spring Boot.
-Use official Specmatic sample/contract sources when configured, ask for a destination path, install deps, and run tests until green.
+Use only the configured central contract repo or a user-provided contract path, ask for a destination path, install deps, and run tests until green.
 ```
 
 Or for the interactive flow:
@@ -74,6 +74,10 @@ Generated samples are written as folders named from the selected enum values:
     └── ...
 ```
 
+When the destination is a repository link, the generator clones or reuses the
+checkout adjacent to the skill repo, then asks for permission before pushing the
+verified sample commit.
+
 Protocol aliases are normalized by the skill:
 
 - `rest` / `openapi`
@@ -82,8 +86,8 @@ Protocol aliases are normalized by the skill:
 - `graphql`
 - `soap` / `wsdl`
 
-Some non-REST protocols use Specmatic Enterprise in the official docs and sample
-projects. Generated samples for those protocols should document the required
+Some non-REST protocols use Specmatic Enterprise in the official docs.
+Generated samples for those protocols should document the required
 Docker image/artifact and any license/setup prerequisites.
 
 The provided location is only a container for sample folders. The skill should not create shared contracts, workflows, or metadata at that root.

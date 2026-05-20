@@ -38,11 +38,6 @@ contract_resolution:
       spec_format: asyncapi
       run_option_key: asyncapi
       requires_enterprise: true
-      official_samples:
-        - https://github.com/specmatic/specmatic-kafka-sample.git
-        - https://github.com/specmatic/specmatic-kafka-sample-asyncapi3.git
-        - https://github.com/specmatic/specmatic-order-bff-java.git
-        - https://github.com/specmatic/specmatic-order-bff-nodejs.git
       source:
         git:
           url: https://github.com/specmatic/specmatic-order-contracts.git
@@ -71,10 +66,6 @@ contract_resolution:
       spec_format: protobuf
       run_option_key: protobuf
       requires_enterprise: true
-      official_samples:
-        - https://github.com/specmatic/specmatic-order-api-grpc-kotlin.git
-        - https://github.com/specmatic/specmatic-order-bff-grpc-kotlin.git
-        - https://github.com/specmatic/specmatic-order-bff-grpc-go.git
       source:
         git:
           url: https://github.com/specmatic/specmatic-order-contracts.git
@@ -103,10 +94,6 @@ contract_resolution:
       spec_format: graphqlsdl
       run_option_key: graphqlsdl
       requires_enterprise: true
-      official_samples:
-        - https://github.com/specmatic/specmatic-order-graphql-ui-react.git
-        - https://github.com/specmatic/specmatic-order-bff-graphql.git
-        - https://github.com/specmatic/specmatic-order-graphql-consumer.git
       source:
         git:
           url: https://github.com/specmatic/specmatic-order-contracts.git
@@ -134,8 +121,6 @@ contract_resolution:
       spec_format: wsdl
       run_option_key: wsdl
       requires_enterprise: true
-      official_samples:
-        - https://github.com/specmatic/specmatic-order-bff-wsdl.git
       source:
         git:
           url: https://github.com/specmatic/specmatic-order-contracts.git

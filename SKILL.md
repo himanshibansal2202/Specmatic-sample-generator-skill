@@ -94,9 +94,9 @@ protocol:
    generated `specmatic.yaml`.
 6. If multiple candidates match the same role/version, fail with a clear error
    instead of guessing.
-7. Use configured official sample repositories only when no compatible contract
-   is found in the central contract repo. If none is found there either, ask for
-   a user-provided contract repo/path or fail before generating source code.
+7. If any required system-under-test or dependency contract cannot be resolved
+   from the configured central contract repo, stop before generating source code
+   and ask the user for an explicit contract repo/path to use.
 
 Before fetching from the network, check only approved contract-source locations:
 the current generated sample's own `.specmatic/repos/<repo-name>` cache, an
@@ -161,7 +161,13 @@ Use the selected enum values directly. For example,
 `backend-rest-javascript-express-in-memory`.
 
 - If the destination is a local path, create or update the sample at `<destination>/<sample-id>/`.
-- If the destination is a repository link, clone or locate a local checkout of that repository first, then create or update the sample at `<checkout>/<sample-id>/`.
+- If the destination is a repository link, derive `<repo-name>` from the Git URL
+  basename without `.git`, then clone or locate the repository at
+  `<skill-repo-parent>/<repo-name>/`, where `<skill-repo-parent>` is the parent
+  directory of this skill repo. Create or update the sample at
+  `<skill-repo-parent>/<repo-name>/<sample-id>/`.
+- Do not clone destination repositories inside this skill repo or inside a
+  generated sample folder.
 - Do not write generated sample files directly into the destination root.
 - Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
 - If the destination root already has `.github/workflows/samples-ci.yml`, update it to include the generated sample.
@@ -243,7 +249,29 @@ When tests fail, classify the failure before changing code:
 Use the classification to make the smallest behavior change needed to match the
 executable contract, then re-run the documented test command.
 
-Only report "done" when tests are green.
+Only report "done" when tests are green and any required repository-link
+publish step has completed or been skipped for a documented reason.
+
+### Step 7: Publish Repository-Link Destinations
+
+Run this step only when the destination provided by the user was a repository
+link. Local path destinations are not committed or pushed automatically.
+
+After Step 6 passes:
+
+1. From the destination repository checkout, inspect the git worktree.
+2. If there are unrelated dirty files outside the generated `<sample-id>/`
+   folder and optional root `.github/workflows/samples-ci.yml`, stop and report
+   the blocker. Do not overwrite, stage, commit, or push unrelated changes.
+3. If there are no generated changes to commit, skip commit and push.
+4. Stage only the generated `<sample-id>/` folder and the root
+   `.github/workflows/samples-ci.yml` if it was updated.
+5. Commit with message `Add <sample-id> Specmatic sample`.
+6. Ask the user for explicit permission before running `git push`.
+7. If approved, push the current branch to its configured upstream. If no
+   upstream is configured, push to `origin <current-branch>`.
+8. If the push fails because authentication, authorization, or branch protection
+   blocks it, report the failure and leave the committed local branch intact.
 
 ## Key Rules
 
@@ -258,7 +286,7 @@ Only report "done" when tests are green.
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
 - **Prompts must be example-driven.** User-facing stack questions include a few examples in parentheses, but compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
-- **Never read existing generated samples.** Do not read, inspect, or copy from other sample folders already present in the destination repository or monorepo, including their `.specmatic/` caches, build outputs, source files, tests, docs, configs, and manifests. Every file must be generated from the skill's `contracts/`, `guides/`, `test-data/`, configured official contract sources, isolated temporary checkouts, or user-provided contract paths only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference.
+- **Never read existing generated samples.** Do not read, inspect, or copy from other sample folders already present in the destination repository or monorepo, including their `.specmatic/` caches, build outputs, source files, tests, docs, configs, and manifests. Every file must be generated from the skill's `contracts/`, `guides/`, `test-data/`, configured central contract repo, isolated temporary checkouts of that repo, or user-provided contract paths only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **Keep the test adapter minimal.** Let the verified Specmatic package interface determine whether it uses a CLI, library API, or bundled JAR.
 - **specmatic.yaml structure is protocol-aware.** Resolved contract paths,
