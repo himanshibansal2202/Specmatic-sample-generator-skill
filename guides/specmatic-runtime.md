@@ -97,8 +97,8 @@ third-party class.
 
 Resolve generically:
 
-1. Pick a Specmatic test-library version that supports the `specmatic.yaml`
-   schema version chosen by the user. Each language binding (JVM, Node.js,
+1. Pick a Specmatic test-library version that supports the generated
+   `specmatic.yaml` schema version. Each language binding (JVM, Node.js,
    Python, etc.) publishes its own schema-version-to-library-version mapping
    in its release notes.
 2. Run the generated test command once as part of Step 6 of the workflow.

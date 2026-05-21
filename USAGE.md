@@ -45,7 +45,7 @@ To use this skill in Kiro, start a new session and say:
 ```
 Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, contracts/*, guides/*, test-data/*, config/*).
 Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + in-memory.
-Ask me for the destination path or repository link, create the sample as a self-contained folder under that location, install deps, and run tests until green.
+Ask me for the destination path, create the sample as a self-contained folder under that location, install deps, and run tests until green.
 ```
 
 For non-REST protocols, name the protocol in the same prompt:
@@ -74,9 +74,8 @@ Generated samples are written as folders named from the selected enum values:
     └── ...
 ```
 
-When the destination is a repository link, the generator clones or reuses the
-checkout adjacent to the skill repo, then asks for permission before pushing the
-verified sample commit.
+The destination must be a local folder. Generated samples are not committed or
+pushed automatically.
 
 Protocol aliases are normalized by the skill:
 

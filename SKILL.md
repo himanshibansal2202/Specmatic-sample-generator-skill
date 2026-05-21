@@ -37,18 +37,16 @@ Ask each question separately. Wait for the user's answer before asking the next.
    - Wait for answer.
 2. Then ask: "What protocol? (for example: rest/openapi, kafka/asyncapi, grpc, graphql, soap/wsdl)"
    - Wait for answer.
-3. Then ask: "What contract version? (default v3 / latest / specific like v5)"
+3. Then ask: "What language? (for example: javascript, typescript, java, python)"
    - Wait for answer.
-4. Then ask: "What language? (for example: javascript, typescript, java, python)"
-   - Wait for answer.
-5. Then ask: "What framework? (for example: express, spring-boot, flask)" —
+4. Then ask: "What framework? (for example: express, spring-boot, flask)" —
    examples may be adjusted for the selected application type, protocol, or
    language.
    - Wait for answer.
-6. Then ask: "What data layer? (for example: in-memory, rest-api, grpc-service, kafka-broker)" — examples
+5. Then ask: "What data layer? (for example: in-memory, rest-api, grpc-service, kafka-broker)" — examples
    may be adjusted for the selected application type or architecture.
    - Wait for answer.
-7. Then ask: "Where should I create the sample folder? Provide a local path or repository link."
+6. Then ask: "Where should I create the sample folder? Provide a local path."
    - Wait for answer.
 
 Only proceed to Step 2 after ALL answers are collected.
@@ -98,16 +96,15 @@ protocol:
 1. Inspect filenames under the configured `spec_root` in the contract
    repository.
 2. Match the selected role's discovery patterns for the selected spec format
-   and requested/default contract version.
-3. If a requested version is available, use that version.
-4. If no version was requested, use `default_version`; if those files are not
-   available, select the latest compatible discovered version.
-5. Resolve exactly one system-under-test contract and exactly one contract for
+   across all discovered compatible contract versions.
+3. Select the latest compatible discovered version for each required
+   system-under-test or dependency contract role.
+4. Resolve exactly one system-under-test contract and exactly one contract for
    each required dependency. Write these exact resolved paths into the
    generated `specmatic.yaml`.
-6. If multiple candidates match the same role/version, fail with a clear error
+5. If multiple candidates match the same role/version, fail with a clear error
    instead of guessing.
-7. If any required system-under-test or dependency contract cannot be resolved
+6. If any required system-under-test or dependency contract cannot be resolved
    from the configured central contract repo, stop before generating source code
    and ask the user for an explicit contract repo/path to use.
 
@@ -173,14 +170,7 @@ Use the selected enum values directly. For example,
 `backend + rest + javascript + express + in-memory` becomes
 `backend-rest-javascript-express-in-memory`.
 
-- If the destination is a local path, create or update the sample at `<destination>/<sample-id>/`.
-- If the destination is a repository link, derive `<repo-name>` from the Git URL
-  basename without `.git`, then clone or locate the repository at
-  `<skill-repo-parent>/<repo-name>/`, where `<skill-repo-parent>` is the parent
-  directory of this skill repo. Create or update the sample at
-  `<skill-repo-parent>/<repo-name>/<sample-id>/`.
-- Do not clone destination repositories inside this skill repo or inside a
-  generated sample folder.
+- Create or update the sample at `<destination>/<sample-id>/`.
 - Do not write generated sample files directly into the destination root.
 - Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
 - If the destination root already has `.github/workflows/samples-ci.yml`, update it to include the generated sample.
@@ -262,29 +252,7 @@ When tests fail, classify the failure before changing code:
 Use the classification to make the smallest behavior change needed to match the
 executable contract, then re-run the documented test command.
 
-Only report "done" when tests are green and any required repository-link
-publish step has completed or been skipped for a documented reason.
-
-### Step 7: Publish Repository-Link Destinations
-
-Run this step only when the destination provided by the user was a repository
-link. Local path destinations are not committed or pushed automatically.
-
-After Step 6 passes:
-
-1. From the destination repository checkout, inspect the git worktree.
-2. If there are unrelated dirty files outside the generated `<sample-id>/`
-   folder and optional root `.github/workflows/samples-ci.yml`, stop and report
-   the blocker. Do not overwrite, stage, commit, or push unrelated changes.
-3. If there are no generated changes to commit, skip commit and push.
-4. Stage only the generated `<sample-id>/` folder and the root
-   `.github/workflows/samples-ci.yml` if it was updated.
-5. Commit with message `Add <sample-id> Specmatic sample`.
-6. Ask the user for explicit permission before running `git push`.
-7. If approved, push the current branch to its configured upstream. If no
-   upstream is configured, push to `origin <current-branch>`.
-8. If the push fails because authentication, authorization, or branch protection
-   blocks it, report the failure and leave the committed local branch intact.
+Only report "done" when tests are green.
 
 ## Key Rules
 
