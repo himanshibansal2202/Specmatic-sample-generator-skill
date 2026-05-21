@@ -320,93 +320,46 @@ After Step 6 passes:
 
 Ask the user:
 
-> "Point me to the local path of the repo or monorepo containing the sample(s) to maintain."
+> "Point me to the local path of the sample to maintain."
 
-Wait for the user's answer. The path may contain:
-- A single sample (has `.specmatic-sample-manifest.json` at its root)
-- A monorepo with multiple samples (each subdirectory has its own manifest)
+Wait for the user's answer. The path should contain a single sample with a `.specmatic-sample-manifest.json` at its root.
 
-### Step 2: Discover Samples
+If the user provides a monorepo path with multiple samples, list the discovered samples and ask which one to maintain. Process one sample per session to avoid context overload and ensure focused fixes.
 
-Scan the provided path for all `.specmatic-sample-manifest.json` files. For each manifest found:
-- Read the manifest to recover the original inputs (application type, protocol, language, framework, data layer, contract source)
-- Record the sample path and its stack
+### Step 2: Discover and Read
 
-Report to the user:
-> "Found N sample(s): [list sample folder names and their stacks]"
+Scan the provided path for `.specmatic-sample-manifest.json`. Read the manifest to recover the original inputs (application type, protocol, language, framework, data layer, contract source).
 
-If no manifests are found, inform the user and ask if they want to generate a new sample instead.
+If no manifest is found, inform the user and ask if they want to generate a new sample instead.
 
-### Step 3: Assess Each Sample
+Read the sample's source files, config, and build files to understand the current state. In maintain mode, reading the existing sample IS required (unlike generate mode where it is forbidden).
 
-For each discovered sample, in order:
+### Step 3: Update Layers
 
-#### 3a: Read Existing Code
+#### 3a: Update Contract Config (always)
 
-Read the sample's source files, config, and build files to understand the current state. In maintain mode, reading the existing sample IS required (unlike generate mode where it is forbidden). Understand:
-- Current Specmatic config format and version
-- Current dependency versions
-- Current route handlers / controllers / client code
-- Current test adapter
+Re-resolve the contract source using `config/contract-resolution.yaml` and the manifest inputs. Regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require it) with the latest resolved contract paths.
 
-#### 3b: Update Contract Config (always)
+#### 3b: Update Dependencies (always)
 
-Re-resolve the contract source using `config/contract-resolution.yaml` and the manifest inputs. Regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require it) with the latest resolved contract paths. This ensures the sample points to the correct contract version.
-
-#### 3c: Update Dependencies (always)
-
-Bump Specmatic and framework dependency versions to the latest compatible release:
-- For npm: update `specmatic`, framework, and dev dependency versions in `package.json`
-- For Maven: update Specmatic and Spring Boot versions in `pom.xml`
-- For pip: update versions in `requirements.txt`
+Bump Specmatic and framework/library dependency versions to the latest compatible release. Identify the build file for the sample's language (e.g., `package.json` for npm, `pom.xml` for Maven) and update all relevant versions — including the framework itself, Specmatic packages, and dev/test dependencies.
 
 Install dependencies after updating.
 
-#### 3d: Update Infrastructure (always)
+#### 3c: Update Infrastructure (always)
 
 Regenerate from current best practices:
 - `Dockerfile` — latest base image, optimized layers
 - `.github/workflows/ci.yml` — latest action versions, correct setup steps
 - `.gitignore` / `.dockerignore` — complete ignore patterns
 
-#### 3e: Run Tests
+#### 3d: Run Tests
 
-Run the sample's test command. If tests pass, this sample is done — move to the next sample.
+Run the sample's test command. If tests pass, this sample is done.
 
 ### Step 4: Fix Failures (only if tests fail)
 
-If tests fail after the config/deps/infra updates:
-
-#### 4a: Classify the Failure
-
-Read the Specmatic test output, JUnit reports, or console errors. Classify into:
-
-| Failure Type | Indicator |
-|---|---|
-| Missing route | 404 for a path that exists in the contract |
-| Status mismatch | Expected 201, got 200 (or similar) |
-| Schema mismatch | Response missing a required field, wrong type |
-| Content-type mismatch | Expected text/plain, got application/json |
-| Dependency mock rejection | Backend mock returns 400/500 to the BFF/frontend |
-| Config parse error | Specmatic can't read the config file |
-| Startup failure | App won't start, port conflict, missing dependency |
-
-#### 4b: Apply Targeted Fix
-
-Make the smallest code change that resolves the classified failure:
-- Missing route → add the route handler with correct status and response shape
-- Status mismatch → change the response status code
-- Schema mismatch → add/fix the field in the response or seed data
-- Content-type mismatch → change the response content type
-- Dependency mock rejection → fix the outbound request (headers, body, params)
-- Config parse error → regenerate the config file
-- Startup failure → fix port config or dependency issue
-
-#### 4c: Re-run Tests
-
-After applying the fix, run tests again. If green, move to the next sample.
-
-#### 4d: Escalate if Needed
+If tests fail after the layer updates, read the Specmatic test output and fix the code — same approach as generate mode Step 6 (Verify And Converge). Make the smallest change needed to match the executable contract, re-run tests, repeat up to 3 times.
 
 If the same failure persists after 3 fix attempts:
 1. Regenerate the broken file from scratch using the contract facts (same approach as generate mode Step 5)
@@ -417,22 +370,34 @@ Do NOT leave a sample in a worse state than you found it. If escalation fails, r
 
 ### Step 5: Report
 
-After processing all samples, report:
+After processing the sample, report:
 
 ```
 Maintain Summary:
-- sample-name-1: ✅ updated (deps bumped, config refreshed)
-- sample-name-2: ✅ fixed (added missing route for GET /products/{id}/reviews)
-- sample-name-3: ❌ unfixable (contract removed endpoint /orders entirely — manual intervention needed)
+- sample-name: ✅ updated (deps bumped, config refreshed, framework upgraded)
+```
+
+or
+
+```
+Maintain Summary:
+- sample-name: ✅ fixed (brief description of what was fixed)
+```
+
+or
+
+```
+Maintain Summary:
+- sample-name: ❌ unfixable (reason — manual intervention needed)
 ```
 
 ### Maintain Mode Key Rules
 
 - **Read existing code.** Unlike generate mode, maintain mode MUST read and understand the current sample before making changes.
 - **Preserve manual customizations.** Only change what's needed. Don't rewrite working app code just because the skill would generate it differently today.
-- **Config and deps are always safe to update.** These layers don't contain user customizations.
+- **Config, deps, and infra are always safe to update.** These layers don't contain user customizations. This includes framework version upgrades.
 - **App code is only touched when tests fail.** If tests pass after config/dep/infra updates, don't touch app code.
-- **One contract change may break multiple samples.** Process each sample independently — the fix for a Java sample differs from the fix for a JavaScript sample even if the contract change is the same.
+- **One sample per session.** Maintain one sample at a time to ensure focused, high-quality fixes.
 - **Report-driven fixes only.** Same as generate mode — read the actual test failure, don't guess.
 - **Never make the sample worse.** If a fix attempt breaks more tests than it fixes, revert and try a different approach.
 - **Manifest is required.** Skip directories without `.specmatic-sample-manifest.json` — they can't be maintained without knowing the original inputs.
