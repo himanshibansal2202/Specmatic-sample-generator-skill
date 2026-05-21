@@ -99,6 +99,38 @@ Adjust paths for the actual generated structure.
 - [Specmatic Documentation](https://docs.specmatic.io)
 - Link to the specific contract/spec used by this sample
 
+## Optional Sections
+
+Include these when relevant to the sample:
+
+### Endpoints (Backend and BFF samples)
+
+Table of API endpoints implemented by the sample:
+
+```markdown
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /products | List products |
+| POST | /products | Create a product |
+```
+
+Derive from the contract facts. Helps developers quickly see what the service implements.
+
+### Configuration
+
+Table of environment variables that can override defaults:
+
+```markdown
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| SUT_PORT | 8080 | Application port |
+| SUT_BASE_URL | http://localhost:8080 | Base URL for Specmatic tests |
+```
+
+Include when the sample exposes configurable ports, URLs, or broker settings.
+
+Place optional sections between "How It Works" and "Project Structure".
+
 ## Tone and Style
 
 - Written for a developer who just found this repo — they should understand WHY in 30 seconds
