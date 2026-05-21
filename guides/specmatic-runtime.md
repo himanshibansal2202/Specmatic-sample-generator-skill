@@ -22,6 +22,8 @@ Resolve these values before writing a generated sample's `specmatic.yaml`:
 - `<DEPENDENCY_SPEC_PATH>` when a dependency mock is needed
 - `<DEPENDENCY_ENDPOINT_ENV>` when a dependency mock is needed
 - `<DEPENDENCY_DEFAULT_ENDPOINT>` when a dependency mock is needed
+- `<SPECMATIC_INTEGRATION_MODE>` (`cli`, `docker-cli`, `test-container`, or
+  `native`)
 - protocol-specific values such as broker URL, host, port, import paths,
   protoc version, request timeout, or examples directories when required
 
@@ -113,19 +115,126 @@ Treat this as a build-fix step, not a content-generation step. The broader
 rule already lives in Step 6 of the workflow: a generated sample is not done
 until its test command exits cleanly.
 
-## Specmatic Package Interface Discovery
+## Specmatic Integration Interface Discovery
 
-After installing dependencies, verify how the selected language package invokes
-Specmatic before finalizing the generated test adapter:
+After installing dependencies, verify how the selected language/runtime invokes
+Specmatic for the selected integration mode before finalizing the generated test
+adapter:
 
-- Prefer the package's documented test-library API when it cleanly starts mocks,
-  starts the app, runs tests, returns failures, and shuts down.
-- If the package exposes a CLI, use that CLI in the generated test command.
-- If the package exposes a bundled Specmatic JAR rather than a CLI, invoke the
-  JAR from the generated test adapter and assert its process exit code.
+- For `cli`, verify the package CLI, standalone CLI, or downloaded JAR command.
+  Prefer current official documentation or Maven Central executable artifacts
+  when selecting the runtime. Do not copy or infer Specmatic runtime versions
+  from existing samples.
+- For `docker-cli`, verify Docker availability and the official Specmatic image
+  tag needed for the selected protocol.
+- For `test-container`, verify the language's Testcontainers dependency and the
+  official Specmatic Docker image tag needed for the selected protocol.
+- For `native`, verify the official native test dependency and API for the
+  selected language, protocol, and test framework.
 - If the installed package cannot parse the generated `specmatic.yaml` version,
   select a compatible package/runtime combination and reinstall before changing
   contract behavior.
+
+## Integration Modes
+
+The selected mode is a user input. It controls test wiring, dependencies,
+README instructions, and CI setup. It does not change contract resolution,
+`specmatic.yaml`, or generated application behavior.
+
+### CLI
+
+Use `cli` when the sample should invoke Specmatic as an external executable.
+
+- Start the generated app and any dependency mocks/stubs needed by the sample.
+- Run Specmatic with the verified CLI command, standalone JAR, or package CLI.
+  For standalone JAR wiring, the command shape is `java -jar specmatic.jar test`
+  from the generated sample root unless the verified distribution documents a
+  different invocation.
+- Pass endpoint, port, broker, examples, and report settings through
+  `specmatic.yaml`, environment variables, or CLI flags supported by the
+  verified Specmatic version.
+- Capture Specmatic stdout/stderr and generated reports, fail on non-zero exit,
+  and assert that reported failures are zero.
+- Local and CI prerequisites include Java 17+ when the selected CLI/JAR requires
+  it.
+
+### Docker CLI
+
+Use `docker-cli` when Specmatic should run as a direct Docker command rather
+than as a language dependency or a Testcontainers-managed container.
+
+- Start the generated app and any dependency mocks/stubs needed by the sample.
+- Run Specmatic with `docker run` from the generated test command or test
+  adapter. Use the official `specmatic/specmatic` image for
+  community-supported protocols and `specmatic/enterprise` when the selected
+  protocol requires Enterprise.
+- Mount or copy `specmatic.yaml`, any local contract/example files, and the
+  report output directory into the container. If contracts are fetched from git,
+  pass the network and credential configuration needed by Specmatic.
+- Configure the SUT endpoint so the container can reach the generated app. Use
+  host networking, a shared Docker network, or documented host aliases
+  appropriate for the target OS instead of assuming container-local
+  `localhost`.
+- Capture container logs and reports, fail on non-zero exit, and assert that
+  reported failures are zero.
+- Local and CI prerequisites include Docker, but must not require local Java for
+  Specmatic itself.
+
+### Test Container
+
+Use `test-container` when Specmatic should run from Docker inside the generated
+test suite.
+
+- Add the selected language's standard Testcontainers dependency and generate a
+  test adapter that starts the generated app, then starts the Specmatic
+  container.
+- Use the official `specmatic/specmatic` image for community-supported
+  protocols and `specmatic/enterprise` when the selected protocol requires
+  Enterprise.
+- Mount or copy `specmatic.yaml`, any local contract/example files, and the
+  report output directory into the container. If contracts are fetched from git,
+  pass network and credential configuration needed by Specmatic.
+- Configure the SUT endpoint so the container can reach the generated app. Use
+  Testcontainers host access or network aliases rather than hardcoded
+  localhost assumptions.
+- Stream container logs into the test output, fail on non-zero container exit,
+  and assert that reported failures are zero.
+- Local and CI prerequisites include Docker, but must not require local Java
+  outside the container.
+
+### Native
+
+Use `native` when the selected language has an official native Specmatic test
+integration for the selected protocol. This covers Java/Kotlin test interfaces,
+Python pytest APIs, Node.js/TypeScript package APIs, and other documented
+language-level integrations.
+
+- Generate the native contract test class/module using the current official API
+  for the language and test framework. For JVM/JUnit 5 stacks, prefer
+  `io.specmatic.test.SpecmaticContractTest` when current official documentation
+  uses it, rather than older support-class names.
+- Keep `specmatic.yaml` at the sample root and configure the native test
+  integration to read it, start the generated app, and run the contract tests.
+- For Python, use the official Specmatic Python API/decorator style published
+  for the selected package version, with pytest if that is the generated test
+  framework.
+- For Node.js/TypeScript, use the official Specmatic npm package API when it
+  supports the selected protocol, such as `testWithApiCoverage` for OpenAPI.
+- Fail fast when the app cannot start or the native Specmatic result contains
+  failures. Do not hide failures behind ordinary unit-test assertions.
+- Local and CI prerequisites follow the native package. JVM native integration
+  normally still requires JDK/JRE 17+.
+
+## Protocol Support By Mode
+
+- REST/OpenAPI may use `cli`, `docker-cli`, `test-container`, or `native` when
+  the selected language/framework supports the chosen adapter.
+- gRPC/Protobuf, GraphQL SDL, SOAP/WSDL, and Kafka/AsyncAPI must use an
+  Enterprise-capable Specmatic runtime unless current official documentation
+  proves community support for that protocol and mode.
+- For Enterprise protocols, prefer `docker-cli` or `test-container` when a
+  native Enterprise language artifact is not verified. Do not accept a native
+  adapter that parses `specmatic.yaml` but reports no executable contract tests.
 
 ## Contract Test Adapter Patterns
 
@@ -151,18 +260,22 @@ Adapter requirements for every language:
 ### Language Notes
 
 - Node.js / JavaScript / TypeScript samples should include the Specmatic package
-  and a test framework dependency.
+  and a test framework dependency when the selected mode needs a package-level
+  integration.
 - Node.js samples using ES modules must configure the test runner so ESM imports
   work under the selected framework.
-- Prefer Specmatic's language wrapper APIs for starting and stopping dependency
-  mocks when available. If a wrapper leaves test-runner handles open after
-  successful teardown, document and configure the minimal runner option needed
-  for the documented test command to exit cleanly.
-- Java samples should include the Specmatic JUnit 5 support dependency.
-- Python samples should include the Specmatic Python package and pytest or the
-  chosen generated test framework.
-- Non-REST protocols that require `specmatic/enterprise` should run that Docker
-  image or the matching Enterprise language artifact in local tests and CI.
+- In `native` mode, prefer Specmatic's language wrapper APIs for starting
+  and stopping dependency mocks when available. If a wrapper leaves test-runner
+  handles open after successful teardown, document and configure the minimal
+  runner option needed for the documented test command to exit cleanly.
+- Java samples should include the Specmatic JUnit 5 support dependency in
+  `native` mode, the selected Testcontainers dependency in `test-container`
+  mode, direct Docker wiring in `docker-cli` mode, or the CLI/JAR wiring in
+  `cli` mode.
+- Python samples should include the Specmatic Python package and pytest for
+  native integration, the selected Testcontainers dependency for
+  `test-container`, direct Docker wiring for `docker-cli`, or CLI/JAR wiring for
+  `cli`.
 
 ## How Specmatic Tests Work
 

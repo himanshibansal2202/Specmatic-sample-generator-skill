@@ -17,7 +17,8 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] Ports, dependency base URLs, service endpoints, broker URLs, and
   protocol-specific test settings can be overridden from environment variables
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
-- [ ] The generated test adapter uses the verified Specmatic package interface for the selected runtime
+- [ ] The generated test adapter uses the selected and verified Specmatic
+  integration mode: `cli`, `docker-cli`, `test-container`, or `native`
 - [ ] Local verification artifacts are ignored and are not left as source files in the generated sample folder
 
 ## Required Files
@@ -29,7 +30,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
 | Source code (controllers/routes/services/resolvers/handlers) | Implements all operations from the contract |
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
-| Contract test file | Adapter that starts app + runs Specmatic |
+| Contract test file | Adapter that starts app + runs Specmatic through the selected integration mode |
 | `Dockerfile` | Production container image |
 | `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, virtualenvs, reports, caches, Specmatic repos, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
@@ -40,9 +41,9 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 ## CI Workflow Must Include
 
 1. Multi-OS matrix strategy: `[ubuntu-latest, macos-latest, windows-latest]`
-2. Setup JRE 17 (Specmatic requires Java)
+2. Setup JRE 17 when the selected integration mode or language runtime requires it
 3. Setup language runtime (Node 20 / JDK 17 / Python 3.x)
-4. Install dependencies
+4. Install dependencies, including CLI/JAR, Docker image access, Testcontainers, or native Specmatic test support for the selected integration mode
 5. Run tests
 6. Upload test report artifact
 7. (On main branch) Build and push Docker image
@@ -51,6 +52,19 @@ For non-REST protocols that require Specmatic Enterprise, CI must also install
 or run the documented Enterprise Docker image/artifact and expose any required
 license or setup variables through the generated README.
 
+For `docker-cli`, CI must make Docker available and run Specmatic through a
+direct `docker run` command or wrapper script using the official Docker image.
+
+For `test-container`, CI must make Docker available to the test process and run
+Specmatic through the official Docker image from the generated test suite
+instead of requiring a local Java installation for Specmatic itself.
+
+For `cli`, CI must install or download the verified Specmatic CLI/JAR/package
+CLI and run it from the generated test adapter.
+
+For `native`, CI must install the official native Specmatic test dependency for
+the selected language and run the generated native test class or module.
+
 ## Root Samples CI
 
 When the destination root already has `.github/workflows/samples-ci.yml`, add or update one job for the generated sample:
@@ -58,8 +72,11 @@ When the destination root already has `.github/workflows/samples-ci.yml`, add or
 - Use the sample id as the job name.
 - Run commands with `working-directory: <sample-id>`.
 - Use the install and test commands generated for the selected language and framework.
-- Set up JRE 17 before running Specmatic tests.
+- Set up JRE 17 before running Specmatic tests when required by the selected
+  language or integration mode.
 - Set up the language runtime required by the selected language.
+- Set up Docker when the selected integration mode is `docker-cli` or
+  `test-container`.
 - Upload the generated Specmatic/JUnit report artifact when the test command
   produces one.
 
@@ -77,6 +94,15 @@ pip install -r requirements.txt && pytest test -v -s
 ```
 
 Single command, green output.
+
+The single test command must use the selected Specmatic integration mode:
+
+- `cli`: starts the app and runs the verified Specmatic CLI/JAR/package CLI.
+- `docker-cli`: starts the app and runs the official Specmatic Docker image
+  through a direct Docker command.
+- `test-container`: starts the app and runs the official Specmatic Docker image
+  from the generated test suite.
+- `native`: runs the generated native Specmatic test class/module.
 
 If the default service port or broker port is occupied, the test command may use
 documented environment overrides such as `SUT_PORT`, `SUT_BASE_URL`,

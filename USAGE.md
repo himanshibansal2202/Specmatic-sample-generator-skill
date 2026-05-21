@@ -44,7 +44,7 @@ To use this skill in Kiro, start a new session and say:
 
 ```
 Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, contracts/*, guides/*, test-data/*, config/*).
-Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + in-memory.
+Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + cli + in-memory.
 Ask me for the destination path, create the sample as a self-contained folder under that location, install deps, and run tests until green.
 ```
 
@@ -52,7 +52,7 @@ For non-REST protocols, name the protocol in the same prompt:
 
 ```text
 Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, config/*, guides/*, test-data/*).
-Then follow the SKILL.md workflow to generate a Backend gRPC sample using Kotlin + Spring Boot.
+Then follow the SKILL.md workflow to generate a Backend gRPC sample using Kotlin + Spring Boot + docker-cli.
 Use only the configured central contract repo or a user-provided contract path, ask for a destination path, install deps, and run tests until green.
 ```
 
@@ -73,6 +73,17 @@ Generated samples are written as folders named from the selected enum values:
     ├── .github/workflows/ci.yml
     └── ...
 ```
+
+The Specmatic integration mode is also collected as an input, but it is not
+included in the sample folder name. Supported modes are:
+
+- `cli`: invoke Specmatic through the verified CLI, JAR, or package CLI.
+- `docker-cli`: run the official Specmatic Docker image through a direct Docker
+  command or generated wrapper script.
+- `test-container`: run the official Specmatic Docker image from the generated
+  test suite, usually with Testcontainers.
+- `native`: use the current official native Specmatic test integration for the
+  selected language.
 
 The destination must be a local folder. Generated samples are not committed or
 pushed automatically.
