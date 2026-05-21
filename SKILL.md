@@ -1,13 +1,26 @@
 ---
 name: generate-specmatic-sample
-description: Generate a working Specmatic v3 sample project for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", or "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests".
+description: Generate or maintain working Specmatic v3 sample projects for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing, or when they want to update existing samples to align with contract changes, dependency upgrades, or Specmatic version updates. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests", "maintain my specmatic samples", or "update my samples repo".
 ---
 
-# Generate Specmatic Sample
+# Specmatic Sample Skill
 
-You are a code generator that creates working Specmatic sample projects. The generated project MUST pass Specmatic contract tests — this is the only definition of "done".
+You are a code generator and maintainer that creates and keeps working Specmatic sample projects. The generated or maintained project MUST pass Specmatic contract tests — this is the only definition of "done".
 
-## Workflow
+## Mode Selection
+
+When the skill is invoked, ask the user:
+
+> "What would you like to do? (generate, maintain)"
+
+- **generate** — Create a new sample project from scratch for a given tech stack.
+- **maintain** — Update existing sample(s) to align with contract changes, dependency upgrades, or Specmatic version updates.
+
+Wait for the user's answer before proceeding to the corresponding workflow.
+
+---
+
+## Generate Workflow
 
 ### Step 1: Collect Inputs (ONE AT A TIME)
 
@@ -286,7 +299,7 @@ After Step 6 passes:
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
 - **Prompts must be example-driven.** User-facing stack questions include a few examples in parentheses, but compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
-- **Never read existing generated samples.** Do not read, inspect, or copy from other sample folders already present in the destination repository or monorepo, including their `.specmatic/` caches, build outputs, source files, tests, docs, configs, and manifests. Every file must be generated from the skill's `contracts/`, `guides/`, `test-data/`, configured central contract repo, isolated temporary checkouts of that repo, or user-provided contract paths only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference.
+- **Never read existing generated samples (generate mode only).** In generate mode, do not read, inspect, or copy from other sample folders already present in the destination repository or monorepo, including their `.specmatic/` caches, build outputs, source files, tests, docs, configs, and manifests. Every file must be generated from the skill's `contracts/`, `guides/`, `test-data/`, configured central contract repo, isolated temporary checkouts of that repo, or user-provided contract paths only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **Keep the test adapter minimal.** Let the verified Specmatic package interface determine whether it uses a CLI, library API, or bundled JAR.
 - **specmatic.yaml structure is protocol-aware.** Resolved contract paths,
@@ -298,3 +311,93 @@ After Step 6 passes:
 - `guides/` — Role generation notes, Specmatic runtime guidance, and acceptance criteria
 - `test-data/backend-seed-data.md` — Required backend data entries for tests to pass
 - `config/contract-resolution.yaml` — Contract repositories, protocol roots, and runtime discovery patterns
+
+---
+
+## Maintain Workflow
+
+### Step 1: Collect Target
+
+Ask the user:
+
+> "Point me to the local path of the sample to maintain."
+
+Wait for the user's answer. The path should contain a single sample with a `.specmatic-sample-manifest.json` at its root.
+
+If the user provides a monorepo path with multiple samples, list the discovered samples and ask which one to maintain. Process one sample per session to avoid context overload and ensure focused fixes.
+
+### Step 2: Discover and Read
+
+Scan the provided path for `.specmatic-sample-manifest.json`. Read the manifest to recover the original inputs (application type, protocol, language, framework, data layer, contract source).
+
+If no manifest is found, inform the user and ask if they want to generate a new sample instead.
+
+Read the sample's source files, config, and build files to understand the current state. In maintain mode, reading the existing sample IS required (unlike generate mode where it is forbidden).
+
+### Step 3: Update Layers
+
+#### 3a: Update Contract Config (always)
+
+Re-resolve the contract source using `config/contract-resolution.yaml` and the manifest inputs. Regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require it) with the latest resolved contract paths.
+
+#### 3b: Update Dependencies (always)
+
+Bump Specmatic and framework/library dependency versions to the latest compatible release. Identify the build file for the sample's language (e.g., `package.json` for npm, `pom.xml` for Maven) and update all relevant versions — including the framework itself, Specmatic packages, and dev/test dependencies.
+
+Install dependencies after updating.
+
+#### 3c: Update Infrastructure (always)
+
+Regenerate from current best practices:
+- `Dockerfile` — latest base image, optimized layers
+- `.github/workflows/ci.yml` — latest action versions, correct setup steps
+- `.gitignore` / `.dockerignore` — complete ignore patterns
+
+#### 3d: Run Tests
+
+Run the sample's test command. If tests pass, this sample is done.
+
+### Step 4: Fix Failures (only if tests fail)
+
+If tests fail after the layer updates, read the Specmatic test output and fix the code — same approach as generate mode Step 6 (Verify And Converge). Make the smallest change needed to match the executable contract, re-run tests, repeat up to 3 times.
+
+If the same failure persists after 3 fix attempts:
+1. Regenerate the broken file from scratch using the contract facts (same approach as generate mode Step 5)
+2. Run tests again
+3. If still failing, report the sample as unfixable with a clear reason
+
+Do NOT leave a sample in a worse state than you found it. If escalation fails, revert app code changes and report.
+
+### Step 5: Report
+
+After processing the sample, report:
+
+```
+Maintain Summary:
+- sample-name: ✅ updated (deps bumped, config refreshed, framework upgraded)
+```
+
+or
+
+```
+Maintain Summary:
+- sample-name: ✅ fixed (brief description of what was fixed)
+```
+
+or
+
+```
+Maintain Summary:
+- sample-name: ❌ unfixable (reason — manual intervention needed)
+```
+
+### Maintain Mode Key Rules
+
+- **Read existing code.** Unlike generate mode, maintain mode MUST read and understand the current sample before making changes.
+- **Preserve manual customizations.** Only change what's needed. Don't rewrite working app code just because the skill would generate it differently today.
+- **Config, deps, and infra are always safe to update.** These layers don't contain user customizations. This includes framework version upgrades.
+- **App code is only touched when tests fail.** If tests pass after config/dep/infra updates, don't touch app code.
+- **One sample per session.** Maintain one sample at a time to ensure focused, high-quality fixes.
+- **Report-driven fixes only.** Same as generate mode — read the actual test failure, don't guess.
+- **Never make the sample worse.** If a fix attempt breaks more tests than it fixes, revert and try a different approach.
+- **Manifest is required.** Skip directories without `.specmatic-sample-manifest.json` — they can't be maintained without knowing the original inputs.

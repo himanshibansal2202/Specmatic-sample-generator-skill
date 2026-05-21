@@ -1,16 +1,16 @@
 ---
 name: generate-specmatic-sample
-description: Generate a working Specmatic v3 sample project for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", or "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests".
+description: Generate or maintain working Specmatic v3 sample projects for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing, or when they want to update existing samples to align with contract changes, dependency upgrades, or Specmatic version updates. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests", "maintain my specmatic samples", or "update my samples repo".
 ---
 
-# Generate Specmatic Sample
+# Specmatic Sample Skill
 
 This is the Codex project-skill entrypoint for the portable skill stored at the repository root.
 
-Before generating anything, read the canonical instructions in `../../../SKILL.md`. Then load only the supporting files needed for the requested sample from:
+Before doing anything, read the canonical instructions in `../../../SKILL.md`. Then load only the supporting files needed for the requested operation from:
 
 - `../../../config/contract-resolution.yaml`
 - `../../../guides/`
 - `../../../test-data/`
 
-Follow the root `SKILL.md` workflow exactly. Ask for a destination local path or repository link if one is not already provided, then generate the self-contained sample project under the resolved `<sample-id>/` folder. Install dependencies, run the documented tests from inside that generated sample folder, and follow the root workflow's publish step for repository-link destinations before reporting completion.
+Follow the root `SKILL.md` workflow exactly. Start by asking the user whether they want to generate or maintain, then follow the corresponding workflow section.
