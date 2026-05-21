@@ -197,6 +197,8 @@ Generate routes/controllers, message handlers, RPC services, GraphQL resolvers,
 SOAP handlers, client calls, schemas, seed data, examples, and adapter
 transformations from the contract facts summary produced in Step 3. Use role
 guides only for architecture and responsibilities.
+Use `guides/readme-generation.md` for README structure and content — the README
+must include the value proposition, not just setup instructions.
 
 Default port conventions:
 
@@ -352,6 +354,9 @@ Regenerate from current best practices:
 - `Dockerfile` — latest base image, optimized layers
 - `.github/workflows/ci.yml` — latest action versions, correct setup steps
 - `.gitignore` / `.dockerignore` — complete ignore patterns
+- `README.md` — update per `guides/readme-generation.md`: add missing required
+  sections (e.g., "Why Specmatic", "How It Works"), refresh versions/commands/links
+  to match current state, preserve any user-added sections
 
 #### 3d: Run Tests
 

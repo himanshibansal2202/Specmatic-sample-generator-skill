@@ -33,7 +33,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | `Dockerfile` | Production container image |
 | `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, virtualenvs, reports, caches, Specmatic repos, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
-| `README.md` | Prerequisites, how to run, how it works |
+| `README.md` | Generated per `guides/readme-generation.md` — includes value prop, run instructions, and architecture |
 | `.gitignore` | Ignore dependency folders, virtualenvs, build output, reports, caches, and `.specmatic` |
 | `.specmatic-sample-manifest.json` | Records generated files owned by this sample |
 
