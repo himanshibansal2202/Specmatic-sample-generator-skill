@@ -1,5 +1,4 @@
 contract_resolution:
-  default_version: v3
   protocol_aliases:
     rest: store_rest
     openapi: store_rest

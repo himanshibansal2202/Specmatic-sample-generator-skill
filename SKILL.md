@@ -37,18 +37,18 @@ Ask each question separately. Wait for the user's answer before asking the next.
    - Wait for answer.
 2. Then ask: "What protocol? (for example: rest/openapi, kafka/asyncapi, grpc, graphql, soap/wsdl)"
    - Wait for answer.
-3. Then ask: "What contract version? (default v3 / latest / specific like v5)"
+3. Then ask: "What language? (for example: javascript, typescript, java, python)"
    - Wait for answer.
-4. Then ask: "What language? (for example: javascript, typescript, java, python)"
-   - Wait for answer.
-5. Then ask: "What framework? (for example: express, spring-boot, flask)" —
+4. Then ask: "What framework? (for example: express, spring-boot, flask)" —
    examples may be adjusted for the selected application type, protocol, or
    language.
+   - Wait for answer.
+5. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
    - Wait for answer.
 6. Then ask: "What data layer? (for example: in-memory, rest-api, grpc-service, kafka-broker)" — examples
    may be adjusted for the selected application type or architecture.
    - Wait for answer.
-7. Then ask: "Where should I create the sample folder? Provide a local path or repository link."
+7. Then ask: "Where should I create the sample folder? Provide a local path."
    - Wait for answer.
 
 Only proceed to Step 2 after ALL answers are collected.
@@ -58,10 +58,11 @@ Only proceed to Step 2 after ALL answers are collected.
 Validate the selected stack in two passes:
 
 1. Reasoned feasibility: decide whether the selected framework, language,
-   application type, protocol, and data-fetch mode are coherent using general
-   framework ecosystem knowledge, the selected role guide, and the architecture
-   implied by the data-fetch mode. Reject only combinations that are clearly
-   incoherent, and explain the reason briefly.
+   application type, protocol, Specmatic integration mode, and data-fetch mode
+   are coherent using general framework ecosystem knowledge, the selected role
+   guide, the selected integration mode, and the architecture implied by the
+   data-fetch mode. Reject only combinations that are clearly incoherent, and
+   explain the reason briefly.
 2. Verification feasibility: if the combination is coherent but support is
    uncertain, proceed to generation and let dependency installation, build, and
    Specmatic tests prove whether the sample is actually supported.
@@ -69,6 +70,33 @@ Validate the selected stack in two passes:
 Do not maintain a hardcoded list of valid or invalid stack combinations in this
 skill. Example values in prompts are guidance only; the skill reasons about
 whether a chosen set of values makes sense.
+
+Validate Specmatic integration modes as follows:
+
+- Normalize `extend-class` to `native` if the user provides the older name, but
+  use `native` in generated documentation and final responses.
+- `cli`: allowed for any coherent stack when the required local executable
+  runtime is available, such as Java for JAR-based execution.
+- `docker-cli`: allowed when Docker is available. This mode must not require
+  local Java for Specmatic itself.
+- `test-container`: allowed when Docker is available and the selected
+  language/test ecosystem can run Docker Testcontainers or an equivalent
+  in-test Docker container. This mode must not require local Java outside the
+  container.
+- `native`: allowed only when the selected language has an official native
+  Specmatic test integration for the selected protocol.
+
+Apply protocol-specific runtime constraints:
+
+- REST/OpenAPI may use `cli`, `docker-cli`, `test-container`, or `native` when
+  the selected language/framework can support the chosen adapter.
+- gRPC/Protobuf, GraphQL SDL, SOAP/WSDL, and Kafka/AsyncAPI must use an
+  Enterprise-capable Specmatic runtime unless current official documentation
+  proves community support for that protocol and mode.
+- `native` for Enterprise protocols is valid only when the matching Enterprise
+  language artifact/API is verified during generation. Do not use a community
+  native adapter that merely parses `specmatic.yaml` but reports no executable
+  contract tests.
 
 ### Step 3: Resolve Contract Source Of Truth
 
@@ -80,6 +108,8 @@ Source-of-truth order:
 2. The executable contract/spec referenced by `specmatic.yaml` is the behavioral source of truth.
 3. Official Specmatic v3 and protocol documentation should be consulted when configuration syntax or contract semantics are unclear.
 4. Local markdown files under `guides/` and `test-data/` are helper summaries. They must not override the executable contract.
+5. Existing generated samples and official sample repositories must not be used
+   as references for generation.
 
 Normalize protocol aliases before resolving contracts:
 
@@ -98,16 +128,15 @@ protocol:
 1. Inspect filenames under the configured `spec_root` in the contract
    repository.
 2. Match the selected role's discovery patterns for the selected spec format
-   and requested/default contract version.
-3. If a requested version is available, use that version.
-4. If no version was requested, use `default_version`; if those files are not
-   available, select the latest compatible discovered version.
-5. Resolve exactly one system-under-test contract and exactly one contract for
+   across all discovered compatible contract versions.
+3. Select the latest compatible discovered version for each required
+   system-under-test or dependency contract role.
+4. Resolve exactly one system-under-test contract and exactly one contract for
    each required dependency. Write these exact resolved paths into the
    generated `specmatic.yaml`.
-6. If multiple candidates match the same role/version, fail with a clear error
+5. If multiple candidates match the same role/version, fail with a clear error
    instead of guessing.
-7. If any required system-under-test or dependency contract cannot be resolved
+6. If any required system-under-test or dependency contract cannot be resolved
    from the configured central contract repo, stop before generating source code
    and ask the user for an explicit contract repo/path to use.
 
@@ -173,14 +202,12 @@ Use the selected enum values directly. For example,
 `backend + rest + javascript + express + in-memory` becomes
 `backend-rest-javascript-express-in-memory`.
 
-- If the destination is a local path, create or update the sample at `<destination>/<sample-id>/`.
-- If the destination is a repository link, derive `<repo-name>` from the Git URL
-  basename without `.git`, then clone or locate the repository at
-  `<skill-repo-parent>/<repo-name>/`, where `<skill-repo-parent>` is the parent
-  directory of this skill repo. Create or update the sample at
-  `<skill-repo-parent>/<repo-name>/<sample-id>/`.
-- Do not clone destination repositories inside this skill repo or inside a
-  generated sample folder.
+Do not include the Specmatic integration mode in the sample folder name. If the
+same application/protocol/language/framework/data-layer combination is
+generated again with a different integration mode, update the same sample
+folder.
+
+- Create or update the sample at `<destination>/<sample-id>/`.
 - Do not write generated sample files directly into the destination root.
 - Do not create shared root-level contracts, metadata, workflows, or other shared generated assets.
 - If the destination root already has `.github/workflows/samples-ci.yml`, update it to include the generated sample.
@@ -191,8 +218,9 @@ Use the selected enum values directly. For example,
 For every sample, generate the complete file set listed in `guides/acceptance-criteria.md`.
 
 Use `guides/specmatic-runtime.md` for Specmatic runtime structure and adapter
-behavior, then fill generated files with resolved contract paths, spec format,
-run option key, and role-specific ports/base URLs/broker settings.
+behavior for the selected integration mode, then fill generated files with
+resolved contract paths, spec format, run option key, and role-specific
+ports/base URLs/broker settings.
 Generate routes/controllers, message handlers, RPC services, GraphQL resolvers,
 SOAP handlers, client calls, schemas, seed data, examples, and adapter
 transformations from the contract facts summary produced in Step 3. Use role
@@ -230,12 +258,18 @@ For a **Frontend** sample, use `guides/frontend-generation.md` for client workfl
 
 After generating all files, run verification from inside the generated sample folder:
 1. Install dependencies
-2. Discover and verify the selected Specmatic package interface for the chosen
-   language: CLI command, test-library API, or bundled JAR. Confirm it supports
-   the generated `specmatic.yaml` version before relying on it.
+2. Discover and verify the selected Specmatic integration interface for the chosen
+   integration mode and language: CLI command, direct Docker command,
+   Docker/Testcontainers image, test library API, or bundled JAR. Confirm it supports the generated
+   `specmatic.yaml` version before relying on it. If the runtime fails on v3
+   config fields such as `version: 3` or `systemUnderTest`, classify it as a
+   runtime compatibility failure and switch to a verified v3-capable runtime
+   before changing generated app behavior.
 3. Run the test command (e.g., `npm test`)
 4. **First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
-5. If tests fail, read the error output and the generated Specmatic/JUnit/report files, fix the code to match the executable contract, and re-run
+5. If tests fail, read the error output and the generated Specmatic/JUnit/report files, fix the code to match the executable contract, and re-run.
+   Use the failing scenario name, request example, expected status, and actual
+   response from Specmatic output to drive the fix.
 6. Repeat until ALL tests pass (max 3 retries)
 7. Run the generated build/package command when the sample includes compiled output or Docker
 8. Remove local verification artifacts from the generated sample folder when
@@ -243,7 +277,9 @@ After generating all files, run verification from inside the generated sample fo
    files or build context.
 
 **Timeout guidance:** If the test command runs for more than 5 minutes, something is wrong. Cancel and check:
-- Is Java 17+ available? (`java -version`)
+- Is the required runtime available? For example, Java 17+ for CLI/JAR or JVM
+  native modes, Docker for `docker-cli` or `test-container`, or Node/Python for
+  package-native modes.
 - Is there network access? (Specmatic needs to clone from GitHub)
 - Is the port already in use?
 - Did the app fail to bind its configured port?
@@ -262,29 +298,7 @@ When tests fail, classify the failure before changing code:
 Use the classification to make the smallest behavior change needed to match the
 executable contract, then re-run the documented test command.
 
-Only report "done" when tests are green and any required repository-link
-publish step has completed or been skipped for a documented reason.
-
-### Step 7: Publish Repository-Link Destinations
-
-Run this step only when the destination provided by the user was a repository
-link. Local path destinations are not committed or pushed automatically.
-
-After Step 6 passes:
-
-1. From the destination repository checkout, inspect the git worktree.
-2. If there are unrelated dirty files outside the generated `<sample-id>/`
-   folder and optional root `.github/workflows/samples-ci.yml`, stop and report
-   the blocker. Do not overwrite, stage, commit, or push unrelated changes.
-3. If there are no generated changes to commit, skip commit and push.
-4. Stage only the generated `<sample-id>/` folder and the root
-   `.github/workflows/samples-ci.yml` if it was updated.
-5. Commit with message `Add <sample-id> Specmatic sample`.
-6. Ask the user for explicit permission before running `git push`.
-7. If approved, push the current branch to its configured upstream. If no
-   upstream is configured, push to `origin <current-branch>`.
-8. If the push fails because authentication, authorization, or branch protection
-   blocks it, report the failure and leave the committed local branch intact.
+Only report "done" when tests are green.
 
 ## Key Rules
 
@@ -299,9 +313,27 @@ After Step 6 passes:
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
 - **Prompts must be example-driven.** User-facing stack questions include a few examples in parentheses, but compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
-- **Never read existing generated samples (generate mode only).** In generate mode, do not read, inspect, or copy from other sample folders already present in the destination repository or monorepo, including their `.specmatic/` caches, build outputs, source files, tests, docs, configs, and manifests. Every file must be generated from the skill's `contracts/`, `guides/`, `test-data/`, configured central contract repo, isolated temporary checkouts of that repo, or user-provided contract paths only. Existing samples may target a different stack or contract version and will silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
+- **Never use samples as references.** In generate mode, do not read, inspect, or copy from other
+  sample projects, including existing generated sample folders in the
+  destination repository or monorepo and official/public sample repositories.
+  This includes their `.specmatic/` caches, build outputs, source files, tests,
+  docs, configs, manifests, workflows, dependency versions, and Specmatic
+  runtime versions. Any other existing sample must not be referred to for code,
+  configuration, documentation, dependency choices, or runtime choices. Every
+  file must be generated from this skill's `guides/`, `test-data/`,
+  `config/contract-resolution.yaml`, the configured central contract repo,
+  isolated temporary checkouts of that contract repo, official product/protocol
+  documentation when syntax is unclear, or user-provided contract paths only.
+  Existing samples may target a different stack or contract version and will
+  silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
-- **Keep the test adapter minimal.** Let the verified Specmatic package interface determine whether it uses a CLI, library API, or bundled JAR.
+- **Honor the selected Specmatic integration mode.** Generate test dependencies,
+  test adapters, README instructions, and CI around `cli`, `docker-cli`,
+  `test-container`, or `native`; do not silently switch modes unless the
+  selected mode is impossible for the stack and the user chooses another one.
+- **Keep the test adapter minimal.** Let the selected and verified Specmatic
+  integration mode determine whether it uses a CLI, direct Docker command,
+  Testcontainers-managed Docker container, native library API, or bundled JAR.
 - **specmatic.yaml structure is protocol-aware.** Resolved contract paths,
   dependency specs, ports, base URLs, broker settings, and run option keys vary
   by protocol, role, and stack.

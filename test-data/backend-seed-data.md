@@ -2,17 +2,20 @@
 
 Specmatic drives tests using named examples in the executable OpenAPI contract.
 The in-memory store must contain entries whose IDs match the path-parameter
-examples for read operations, and must NOT contain entries whose IDs are
-referenced by 4xx examples. Without that alignment, Specmatic sends requests for
-IDs that do not exist and the expected 2xx scenarios fail.
+examples for scenarios that expect 2xx responses, and must NOT contain entries
+whose scenarios expect 4xx responses. Without that alignment, Specmatic sends
+requests for IDs that do not exist and the expected 2xx scenarios fail.
 
 ## How to derive seed data
 
 1. Read the executable contract referenced by `specmatic.yaml`.
 2. For every path-parameter `examples:` block, classify each example value by
-   the response status code of the scenario it belongs to:
+   the response status code of the scenario it belongs to, not by HTTP method
+   intuition:
    - Used by a 2xx scenario → seed an entry with that ID.
    - Used by a 4xx scenario → do NOT seed that ID.
+   - A `DELETE` example can still require seeded data when Specmatic expects a
+     2xx response.
 3. For each seeded entry, take the field values from the matching response
    example. Include only fields the response schema declares; do not add
    fields the contract does not define.
