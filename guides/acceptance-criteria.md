@@ -16,6 +16,9 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
 - [ ] Ports, dependency base URLs, service endpoints, broker URLs, and
   protocol-specific test settings can be overridden from environment variables
+  consumed by the checked-in `specmatic.yaml`
+- [ ] The checked-in root `specmatic.yaml` is the only Specmatic config source;
+  tests do not generate, copy, overwrite, or mutate another Specmatic YAML file
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
 - [ ] The generated test adapter uses the selected and verified Specmatic
   integration mode: `cli`, `docker-cli`, `test-container`, or `native`
@@ -25,7 +28,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 
 | File | Purpose |
 |------|---------|
-| `specmatic.yaml` | Points to central contract repo, defines test config |
+| `specmatic.yaml` | Points to central contract repo, defines test config, and contains environment-template runtime values |
 | Build file (`package.json` / `pom.xml` / `build.gradle` / `requirements.txt`) | Dependencies including Specmatic |
 | Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
 | Source code (controllers/routes/services/resolvers/handlers) | Implements all operations from the contract |

@@ -1,11 +1,22 @@
 ---
 name: generate-specmatic-sample
-description: Generate or maintain working Specmatic v3 sample projects for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing, or when they want to update existing samples to align with contract changes, dependency upgrades, or Specmatic version updates. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests", "maintain my specmatic samples", or "update my samples repo".
+description: Generate or maintain working Specmatic sample projects using the current supported Specmatic configuration schema for a given tech stack and protocol. Use when the user wants to create a Backend, BFF, or Frontend sample that demonstrates Specmatic contract testing, or when they want to update existing samples to align with contract changes, dependency upgrades, or Specmatic runtime/configuration updates. Triggers on requests like "generate a specmatic sample", "create a sample project for Java Spring Boot", "scaffold a backend REST, gRPC, GraphQL, AsyncAPI, or SOAP service with contract tests", "maintain my specmatic samples", or "update my samples repo".
 ---
 
 # Specmatic Sample Skill
 
 You are a code generator and maintainer that creates and keeps working Specmatic sample projects. The generated or maintained project MUST pass Specmatic contract tests — this is the only definition of "done".
+
+Terminology:
+
+- **Specmatic configuration schema version** is the `version` field in
+  `specmatic.yaml` (for example `version: 3`). It describes the configuration
+  file shape, not the Specmatic product/runtime release.
+- **Specmatic runtime version** is the CLI, JAR, Docker image, native package,
+  or Enterprise artifact version used to execute tests or mocks.
+- **Contract spec version** is the API/contract file version resolved from the
+  contract repository, such as `api_order_v3.yaml` or
+  `product_search_bff_v4.yaml`.
 
 ## Mode Selection
 
@@ -14,7 +25,8 @@ When the skill is invoked, ask the user:
 > "What would you like to do? (generate, maintain)"
 
 - **generate** — Create a new sample project from scratch for a given tech stack.
-- **maintain** — Update existing sample(s) to align with contract changes, dependency upgrades, or Specmatic version updates.
+- **maintain** — Update existing sample(s) to align with contract changes,
+  dependency upgrades, or Specmatic runtime/configuration updates.
 
 Wait for the user's answer before proceeding to the corresponding workflow.
 
@@ -106,7 +118,8 @@ Source-of-truth order:
 
 1. Passing Specmatic tests is the final definition of correctness.
 2. The executable contract/spec referenced by `specmatic.yaml` is the behavioral source of truth.
-3. Official Specmatic v3 and protocol documentation should be consulted when configuration syntax or contract semantics are unclear.
+3. Official Specmatic configuration and protocol documentation should be
+   consulted when configuration syntax or contract semantics are unclear.
 4. Local markdown files under `guides/` and `test-data/` are helper summaries. They must not override the executable contract.
 5. Existing generated samples and official sample repositories must not be used
    as references for generation.
@@ -234,10 +247,11 @@ Default port conventions:
 - Specmatic dependency mocks/stubs default to port `8090`.
 - Frontend dev servers default to port `3000` when a dev server is generated.
 - AsyncAPI/Kafka samples default to the broker settings declared by the
-  resolved contract, with host/port/topic overrides in generated config.
+  resolved contract, with host/port/topic overrides in the generated app config
+  and checked-in `specmatic.yaml`.
 - All ports, base URLs, broker URLs, and service endpoints must be configurable
-  through environment variables or generated config so tests can avoid occupied
-  resources.
+  through environment variables consumed by the generated app config and
+  checked-in `specmatic.yaml` so tests can avoid occupied resources.
 
 For a **Backend** sample, use `guides/backend-generation.md` for role behavior. Key differences:
 - The Backend owns local Products and Orders state
@@ -263,10 +277,11 @@ After generating all files, run verification from inside the generated sample fo
 2. Discover and verify the selected Specmatic integration interface for the chosen
    integration mode and language: CLI command, direct Docker command,
    Docker/Testcontainers image, test library API, or bundled JAR. Confirm it supports the generated
-   `specmatic.yaml` version before relying on it. If the runtime fails on v3
-   config fields such as `version: 3` or `systemUnderTest`, classify it as a
-   runtime compatibility failure and switch to a verified v3-capable runtime
-   before changing generated app behavior.
+   `specmatic.yaml` configuration schema version before relying on it. If the
+   runtime fails on config fields such as `version`, `systemUnderTest`, or
+   `components`, classify it as a runtime compatibility failure and switch to a
+   verified runtime/config-schema combination before changing generated app
+   behavior.
 3. Run the test command (e.g., `npm test`)
 4. **First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
 5. If tests fail, read the error output and the generated Specmatic/JUnit/report files, fix the code to match the executable contract, and re-run.
@@ -296,6 +311,7 @@ When tests fail, classify the failure before changing code:
 - protocol adapter mismatch
 - runtime or Specmatic package compatibility mismatch
 - startup or port binding failure
+- duplicated or mutated Specmatic runtime config
 
 Use the classification to make the smallest behavior change needed to match the
 executable contract, then re-run the documented test command.
@@ -308,9 +324,9 @@ Only report "done" when tests are green.
 - **Role intent lives in `guides/`.** Guides define responsibilities and architecture; Step 3 contract facts define contract behavior.
 - **Samples are self-contained.** Include every file needed to run, test, build, and understand the sample inside the sample folder.
 - **The destination root is only a container.** Generate under `<provided-location>/<sample-id>/`, never directly into `<provided-location>/`.
-- **Ports must be configurable.** Keep documented default ports stable, but let
-  tests override ports, base URLs, service endpoints, and broker settings so
-  samples can run when defaults are occupied.
+- **Ports must be configurable through the single Specmatic config.** Keep
+  documented defaults stable and follow `guides/specmatic-runtime.md` for
+  endpoint template values and adapter behavior.
 - **Startup failures must fail fast.** Test adapters must surface listen/bind errors, dependency startup failures, and Specmatic failures clearly.
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
 - **Prompts must be example-driven.** User-facing stack questions include a few examples in parentheses, but compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
@@ -336,6 +352,8 @@ Only report "done" when tests are green.
 - **Keep the test adapter minimal.** Let the selected and verified Specmatic
   integration mode determine whether it uses a CLI, direct Docker command,
   Testcontainers-managed Docker container, native library API, or bundled JAR.
+  Test adapters may start apps and mocks, set environment variables, stage
+  protocol support files such as imported protos, and run Specmatic.
 - **specmatic.yaml structure is protocol-aware.** Resolved contract paths,
   dependency specs, ports, base URLs, broker settings, and run option keys vary
   by protocol, role, and stack.
