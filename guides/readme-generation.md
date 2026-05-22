@@ -1,6 +1,6 @@
 # README Generation Guide
 
-Generated READMEs serve two purposes: help developers run the sample AND demonstrate why Specmatic matters. The README is a selling point for contract testing, not just setup instructions.
+Generated READMEs serve two purposes: help developers run the sample AND demonstrate why Specmatic matters. The README is a selling point for Specmatic, not just setup instructions.
 
 ## Required Sections (in order)
 
@@ -23,16 +23,17 @@ Example tone: "This sample demonstrates how Specmatic contract tests a Spring Bo
 
 ### 3. Why Specmatic
 
-Bullet list of benefits. Keep it to 3-4 points, protocol-aware:
+Bullet list of benefits. Keep it to 3-4 points, protocol-aware. Focus on what
+Specmatic uniquely offers, not generic contract testing concepts:
 
-- **Contract-as-code** — your API spec (OpenAPI/AsyncAPI/gRPC/GraphQL/WSDL) IS your test suite. No hand-written mocks to maintain.
-- **Shift-left contract testing** — catch breaking changes at build time, not in production.
-- **Zero integration dependency** — test your service in complete isolation. Specmatic auto-generates request/response pairs from your spec.
-- **Backward compatibility checks** — Specmatic detects breaking changes between spec versions automatically.
+- **Auto-generated tests from your API spec** — Specmatic reads your OpenAPI/AsyncAPI/gRPC/GraphQL/WSDL spec and generates test cases automatically. No hand-written test code or mocks to maintain.
+- **Intelligent service virtualisation** — Specmatic generates realistic stubs/mocks from the same spec, so consumers can develop in parallel without waiting for providers.
+- **Backward compatibility detection** — Specmatic compares spec versions and flags breaking changes before they reach production.
+- **Single source of truth** — one spec drives contract tests, stubs, and backward compatibility checks. No drift between tests and documentation.
 
 For protocol-specific benefits, add one relevant point:
 - REST/OpenAPI: "Works with your existing OpenAPI spec — no new DSL to learn."
-- AsyncAPI/Kafka: "Validates message producers and consumers against your AsyncAPI contract."
+- AsyncAPI/Kafka: "Validates message producers and consumers against your AsyncAPI contract without a running broker."
 - gRPC: "Tests your Protobuf service definitions without spinning up dependent services."
 - GraphQL: "Validates queries, mutations, and schema compliance from your GraphQL SDL."
 - SOAP/WSDL: "Contract tests your SOAP services using existing WSDL definitions."
