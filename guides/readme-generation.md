@@ -57,6 +57,29 @@ Include a note about first-run timing: "First run takes 1-2 minutes as Specmatic
 
 Link to the specmatic.yaml file and explain it configures which contracts are tested.
 
+Include a "Test Modes" subsection explaining how to enable schema resiliency:
+
+```markdown
+### Test Modes
+
+This sample ships with `schemaResiliencyTests: none` for fast, predictable tests.
+You can increase test coverage by changing the mode in `specmatic.yaml`:
+
+| Mode | What it does |
+|------|-------------|
+| `none` | Runs tests from named examples only (default) |
+| `positiveOnly` | Adds all valid input combinations |
+| `all` | Adds negative/boundary tests (expects 400 for invalid inputs) |
+
+To enable, update `specmatic.yaml`:
+```yaml
+components:
+  settings:
+    test:
+      schemaResiliencyTests: all
+```
+```
+
 ### 6. How It Works
 
 Brief explanation of the contract testing flow specific to this sample's role:
