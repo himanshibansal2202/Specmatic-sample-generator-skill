@@ -16,22 +16,28 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
 - [ ] Ports, dependency base URLs, service endpoints, broker URLs, and
   protocol-specific test settings can be overridden from environment variables
+  consumed by the checked-in `specmatic.yaml`
+- [ ] The checked-in root `specmatic.yaml` is the only Specmatic config source;
+  tests do not generate, copy, overwrite, or mutate another Specmatic YAML file
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
 - [ ] The generated test adapter uses the selected and verified Specmatic
   integration mode: `cli`, `docker-cli`, `test-container`, or `native`
+- [ ] Generated Dockerfiles build from source and do not depend on local build
+  outputs that are excluded by `.dockerignore`, such as `target/`, `dist/`, or
+  `build/`
 - [ ] Local verification artifacts are ignored and are not left as source files in the generated sample folder
 
 ## Required Files
 
 | File | Purpose |
 |------|---------|
-| `specmatic.yaml` | Points to central contract repo, defines test config |
+| `specmatic.yaml` | Points to central contract repo, defines test config, and contains environment-template runtime values |
 | Build file (`package.json` / `pom.xml` / `build.gradle` / `requirements.txt`) | Dependencies including Specmatic |
 | Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
 | Source code (controllers/routes/services/resolvers/handlers) | Implements all operations from the contract |
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
 | Contract test file | Adapter that starts app + runs Specmatic through the selected integration mode |
-| `Dockerfile` | Production container image |
+| `Dockerfile` | Production container image that builds from source; use a multi-stage build for compiled stacks instead of copying local build outputs from ignored folders |
 | `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, virtualenvs, reports, caches, Specmatic repos, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Generated per `guides/readme-generation.md` — includes value prop, run instructions, and architecture |
@@ -48,9 +54,11 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 6. Upload test report artifact
 7. (On main branch) Build and push Docker image
 
-For non-REST protocols that require Specmatic Enterprise, CI must also install
-or run the documented Enterprise Docker image/artifact and expose any required
-license or setup variables through the generated README.
+For non-REST protocols, or any protocol marked `requires_enterprise: true`, CI
+must install or run the documented Enterprise Docker image/artifact and README
+must state the required license/setup variables. Do not rely on accidental
+local license files, preinstalled CLIs, private caches, or checked-out contract
+repo state.
 
 For `docker-cli`, CI must make Docker available and run Specmatic through a
 direct `docker run` command or wrapper script using the official Docker image.
@@ -77,6 +85,8 @@ When the destination root already has `.github/workflows/samples-ci.yml`, add or
 - Set up the language runtime required by the selected language.
 - Set up Docker when the selected integration mode is `docker-cli` or
   `test-container`.
+- Include the documented Enterprise runtime/license setup for non-REST
+  protocols, or any protocol marked `requires_enterprise: true`.
 - Upload the generated Specmatic/JUnit report artifact when the test command
   produces one.
 

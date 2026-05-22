@@ -29,9 +29,15 @@ Resolve these values before writing a generated sample's `specmatic.yaml`:
 
 ## specmatic.yaml
 
-Place the generated `specmatic.yaml` at the generated sample root. Keep base
-URLs, service endpoints, broker URLs, ports, import paths, and examples
-directories configurable so tests can avoid occupied resources.
+Place the generated `specmatic.yaml` at the generated sample root. It is the
+only Specmatic configuration source for the sample. Test adapters must not build
+Specmatic YAML strings, write a second generated config file, copy generated
+YAML over the root config, or mutate `specmatic.yaml` during tests.
+
+Keep base URLs, service endpoints, broker URLs, ports, import paths, and
+examples directories configurable so tests can avoid occupied resources. Prefer
+Specmatic-supported template values in the checked-in `specmatic.yaml`; test
+adapters should set environment variables consumed by those template values.
 
 Use the resolved `run_option_key` from `config/contract-resolution.yaml` rather
 than duplicating protocol-specific examples in this guide.
@@ -44,18 +50,32 @@ than duplicating protocol-specific examples in this guide.
 | GraphQL | `graphqlsdl` | `graphqlsdl` | host, port, examples directory when required |
 | SOAP/WSDL | `wsdl` | `wsdl` | HTTP `baseUrl` plus WSDL SOAP metadata |
 
+When the selected runtime supports Specmatic configuration schema `version: 3`,
+use the official component/reference style so SUT and dependency service
+definitions and run options are not duplicated:
+
 ```yaml
 version: 3
 systemUnderTest:
   service:
-    definitions:
-      - definition:
-          source:
-            git:
-              url: <CONTRACT_REPO_URL>
-          specs:
-            - <SUT_SPEC_PATH>
+    $ref: "#/components/services/<SUT_SERVICE_ID>"
     runOptions:
+      $ref: "#/components/runOptions/<SUT_RUN_OPTIONS_ID>"
+components:
+  sources:
+    <CONTRACT_SOURCE_ID>:
+      git:
+        url: <CONTRACT_REPO_URL>
+  services:
+    <SUT_SERVICE_ID>:
+      definitions:
+        - definition:
+            source:
+              $ref: "#/components/sources/<CONTRACT_SOURCE_ID>"
+            specs:
+              - <SUT_SPEC_PATH>
+  runOptions:
+    <SUT_RUN_OPTIONS_ID>:
       <RUN_OPTION_KEY>:
         type: test
         <PROTOCOL_SPECIFIC_OPTIONS>: <VALUES_FROM_RESOLVED_CONTRACT>
@@ -68,18 +88,66 @@ mock dependencies. Add each dependency under `dependencies.services`.
 dependencies:
   services:
     - service:
-        definitions:
-          - definition:
-              source:
-                git:
-                  url: <DEPENDENCY_CONTRACT_REPO_URL>
-              specs:
-                - <DEPENDENCY_SPEC_PATH>
+        $ref: "#/components/services/<DEPENDENCY_SERVICE_ID>"
         runOptions:
-          <RUN_OPTION_KEY>:
-            type: mock
-            <PROTOCOL_SPECIFIC_OPTIONS>: <VALUES_FROM_RESOLVED_CONTRACT>
+          $ref: "#/components/runOptions/<DEPENDENCY_RUN_OPTIONS_ID>"
 ```
+
+If a verified runtime requires a different official configuration shape, use
+that runtime's documented shape, but preserve the single-config rule.
+
+## Runtime Value Templates
+
+Use stable default ports from the root workflow, but make every runtime endpoint
+overridable through the root `specmatic.yaml`. The generated application config
+and Specmatic config must use the same environment variable names.
+
+Recommended names:
+
+- SUT HTTP base URL: `{SUT_BASE_URL:http://localhost:8080}`.
+- SUT gRPC host and port: `{SPECMATIC_SUT_HOST:host.docker.internal}` and
+  `{SUT_PORT:8080}` for Docker-based verification, or
+  `{SPECMATIC_SUT_HOST:localhost}` for host-network modes.
+- Dependency HTTP mock URL: `{STUB_BASE_URL:http://localhost:8090}`.
+- Dependency gRPC mock host and port: `{SPECMATIC_STUB_HOST:localhost}` and
+  `{STUB_PORT:8090}`.
+- Kafka/AsyncAPI broker settings: `{BROKER_HOST:localhost}`,
+  `{BROKER_PORT:9092}`, or `{BROKER_URL:localhost:9092}` depending on the
+  resolved contract shape.
+
+Examples:
+
+```yaml
+openapi:
+  type: test
+  baseUrl: "{SUT_BASE_URL:http://localhost:8080}"
+```
+
+```yaml
+protobuf:
+  type: test
+  host: "{SPECMATIC_SUT_HOST:host.docker.internal}"
+  port: "{SUT_PORT:8080}"
+  importPaths:
+    - .specmatic_grpc_working_dir
+  protocVersion: 3.23.4
+  requestTimeout: "{SPECMATIC_REQUEST_TIMEOUT_MS:10000}"
+```
+
+```yaml
+asyncapi:
+  type: mock
+  inMemoryBroker:
+    host: "{BROKER_HOST:localhost}"
+    port: "{BROKER_PORT:9092}"
+  servers:
+    - host: "{BROKER_URL:localhost:9092}"
+      protocol: kafka
+```
+
+When verification needs a non-default port because the default is occupied, set
+the corresponding environment variable before running the generated test
+command.
 
 ## Contract Source Of Truth
 
@@ -168,13 +236,15 @@ than as a language dependency or a Testcontainers-managed container.
   adapter. Use the official `specmatic/specmatic` image for
   community-supported protocols and `specmatic/enterprise` when the selected
   protocol requires Enterprise.
-- Mount or copy `specmatic.yaml`, any local contract/example files, and the
-  report output directory into the container. If contracts are fetched from git,
-  pass the network and credential configuration needed by Specmatic.
+- Mount the root `specmatic.yaml`, any local contract/example files, and the
+  report output directory into the container. Mount the config read-only when
+  the selected tooling supports it. If contracts are fetched from git, pass the
+  network and credential configuration needed by Specmatic.
 - Configure the SUT endpoint so the container can reach the generated app. Use
   host networking, a shared Docker network, or documented host aliases
   appropriate for the target OS instead of assuming container-local
-  `localhost`.
+  `localhost`. Pass endpoint overrides as environment variables consumed by
+  `specmatic.yaml`.
 - Capture container logs and reports, fail on non-zero exit, and assert that
   reported failures are zero.
 - Local and CI prerequisites include Docker, but must not require local Java for
@@ -191,12 +261,14 @@ test suite.
 - Use the official `specmatic/specmatic` image for community-supported
   protocols and `specmatic/enterprise` when the selected protocol requires
   Enterprise.
-- Mount or copy `specmatic.yaml`, any local contract/example files, and the
-  report output directory into the container. If contracts are fetched from git,
-  pass network and credential configuration needed by Specmatic.
+- Mount the root `specmatic.yaml`, any local contract/example files, and the
+  report output directory into the container. Mount the config read-only when
+  the selected tooling supports it. If contracts are fetched from git, pass
+  network and credential configuration needed by Specmatic.
 - Configure the SUT endpoint so the container can reach the generated app. Use
   Testcontainers host access or network aliases rather than hardcoded
-  localhost assumptions.
+  localhost assumptions. Pass endpoint overrides as environment variables
+  consumed by `specmatic.yaml`.
 - Stream container logs into the test output, fail on non-zero container exit,
   and assert that reported failures are zero.
 - Local and CI prerequisites include Docker, but must not require local Java
@@ -235,6 +307,12 @@ language-level integrations.
 - For Enterprise protocols, prefer `docker-cli` or `test-container` when a
   native Enterprise language artifact is not verified. Do not accept a native
   adapter that parses `specmatic.yaml` but reports no executable contract tests.
+- For gRPC/Protobuf with Docker-based Enterprise runtimes, keep host, port,
+  import paths, `protocVersion`, and request timeout in the root
+  `specmatic.yaml`. Pin or pass the verified `PROTOC_VERSION` when the runtime
+  requires it on the current platform. Staging imported proto files into an
+  ignored runtime directory is allowed; staging or generating another
+  Specmatic config is not allowed.
 
 ## Contract Test Adapter Patterns
 
@@ -243,10 +321,12 @@ the app. It must surface startup/listen errors and Specmatic failures clearly.
 
 Adapter requirements for every language:
 
-- Resolve host, port, base URL, and service endpoint from generated config or
-  environment.
+- Resolve host, port, base URL, and service endpoint from the generated app
+  config or environment, and make sure the same values are exposed to
+  Specmatic through template values in the root `specmatic.yaml`.
 - Resolve broker URL, service endpoint, import paths, examples directories, and
-  protocol-specific timeouts from generated config or environment.
+  protocol-specific timeouts from the generated app config or environment, and
+  keep Specmatic runtime settings in the root `specmatic.yaml`.
 - Start dependency mocks/stubs before running consumer-side contract tests.
 - Start the generated app on the configured host, port, endpoint, or broker.
 - Fail fast if the app or any dependency mock cannot bind its configured port.
@@ -256,6 +336,8 @@ Adapter requirements for every language:
 - Run Specmatic against the configured endpoint.
 - Assert the Specmatic result has zero failures instead of only printing results.
 - Stop the app and all dependency mocks in teardown, even when Specmatic fails.
+- If a runtime needs support files such as imported protos, stage only those
+  support files into ignored runtime directories.
 
 ### Language Notes
 
@@ -300,5 +382,7 @@ Classify failures before editing generated behavior:
   path differences.
 - Runtime/tooling mismatch: selected package, runtime, or adapter cannot run
   the configured Specmatic version.
-- Startup/config mismatch: app, mock, port, base URL, endpoint, or broker
-  wiring failed.
+- Startup/config mismatch: app, mock, port, base URL, endpoint, broker wiring,
+  or Specmatic template value wiring failed.
+- Runtime config duplication: generated tests create or mutate another
+  Specmatic config instead of using the checked-in root `specmatic.yaml`.
