@@ -303,14 +303,24 @@ count.
 **Level 2 — Positive resiliency** (`schemaResiliencyTests: positiveOnly`):
 Switch to `positiveOnly` and re-run. This adds all valid request combinations
 (enum permutations, optional fields present/absent) without negative tests.
-Fix any new failures. Verify the test count is ≥ Level 1. If it drops, stop
-and investigate — a count drop signals misconfiguration.
+Fix any new failures. Verify the test count is **strictly greater than** Level 1.
 
 **Level 3 — Full resiliency** (`schemaResiliencyTests: all`):
 Switch to `all` and re-run. This adds negative/boundary tests (nulls to
 non-nullable fields, wrong types, missing required fields). The app must return
 `400` for invalid inputs. Fix any new failures — typically adding input
-validation. Verify the test count is ≥ Level 2.
+validation. Verify the test count is **strictly greater than** Level 2.
+
+**Test count did not increase?** This means the `schemaResiliencyTests` setting
+is not taking effect — Specmatic is silently ignoring it. Do NOT proceed or
+treat this as "all tests pass". Stop and diagnose:
+
+1. Verify the setting is under the correct yaml path: `specmatic.settings.test.schemaResiliencyTests`
+   (top-level `specmatic:` key, not under `components:`).
+2. Verify the value is a recognized string (`none`, `positiveOnly`, `all`).
+3. Verify the Specmatic version supports this setting. If not, use the
+   `SPECMATIC_GENERATIVE_TESTS=true` environment variable as a fallback.
+4. After fixing, re-run and confirm the count increases before advancing.
 
 After Level 3 passes, set `schemaResiliencyTests: none` in the final delivered
 `specmatic.yaml` so users get immediate green tests on first run. The README
