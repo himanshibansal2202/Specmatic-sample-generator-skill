@@ -73,7 +73,7 @@ You can increase test coverage by changing the mode in `specmatic.yaml`:
 
 To enable, update `specmatic.yaml`:
 ```yaml
-components:
+specmatic:
   settings:
     test:
       schemaResiliencyTests: all
