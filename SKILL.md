@@ -320,11 +320,46 @@ treat this as "all tests pass". Stop and diagnose:
 2. Verify the value is a recognized string (`none`, `positiveOnly`, `all`).
 3. Verify the Specmatic version supports this setting. If not, use the
    `SPECMATIC_GENERATIVE_TESTS=true` environment variable as a fallback.
-4. After fixing, re-run and confirm the count increases before advancing.
+4. If the env var works but the yaml setting doesn't, the yaml path is wrong.
+5. After fixing, re-run and confirm the count increases before advancing.
 
-After Level 3 passes, set `schemaResiliencyTests: none` in the final delivered
-`specmatic.yaml` so users get immediate green tests on first run. The README
-documents how to enable higher levels.
+If the count is identical across all three levels, the setting is being silently
+ignored in every case — do not accept this as "all tests pass at every level."
+
+#### Level 3 Known Patterns
+
+Level 3 (`all`) adds negative/boundary tests that stress input validation. The
+following patterns are common across all stacks:
+
+**Framework error handler override:** Most frameworks include extra fields in
+their default error responses (e.g., `path`, `trace`, `requestId`) that are not
+in the contract's error response schema. Specmatic rejects these extra fields.
+Override the framework's default error handler to return only the fields defined
+in the contract's error response schema.
+
+**Only validate what the contract defines:** Return 4xx only on endpoints where
+the contract explicitly defines a 4xx response. If the contract only defines 2xx
+responses for an endpoint, the app must not return 4xx — even if the input seems
+invalid. The contract is the source of truth for what responses are allowed.
+
+**Enum without 4xx response (unresolvable contract gap):** When the contract
+defines an enum parameter but no 4xx response for that endpoint, Specmatic's
+`all` mode sends invalid enum values expecting 4xx, but cannot verify any 4xx
+response because none is defined. This creates a paradox: returning 200 fails
+("expected 4xx"), returning 400 also fails ("specification does not contain a
+4xx response"). This is a contract gap, not an app bug. Accept these failures,
+document them in the final report, and do not loop trying to fix them.
+
+**Transitive dependency conflicts:** After installing dependencies, if the first
+test run fails with linkage, class-not-found, or missing-method errors pointing
+at a third-party class, identify the conflicting transitive between the
+Specmatic library and the framework. Override it using the build tool's standard
+dependency override mechanism. This is a build fix, not a behavior fix.
+
+After Level 3 passes (or only unresolvable contract-gap failures remain), set
+`schemaResiliencyTests: none` in the final delivered `specmatic.yaml` so users
+get immediate green tests on first run. The README documents how to enable
+higher levels.
 
 At each level, apply the same fix approach: max 3 retries per level, read
 Specmatic/JUnit/report output, make the smallest change to match the contract.

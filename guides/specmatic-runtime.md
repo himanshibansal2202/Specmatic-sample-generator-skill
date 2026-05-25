@@ -176,6 +176,17 @@ how to enable higher levels.
 Test count must not decrease when moving to a higher level. A count drop signals
 misconfiguration — stop and investigate rather than proceeding.
 
+### Known Behaviors
+
+- Specmatic silently ignores `schemaResiliencyTests` if placed under the wrong
+  yaml path. The correct path is `specmatic.settings.test` (top-level
+  `specmatic:` key). Placing it under `components.settings.test` has no effect.
+- If the `SPECMATIC_GENERATIVE_TESTS=true` env var produces more tests but the
+  yaml setting does not, the yaml path is wrong.
+- At `all` level, Specmatic generates negative tests for enum parameters even
+  when the contract does not define a 4xx response for that endpoint. This
+  creates unresolvable failures — see SKILL.md Step 6 "Level 3 Known Patterns".
+
 ## Contract Source Of Truth
 
 See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
