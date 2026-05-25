@@ -110,6 +110,14 @@ Apply protocol-specific runtime constraints:
   native adapter that merely parses `specmatic.yaml` but reports no executable
   contract tests.
 
+Before proceeding, resolve the application framework version and language
+runtime target yourself, then ask the user to approve or override only those two
+values. Do not ask about package dependencies, test frameworks, SDK packages,
+parsers, plugins, images, or Specmatic runtime versions; choose those yourself
+during generation and verification. Phrase the question as: "I will use
+<framework> <version> with <language runtime target>. Is that okay, or would you
+like to change either?"
+
 ### Step 3: Resolve Contract Source Of Truth
 
 Before generating source code, determine the executable contract that Specmatic will use.
