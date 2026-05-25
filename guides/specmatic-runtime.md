@@ -149,6 +149,44 @@ When verification needs a non-default port because the default is occupied, set
 the corresponding environment variable before running the generated test
 command.
 
+## Schema Resiliency Tests Configuration
+
+Generated samples include a `schemaResiliencyTests` setting under
+`specmatic.settings.test`. This controls how many tests Specmatic generates
+beyond the named examples in the contract.
+
+```yaml
+specmatic:
+  settings:
+    test:
+      schemaResiliencyTests: none  # or: positiveOnly, all
+```
+
+| Value | Behavior |
+|-------|----------|
+| `none` | Tests from named examples only (default in delivered samples) |
+| `positiveOnly` | Adds all valid request combinations (enum permutations, optional fields present/absent) |
+| `all` | Adds negative/boundary tests (nulls, wrong types, missing required fields — expects 400 responses) |
+
+During generation, the skill uses progressive verification (none → positiveOnly
+→ all) to fix issues incrementally. The final delivered `specmatic.yaml` ships
+with `none` so users get immediate green tests. The generated README documents
+how to enable higher levels.
+
+Test count must not decrease when moving to a higher level. A count drop signals
+misconfiguration — stop and investigate rather than proceeding.
+
+### Known Behaviors
+
+- Specmatic silently ignores `schemaResiliencyTests` if placed under the wrong
+  yaml path. The correct path is `specmatic.settings.test` (top-level
+  `specmatic:` key). Placing it under `components.settings.test` has no effect.
+- If the `SPECMATIC_GENERATIVE_TESTS=true` env var produces more tests but the
+  yaml setting does not, the yaml path is wrong.
+- At `all` level, Specmatic generates negative tests for enum parameters even
+  when the contract does not define a 4xx response for that endpoint. This
+  creates unresolvable failures — see SKILL.md Step 6 "Level 3 Known Patterns".
+
 ## Contract Source Of Truth
 
 See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
