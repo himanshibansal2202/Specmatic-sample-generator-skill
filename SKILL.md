@@ -302,6 +302,16 @@ Verify the generated sample in three levels, fixing failures at each level
 before advancing. This prevents the AI from being overwhelmed by many failures
 at once and isolates issues by category.
 
+**Progressive verification applies only when Specmatic runs in test mode**
+(`type: test` in `specmatic.yaml`). In test mode, Specmatic generates requests
+and sends them to the app — more levels means more generated requests.
+
+For samples where Specmatic acts only as a stub/mock (`type: mock`) — such as
+frontend samples or consumer-side samples — skip the progressive levels. Run the
+test command once and verify all tests pass. The `schemaResiliencyTests` setting
+has no effect on stub mode because Specmatic is not generating requests; the
+app's own test suite determines the test count.
+
 **Level 1 — Examples only** (`schemaResiliencyTests: none`):
 Set `schemaResiliencyTests: none` in `specmatic.yaml` and run the test command.
 These are the fewest tests — derived from named examples in the contract.

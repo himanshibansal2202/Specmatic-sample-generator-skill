@@ -46,7 +46,13 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 
 ## CI Workflow Must Include
 
-1. Multi-OS matrix strategy: `[ubuntu-latest, macos-latest, windows-latest]`
+1. Multi-OS matrix strategy based on integration mode:
+   - `native` or `cli` modes: `[ubuntu-latest, macos-latest, windows-latest]`
+     (only requires Java/language runtime, available on all OSes)
+   - `docker-cli` or `test-container` modes: `ubuntu-latest` only
+     (Docker requires a Linux kernel; macOS/Windows CI runners do not have
+     Docker pre-installed, and installing it adds fragile VM setup + minutes
+     of startup time)
 2. Setup JRE 17 when the selected integration mode or language runtime requires it
 3. Setup language runtime (Node 20 / JDK 17 / Python 3.x)
 4. Install dependencies, including CLI/JAR, Docker image access, Testcontainers, or native Specmatic test support for the selected integration mode
