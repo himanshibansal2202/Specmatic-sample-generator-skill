@@ -467,21 +467,66 @@ If no manifest is found, inform the user and ask if they want to generate a new 
 
 Read the sample's source files, config, and build files to understand the current state. In maintain mode, reading the existing sample IS required (unlike generate mode where it is forbidden).
 
-### Step 3: Update Layers
+### Step 3: Plan and Confirm
 
-#### 3a: Update Contract Config (always)
+After reading the current state, determine what updates are available and
+present a plan to the user before making changes. Check:
+
+- **Specmatic version**: compare installed vs latest available
+- **Framework/runtime version**: compare installed vs latest compatible
+- **Contract changes**: check if the resolved contract has new/changed operations
+- **Infrastructure**: check if CI actions, Dockerfile base images, or ignore
+  patterns are outdated
+
+Present the plan:
+
+```
+Maintenance plan for <sample-name>:
+
+- Specmatic: <current> → <latest>
+- <Framework>: <current> → <latest>
+- <Runtime> base image: <current> → <latest>
+- CI actions: <list outdated actions>
+- Contract: <no changes / N new operations detected>
+- README: <missing sections to add>
+
+Proceed with all? Or tell me which to skip.
+```
+
+Wait for the user's answer. The user may say:
+- "proceed" / "all" — apply everything
+- "just specmatic" — only bump Specmatic version
+- "skip framework upgrade" — do everything except framework version bump
+- "only infra" — only update CI, Dockerfile, gitignore
+- Any combination
+
+Record the user's choices and apply only the approved updates in Step 4.
+
+### Step 4: Update Layers
+
+Apply only the updates the user approved in Step 3.
+
+#### 4a: Update Contract Config (always)
 
 Re-resolve the contract source using `config/contract-resolution.yaml` and the manifest inputs. Regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require it) with the latest resolved contract paths.
 
-#### 3b: Update Dependencies (always)
+#### 4b: Update Dependencies (when approved)
 
-Bump Specmatic and framework/library dependency versions to the latest compatible release. Identify the build file for the sample's language (e.g., `package.json` for npm, `pom.xml` for Maven) and update all relevant versions — including the framework itself, Specmatic packages, and dev/test dependencies.
+Bump only the approved dependency versions. For example:
+- If user said "just specmatic" — only bump the Specmatic package version
+- If user said "all" — bump Specmatic, framework, and all dev/test dependencies
+  to latest compatible releases
+- If user said "skip framework" — bump Specmatic and other deps but keep the
+  framework at its current version
+
+Identify the build file for the sample's language (e.g., `package.json` for npm,
+`pom.xml` for Maven) and update the approved versions.
 
 Install dependencies after updating.
 
-#### 3c: Update Infrastructure (always)
+#### 4c: Update Infrastructure (when approved)
 
-Regenerate from current best practices:
+Regenerate from current best practices (only the approved items):
 - `Dockerfile` — latest base image, optimized layers
 - `.github/workflows/ci.yml` — latest action versions, correct setup steps
 - `.gitignore` / `.dockerignore` — complete ignore patterns
@@ -489,11 +534,11 @@ Regenerate from current best practices:
   sections (e.g., "Why Specmatic", "How It Works"), refresh versions/commands/links
   to match current state, preserve any user-added sections
 
-#### 3d: Run Tests
+#### 4d: Run Tests
 
 Run the sample's test command. If tests pass, this sample is done.
 
-### Step 4: Fix Failures (only if tests fail)
+### Step 5: Fix Failures (only if tests fail)
 
 If tests fail after the layer updates, read the Specmatic test output and fix the code — same approach as generate mode Step 6 (Verify And Converge). Make the smallest change needed to match the executable contract, re-run tests, repeat up to 3 times.
 
@@ -504,7 +549,7 @@ If the same failure persists after 3 fix attempts:
 
 Do NOT leave a sample in a worse state than you found it. If escalation fails, revert app code changes and report.
 
-### Step 5: Report
+### Step 6: Report
 
 After processing the sample, report:
 
@@ -530,9 +575,11 @@ Maintain Summary:
 ### Maintain Mode Key Rules
 
 - **Read existing code.** Unlike generate mode, maintain mode MUST read and understand the current sample before making changes.
+- **Plan before acting.** Always present the maintenance plan and wait for user confirmation before applying updates.
+- **Respect user choices.** If the user says "skip framework upgrade", do not upgrade the framework — even if it would be best practice.
 - **Preserve manual customizations.** Only change what's needed. Don't rewrite working app code just because the skill would generate it differently today.
-- **Config, deps, and infra are always safe to update.** These layers don't contain user customizations. This includes framework version upgrades.
-- **App code is only touched when tests fail.** If tests pass after config/dep/infra updates, don't touch app code.
+- **Contract config is always refreshed.** Regardless of what else the user skips, `specmatic.yaml` is always re-resolved to ensure contract alignment.
+- **App code is only touched when tests fail.** If tests pass after approved updates, don't touch app code.
 - **One sample per session.** Maintain one sample at a time to ensure focused, high-quality fixes.
 - **Report-driven fixes only.** Same as generate mode — read the actual test failure, don't guess.
 - **Never make the sample worse.** If a fix attempt breaks more tests than it fixes, revert and try a different approach.
