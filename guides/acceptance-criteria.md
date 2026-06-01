@@ -42,7 +42,44 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
 | `README.md` | Generated per `guides/readme-generation.md` — includes value prop, run instructions, and architecture |
 | `.gitignore` | Ignore dependency folders, virtualenvs, build output, reports, caches, and `.specmatic` |
-| `.specmatic-sample-manifest.json` | Records generated files owned by this sample |
+| `.specmatic-sample-manifest.json` | Records generated files, test coverage, and learnings |
+
+## Manifest Required Fields
+
+The `.specmatic-sample-manifest.json` must include:
+
+```json
+{
+  "id": "<sample-id>",
+  "application_type": "<backend|bff|frontend>",
+  "protocol": "<rest|kafka|grpc|graphql|soap>",
+  "language": "<language>",
+  "framework": "<framework>",
+  "data_layer": "<data-layer>",
+  "integration_mode": "<native|cli|docker-cli|test-container>",
+  "contract_version": "<version>",
+  "port": 8080,
+  "test_command": "<command>",
+  "install_command": "<command>",
+  "generated_files": ["<list of generated file paths>"],
+  "testCoverage": {
+    "level1_none": { "tests": 0, "passed": 0, "failed": 0 },
+    "level2_positiveOnly": { "tests": 0, "passed": 0, "failed": 0 },
+    "level3_all": { "tests": 0, "passed": 0, "failed": 0 },
+    "shipped_level": "all"
+  },
+  "learnings": [
+    "Brief description of any issue encountered and how it was resolved"
+  ]
+}
+```
+
+- `testCoverage`: records test counts at each progressive verification level.
+  `shipped_level` indicates which `schemaResiliencyTests` value the delivered
+  `specmatic.yaml` uses.
+- `learnings`: array of strings documenting issues encountered during
+  generation — dependency conflicts, contract gaps, framework quirks, or
+  workarounds applied. Empty array if generation was clean.
 
 ## CI Workflow Must Include
 
