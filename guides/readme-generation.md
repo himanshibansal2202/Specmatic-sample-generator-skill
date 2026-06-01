@@ -121,7 +121,46 @@ specmatic:
 **Do NOT include an Endpoints table.** The contract spec (linked in Background)
 is the source of truth for endpoints.
 
-### 6. For More Info
+### 6. How It Works
+
+Brief explanation of the contract testing flow specific to this sample's role:
+
+**Backend:**
+```
+API Spec (OpenAPI/Proto/etc.) → specmatic.yaml → Specmatic generates requests → Your service responds → Specmatic validates responses against the spec
+```
+
+**BFF:**
+```
+BFF Spec → specmatic.yaml → Specmatic generates requests to your BFF → Your BFF calls dependency (Specmatic mock) → Specmatic validates both sides
+```
+
+**Frontend:**
+```
+BFF Spec → specmatic.yaml → Specmatic mocks the BFF API → Your frontend calls the mock → Contract compliance verified
+```
+
+Explain in 2-3 sentences what happens when you run the test command. Mention
+that Specmatic reads `specmatic.yaml`, fetches the contract, and auto-generates
+test cases.
+
+### 7. Project Structure
+
+Table of key files:
+
+```markdown
+| File | Purpose |
+|------|---------|
+| `specmatic.yaml` | Contract test configuration — points to the API spec |
+| `src/...` or equivalent | Application source code |
+| `test/...` or equivalent | Contract test adapter that starts the app and runs Specmatic |
+| `Dockerfile` | Production container image |
+| `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
+```
+
+Adjust paths for the actual generated structure.
+
+### 8. For More Info
 
 ```markdown
 * [Specmatic Website](https://specmatic.io)
@@ -131,11 +170,8 @@ is the source of truth for endpoints.
 ## Sections NOT to Include
 
 - **Endpoints table** — removed. The linked contract spec is the source of truth.
-- **Configuration/env vars table** — only include if critical for running tests.
 - **"Why Specmatic" marketing section** — replaced by the Background section
   which demonstrates value through the architecture and spec links.
-- **"How It Works" flow diagram** — replaced by the architecture GIF which
-  communicates the same information visually.
 
 ## Tone and Style
 
