@@ -94,6 +94,30 @@ Specmatic in the following location:
 Include a note about first-run timing: "First run takes 1-2 minutes as
 Specmatic clones the contract repository. Subsequent runs are fast."
 
+Include a "Test Modes" subsection explaining the schema resiliency levels:
+
+```markdown
+### Test Modes
+
+This sample ships with `schemaResiliencyTests: all` which runs the full test
+suite including negative/boundary tests. You can adjust the mode in
+`specmatic.yaml`:
+
+| Mode | What it does |
+|------|-------------|
+| `none` | Runs tests from named examples only (fastest) |
+| `positiveOnly` | Adds all valid input combinations |
+| `all` | Adds negative/boundary tests — expects 400 for invalid inputs (default) |
+
+To change, update `specmatic.yaml`:
+```yaml
+specmatic:
+  settings:
+    test:
+      schemaResiliencyTests: none
+```
+```
+
 **Do NOT include an Endpoints table.** The contract spec (linked in Background)
 is the source of truth for endpoints.
 
