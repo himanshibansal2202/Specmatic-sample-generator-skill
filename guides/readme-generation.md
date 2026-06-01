@@ -36,20 +36,19 @@ List the specs used with links:
 
 ### 3. Architecture Image
 
-Include an animated GIF showing the interaction flow. Use the standard
-Specmatic architecture diagrams from existing sample repos:
+Include an animated GIF showing the interaction flow. Copy the appropriate
+diagram from this skill's `assets/` folder into the sample's `assets/` folder:
 
-- **Backend**: `![Specmatic tests the API against its OpenAPI spec](assets/specmatic-order-api-architecture.gif)`
-- **BFF**: `![HTML client talks to BFF API which in-turn talks to backend API](assets/specmatic-order-bff-architecture.gif)`
-- **Frontend**: `![Frontend calls Specmatic stub of the BFF API](assets/specmatic-order-frontend-architecture.gif)`
+- **BFF**: `assets/specmatic-order-bff-architecture.gif` (bundled in skill)
 
-Place the GIF file in an `assets/` folder within the sample. Source the
-appropriate diagram from Specmatic's existing sample repositories:
-- BFF: https://github.com/specmatic/specmatic-order-bff-java/blob/main/assets/specmatic-order-bff-architecture.gif
+For app types where a diagram is not yet bundled in the skill (backend,
+frontend), skip this section rather than generating a placeholder. Record
+"architecture diagram not available" in the manifest learnings.
 
-If a diagram for the specific app type is not available in existing repos,
-note it in the manifest learnings and skip the image rather than generating
-a placeholder.
+Markdown reference in README:
+```markdown
+![HTML client talks to BFF API which in-turn talks to backend API](assets/specmatic-order-bff-architecture.gif)
+```
 
 ### 4. Tech
 
