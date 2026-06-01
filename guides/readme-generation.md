@@ -4,9 +4,6 @@ Generated READMEs serve two purposes: help developers run the sample AND
 demonstrate why Specmatic matters. The README is a selling point for Specmatic,
 not just setup instructions.
 
-Align structure and tone with the reference:
-https://github.com/specmatic/specmatic-order-bff-java
-
 ## Required Sections (in order)
 
 ### 1. Title + Table of Contents
