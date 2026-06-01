@@ -1,0 +1,6 @@
+target/
+.specmatic/
+.git/
+.idea/
+*.iml
+.DS_Store

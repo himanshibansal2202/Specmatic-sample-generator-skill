@@ -1,173 +1,136 @@
 # README Generation Guide
 
-Generated READMEs serve two purposes: help developers run the sample AND demonstrate why Specmatic matters. The README is a selling point for Specmatic, not just setup instructions.
+Generated READMEs serve two purposes: help developers run the sample AND
+demonstrate why Specmatic matters. The README is a selling point for Specmatic,
+not just setup instructions.
+
+Align structure and tone with the reference:
+https://github.com/specmatic/specmatic-order-bff-java
 
 ## Required Sections (in order)
 
-### 1. Title
+### 1. Title + Table of Contents
 
-```
+```markdown
 # Specmatic Sample: <Framework> <App-Type> (<Protocol>)
+
+Table of Contents
+* [Background](#background)
+* [Tech](#tech)
+* [Run Contract Tests](#run-contract-tests)
+* [For More Info](#for-more-info)
 ```
 
-Example: `# Specmatic Sample: Spring Boot Order API (REST/OpenAPI)`
-
-### 2. What This Is
+### 2. Background
 
 One paragraph explaining what this sample demonstrates. Include:
 - The application type (backend, BFF, frontend)
-- The protocol being contract-tested
-- That Specmatic auto-generates tests from the API spec
+- Which specs are used (with links to the actual contract files in the contract repo)
+- What dependencies are stubbed/mocked by Specmatic
 
-Example tone: "This sample demonstrates how Specmatic contract tests a Spring Boot REST API in complete isolation — no running dependencies, no hand-written mocks, no integration environment needed."
+Example tone: "In this sample project, we will use Specmatic to contract test
+the Order API in isolation. The interaction between the Order API and its
+consumers is governed by this OpenAPI specification."
 
-### 3. Why Specmatic
+List the specs used with links:
+```markdown
+* [Order API's OpenAPI spec](https://github.com/specmatic/specmatic-order-contracts/blob/main/io/specmatic/examples/store/openapi/api_order_v3.yaml) is used for running contract tests against the API.
+```
 
-Bullet list of benefits. Keep it to 3-4 points, protocol-aware. Focus on what
-Specmatic uniquely offers, not generic contract testing concepts:
+### 3. Architecture Image
 
-- **Auto-generated tests from your API spec** — Specmatic reads your OpenAPI/AsyncAPI/gRPC/GraphQL/WSDL spec and generates test cases automatically. No hand-written test code or mocks to maintain.
-- **Intelligent service virtualisation** — Specmatic generates realistic stubs/mocks from the same spec, so consumers can develop in parallel without waiting for providers.
-- **Backward compatibility detection** — Specmatic compares spec versions and flags breaking changes before they reach production.
-- **Single source of truth** — one spec drives contract tests, stubs, and backward compatibility checks. No drift between tests and documentation.
+Include an animated GIF showing the interaction flow. Use the standard
+Specmatic architecture diagrams from existing sample repos:
 
-For protocol-specific benefits, add one relevant point:
-- REST/OpenAPI: "Works with your existing OpenAPI spec — no new DSL to learn."
-- AsyncAPI/Kafka: "Validates message producers and consumers against your AsyncAPI contract without a running broker."
-- gRPC: "Tests your Protobuf service definitions without spinning up dependent services."
-- GraphQL: "Validates queries, mutations, and schema compliance from your GraphQL SDL."
-- SOAP/WSDL: "Contract tests your SOAP services using existing WSDL definitions."
+- **Backend**: `![Specmatic tests the API against its OpenAPI spec](assets/specmatic-order-api-architecture.gif)`
+- **BFF**: `![HTML client talks to BFF API which in-turn talks to backend API](assets/specmatic-order-bff-architecture.gif)`
+- **Frontend**: `![Frontend calls Specmatic stub of the BFF API](assets/specmatic-order-frontend-architecture.gif)`
+
+Place the GIF file in an `assets/` folder within the sample. Source the
+appropriate diagram from Specmatic's existing sample repositories:
+- BFF: https://github.com/specmatic/specmatic-order-bff-java/blob/main/assets/specmatic-order-bff-architecture.gif
+
+If a diagram for the specific app type is not available in existing repos,
+note it in the manifest learnings and skip the image rather than generating
+a placeholder.
 
 ### 4. Tech
 
 Numbered list of key technologies:
 1. Language + Framework (e.g., "Spring Boot service written in Java")
-2. Specmatic (mention the version if relevant)
-3. Any notable runtime requirement (e.g., "JRE 17+", "Node 20+")
+2. Specmatic (or Specmatic Enterprise for non-REST protocols)
+3. Docker Desktop (when the integration mode requires it)
+4. Any other notable dependency
 
 ### 5. Run Contract Tests
 
-Structure:
-- **Prerequisites** — list what must be installed (JRE 17+, language runtime, etc.)
-- **Using the build tool** — the primary single-command path (e.g., `./mvnw test`, `npm test`, `pytest`)
-- **Using Docker** — if applicable, show the Docker-based test run
-- Platform-aware commands (Unix/macOS vs Windows) when they differ
-
-Include a note about first-run timing: "First run takes 1-2 minutes as Specmatic clones the contract repository. Subsequent runs are fast (cached in `.specmatic/`)."
-
-Link to the specmatic.yaml file and explain it configures which contracts are tested.
-
-Include a "Test Modes" subsection explaining how to enable schema resiliency:
+Provide commands for **all three OS variants** under each method:
 
 ```markdown
-### Test Modes
+### 1. Using <Primary Method>
 
-This sample ships with `schemaResiliencyTests: none` for fast, predictable tests.
-You can increase test coverage by changing the mode in `specmatic.yaml`:
+For **Unix based systems** and **Windows PowerShell**:
+```shell
+./mvnw test
+```
 
-| Mode | What it does |
-|------|-------------|
-| `none` | Runs tests from named examples only (default) |
-| `positiveOnly` | Adds all valid input combinations |
-| `all` | Adds negative/boundary tests (expects 400 for invalid inputs) |
-
-To enable, update `specmatic.yaml`:
-```yaml
-specmatic:
-  settings:
-    test:
-      schemaResiliencyTests: all
+For **Windows Command Prompt**:
+```shell
+mvnw.cmd test
 ```
 ```
 
-### 6. How It Works
+Structure by integration mode — include all modes the sample supports:
+- **native**: JUnit/pytest/vitest command
+- **test-container**: same command but note Docker Desktop requirement
+- **docker-cli**: show `docker run` commands with volume mounts
+- **cli**: show standalone CLI/JAR invocation
 
-Brief explanation of the contract testing flow specific to this sample's role:
+Include a "View Specmatic Test Reports" subsection after the primary method:
+```markdown
+#### View Specmatic Test Reports
 
-**Backend:**
-```
-API Spec (OpenAPI/Proto/etc.) → specmatic.yaml → Specmatic generates requests → Your service responds → Specmatic validates responses against the spec
-```
-
-**BFF:**
-```
-BFF Spec → specmatic.yaml → Specmatic generates requests to your BFF → Your BFF calls dependency (Specmatic mock) → Specmatic validates both sides
-```
-
-**Frontend:**
-```
-BFF Spec → specmatic.yaml → Specmatic mocks the BFF API → Your frontend calls the mock → Contract compliance verified
+After running the contract tests, you can view the test reports generated by
+Specmatic in the following location:
+[build/reports/specmatic/html/index.html](build/reports/specmatic/html/index.html)
 ```
 
-Explain in 2-3 sentences what happens when you run the test command. Mention that Specmatic reads `specmatic.yaml`, fetches the contract, and auto-generates test cases.
+Include a note about first-run timing: "First run takes 1-2 minutes as
+Specmatic clones the contract repository. Subsequent runs are fast."
 
-### 7. Project Structure
+**Do NOT include an Endpoints table.** The contract spec (linked in Background)
+is the source of truth for endpoints.
 
-Table of key files:
+### 6. For More Info
 
 ```markdown
-| File | Purpose |
-|------|---------|
-| `specmatic.yaml` | Contract test configuration — points to the API spec |
-| `src/...` or equivalent | Application source code |
-| `test/...` or equivalent | Contract test adapter that starts the app and runs Specmatic |
-| `Dockerfile` | Production container image |
-| `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
+* [Specmatic Website](https://specmatic.io)
+* [Specmatic Documentation](https://docs.specmatic.io)
 ```
 
-Adjust paths for the actual generated structure.
+## Sections NOT to Include
 
-### 8. For More Info
-
-- [Specmatic Website](https://specmatic.io)
-- [Specmatic Documentation](https://docs.specmatic.io)
-- Link to the specific contract/spec used by this sample
-
-## Optional Sections
-
-Include these when relevant to the sample:
-
-### Endpoints (Backend and BFF samples)
-
-Table of API endpoints implemented by the sample:
-
-```markdown
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | /products | List products |
-| POST | /products | Create a product |
-```
-
-Derive from the contract facts. Helps developers quickly see what the service implements.
-
-### Configuration
-
-Table of environment variables that can override defaults:
-
-```markdown
-| Environment Variable | Default | Description |
-|---------------------|---------|-------------|
-| SUT_PORT | 8080 | Application port |
-| SUT_BASE_URL | http://localhost:8080 | Base URL for Specmatic tests |
-```
-
-Include when the sample exposes configurable ports, URLs, or broker settings.
-
-Place optional sections between "How It Works" and "Project Structure".
+- **Endpoints table** — removed. The linked contract spec is the source of truth.
+- **Configuration/env vars table** — only include if critical for running tests.
+- **"Why Specmatic" marketing section** — replaced by the Background section
+  which demonstrates value through the architecture and spec links.
+- **"How It Works" flow diagram** — replaced by the architecture GIF which
+  communicates the same information visually.
 
 ## Tone and Style
 
-- Written for a developer who just found this repo — they should understand WHY in 30 seconds
-- Concise, not marketing-heavy — benefits backed by what the sample actually demonstrates
-- Use code blocks for commands
-- Keep the total README under 120 lines when possible
+- Written for a customer engineer who just found this repo
+- Concise, scannable — they should be able to run tests within 60 seconds
+- Use code blocks for all commands
+- Always show Unix + Windows PowerShell + Windows Command Prompt variants
+- Link to contract specs rather than describing endpoints
 
 ## Maintain-Mode Update Rules
 
 When updating an existing README during maintain mode:
 
 1. **Preserve user-added sections** — any section not in the required list above should be kept in place
-2. **Add missing required sections** — if "Why Specmatic" or "How It Works" doesn't exist, add it in the correct position
+2. **Add missing required sections** — if "Architecture Image" or "Background" doesn't exist, add it in the correct position
 3. **Refresh factual content** — update version numbers, commands, prerequisite versions, and contract links to match current state
 4. **Don't rewrite working prose** — if a section exists and is accurate, leave it alone
-5. **Update Project Structure table** — reflect any file changes from the maintain session
+5. **Ensure all 3 OS command variants exist** — add missing OS variants if only one was present
