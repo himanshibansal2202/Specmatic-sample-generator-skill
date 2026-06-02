@@ -34,6 +34,21 @@ List the specs used with links:
 * [Order API's OpenAPI spec](https://github.com/specmatic/specmatic-order-contracts/blob/main/io/specmatic/examples/store/openapi/api_order_v3.yaml) is used for running contract tests against the API.
 ```
 
+After the spec links, include 3-4 Specmatic benefits. Focus on what Specmatic
+uniquely offers, not generic contract testing concepts:
+
+- **Auto-generated tests from your API spec** — Specmatic reads your OpenAPI/AsyncAPI/gRPC/GraphQL/WSDL spec and generates test cases automatically. No hand-written test code or mocks to maintain.
+- **Intelligent service virtualisation** — Specmatic generates realistic stubs/mocks from the same spec, so consumers can develop in parallel without waiting for providers.
+- **Backward compatibility detection** — Specmatic compares spec versions and flags breaking changes before they reach production.
+- **Single source of truth** — one spec drives contract tests, stubs, and backward compatibility checks. No drift between tests and documentation.
+
+Add one protocol-specific benefit:
+- REST/OpenAPI: "Works with your existing OpenAPI spec — no new DSL to learn."
+- AsyncAPI/Kafka: "Validates message producers and consumers against your AsyncAPI contract without a running broker."
+- gRPC: "Tests your Protobuf service definitions without spinning up dependent services."
+- GraphQL: "Validates queries, mutations, and schema compliance from your GraphQL SDL."
+- SOAP/WSDL: "Contract tests your SOAP services using existing WSDL definitions."
+
 ### 3. Architecture Image
 
 Include an animated GIF showing the interaction flow. Copy the appropriate
