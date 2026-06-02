@@ -110,7 +110,8 @@ Specmatic in the following location:
 ```
 
 Include a note about first-run timing: "First run takes 1-2 minutes as
-Specmatic clones the contract repository. Subsequent runs are fast."
+Specmatic clones the contract repository. Subsequent runs are fast (cached
+in `.specmatic/`)."
 
 Include a "Test Modes" subsection explaining the schema resiliency levels:
 
