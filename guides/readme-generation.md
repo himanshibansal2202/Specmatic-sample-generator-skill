@@ -62,9 +62,10 @@ Include an animated GIF showing the interaction flow. Copy the appropriate
 diagram from this skill's `assets/` folder into the sample's `assets/` folder:
 
 - **BFF**: `assets/specmatic-order-bff-architecture.gif` (bundled in skill)
+- **Frontend**: `assets/specmatic-order-frontend-architecture.gif` (bundled in skill)
 
-For app types where a diagram is not yet bundled in the skill (backend,
-frontend), skip this section rather than generating a placeholder. Record
+For app types where a diagram is not yet bundled in the skill (backend),
+skip this section rather than generating a placeholder. Record
 "architecture diagram not available" in the manifest learnings.
 
 Markdown reference in README:
