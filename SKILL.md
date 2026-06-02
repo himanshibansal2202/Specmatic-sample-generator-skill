@@ -374,10 +374,11 @@ at a third-party class, identify the conflicting transitive between the
 Specmatic library and the framework. Override it using the build tool's standard
 dependency override mechanism. This is a build fix, not a behavior fix.
 
-After Level 3 passes (or only unresolvable contract-gap failures remain), set
-`schemaResiliencyTests: none` in the final delivered `specmatic.yaml` so users
-get immediate green tests on first run. The README documents how to enable
-higher levels.
+If Level 3 passes fully (zero failures), ship the final `specmatic.yaml` with
+`schemaResiliencyTests: all` to deliver maximum test coverage out of the box.
+
+If Level 3 has unresolvable contract-gap failures only, ship with
+`schemaResiliencyTests: none` and document the gaps in the manifest learnings.
 
 At each level, apply the same fix approach: max 3 retries per level, read
 Specmatic/JUnit/report output, make the smallest change to match the contract.
@@ -406,6 +407,14 @@ When tests fail, classify the failure before changing code:
 
 Use the classification to make the smallest behavior change needed to match the
 executable contract, then re-run the documented test command.
+
+After verification completes, update `.specmatic-sample-manifest.json` with:
+- `testCoverage`: record the test count, passed, and failed at each level.
+  Set `shipped_level` to the `schemaResiliencyTests` value in the delivered
+  `specmatic.yaml`.
+- `learnings`: record any issues encountered during generation — dependency
+  conflicts, contract gaps, framework quirks, workarounds applied. Use an
+  empty array if generation was clean.
 
 Only report "done" when tests are green.
 
