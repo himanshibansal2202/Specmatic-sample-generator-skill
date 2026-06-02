@@ -61,10 +61,11 @@ For protocol-specific benefits, add one relevant point:
 Include an animated GIF showing the interaction flow. Copy the appropriate
 diagram from this skill's `assets/` folder into the sample's `assets/` folder:
 
+- **Backend**: `assets/specmatic-order-backend-architecture.gif` (bundled in skill — for understanding purpose, may not be fully accurate with the generated sample's architecture)
 - **BFF**: `assets/specmatic-order-bff-architecture.gif` (bundled in skill)
 - **Frontend**: `assets/specmatic-order-frontend-architecture.gif` (bundled in skill)
 
-For app types where a diagram is not yet bundled in the skill (backend),
+For app types where a diagram is not yet bundled in the skill,
 skip this section rather than generating a placeholder. Record
 "architecture diagram not available" in the manifest learnings.
 
