@@ -205,7 +205,11 @@ third-party class.
 
 Resolve generically:
 
-1. Pick a Specmatic test-library version that supports the generated
+1. Look up the latest released Specmatic version for the selected language
+   from its package registry (Maven Central for JVM, npm for Node.js, PyPI
+   for Python) before setting the dependency version. Do not rely on training
+   data — always check online for the current latest release.
+2. Pick a Specmatic test-library version that supports the generated
    `specmatic.yaml` schema version. Each language binding (JVM, Node.js,
    Python, etc.) publishes its own schema-version-to-library-version mapping
    in its release notes.
