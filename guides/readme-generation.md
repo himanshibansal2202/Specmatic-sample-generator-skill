@@ -75,7 +75,10 @@ Numbered list of key technologies:
 
 ### 5. Run Contract Tests
 
-Provide commands for **all three OS variants** under each method:
+Start with a **Prerequisites** subsection listing what must be installed
+(e.g., JRE 17+, Node 20+, Docker Desktop, language runtime).
+
+Then provide commands for **all three OS variants** under each method:
 
 ```markdown
 ### 1. Using <Primary Method>
