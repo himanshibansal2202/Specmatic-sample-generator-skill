@@ -368,6 +368,11 @@ response because none is defined. This creates a paradox: returning 200 fails
 4xx response"). This is a contract gap, not an app bug. Accept these failures,
 document them in the final report, and do not loop trying to fix them.
 
+**Before classifying any issue as an unresolvable contract gap**, verify you are
+using the latest Specmatic version. Newer releases may have resolved the
+behavior. If you are not on the latest version, upgrade and re-run before
+accepting the gap.
+
 **Transitive dependency conflicts:** After installing dependencies, if the first
 test run fails with linkage, class-not-found, or missing-method errors pointing
 at a third-party class, identify the conflicting transitive between the
