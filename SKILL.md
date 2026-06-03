@@ -57,9 +57,18 @@ Ask each question separately. Wait for the user's answer before asking the next.
    - Wait for answer.
 5. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
    - Wait for answer.
-6. Then ask: "What data layer? (for example: in-memory, rest-api, grpc-service, kafka-broker)" — examples
-   may be adjusted for the selected application type or architecture.
-   - Wait for answer.
+6. Then ask: "What data layer?" — but only if the application type is
+   **backend**. For BFF and Frontend, the data layer is implied by the
+   architecture (BFF calls a dependency service, Frontend calls the BFF).
+
+   For backends, the options describe where the service stores/retrieves data:
+   - `in-memory` — the service keeps its own state in memory (most common for samples)
+
+   Skip this question for BFF and Frontend — set the data layer automatically:
+   - BFF: the data source is always the backend dependency (resolved from contracts)
+   - Frontend: the data source is always the BFF API (resolved from contracts)
+
+   - Wait for answer (backend only).
 7. Then ask: "Where should I create the sample folder? Provide a local path."
    - Wait for answer.
 
@@ -387,6 +396,10 @@ If Level 3 has unresolvable contract-gap failures only, ship with
 
 At each level, apply the same fix approach: max 3 retries per level, read
 Specmatic/JUnit/report output, make the smallest change to match the contract.
+
+When modifying `specmatic.yaml` between levels, use your environment's native
+file-editing tools (file write/replace operations). Do not use shell text
+processors like `sed`, `perl`, or `awk` for file modifications.
 
 **First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
 
