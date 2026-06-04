@@ -189,48 +189,36 @@ misconfiguration — stop and investigate rather than proceeding.
 
 ## Governance and Coverage Threshold
 
-Generated samples must include a governance section in `specmatic.yaml` that
-enforces 100% API coverage. This ensures every operation in the spec is tested.
+Generated samples must include governance configuration in `specmatic.yaml`
+that enforces API coverage. Configure:
 
-```yaml
-specmatic:
-  governance:
-    report:
-      formats:
-        - html
-      outputDirectory: build/reports/specmatic
-    successCriteria:
-      minCoveragePercentage: 100
-      maxMissedOperationsInSpec: 0
-      enforce: true
-  settings:
-    test:
-      schemaResiliencyTests: all
-```
+- **Coverage threshold**: set to 100% so the build fails if any operation in
+  the spec is missed.
+- **Max missed operations**: set to 0.
+- **Enforce**: enabled — makes coverage failures break the build.
+- **Report formats**: include HTML for readable reports.
 
-If `enforce: true` is set and coverage is below the threshold, the test command
-fails. This catches cases where endpoints are accidentally skipped.
+For the exact syntax, consult the Specmatic configuration docs at
+https://docs.specmatic.io/references/configuration/reports or reference the
+`specmatic.yaml` in `specmatic-order-bff-java` for a working example. The
+config format may evolve between Specmatic versions — always use the syntax
+supported by the resolved Specmatic version.
 
 ## Path Filtering and Actuator
 
-For BFF and Backend samples using Spring Boot or frameworks with actuator/health
-endpoints, configure path filters to exclude infrastructure paths that the
-service does not implement as business endpoints:
+For BFF and Backend samples, configure path filters to exclude infrastructure
+paths that the service does not implement as business endpoints (e.g.,
+`/health`, `/monitor/{id}`, `/swagger`).
 
-```yaml
-runOptions:
-  openapi:
-    type: test
-    baseUrl: "{APP_URL:http://localhost:8080}"
-    filter: "PATH!='/health,/monitor/{id},/swagger'"
-    actuatorUrl: "{APP_URL:http://localhost:8080}/actuator/mappings"
-```
+Also configure the actuator/endpoint-discovery URL when the framework supports
+it (e.g., Spring Boot's `/actuator/mappings`). This enables Specmatic to report
+coverage accurately — endpoints in the spec but not implemented show as "Not
+Implemented" in the coverage report.
 
-- `filter`: excludes paths from contract testing. Use for monitor, health, and
-  swagger paths that exist in the spec for infrastructure purposes.
-- `actuatorUrl`: enables Specmatic to discover implemented endpoints and report
-  coverage accurately (endpoints in spec but not implemented show as "Not
-  Implemented" in the coverage report).
+For the exact filter and actuator syntax, consult Specmatic's test configuration
+docs or reference the `specmatic-order-bff-java` repo's `specmatic.yaml`.
+The filter expression format and actuator config shape may change between
+Specmatic versions.
 
 ## Contract Source Of Truth
 
