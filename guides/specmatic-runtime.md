@@ -190,12 +190,14 @@ misconfiguration — stop and investigate rather than proceeding.
 ## Governance and Coverage Threshold
 
 Generated samples must include governance configuration in `specmatic.yaml`
-that enforces API coverage. Configure:
+that reports API coverage. Configure:
 
-- **Coverage threshold**: set to 100% so the build fails if any operation in
-  the spec is missed.
-- **Max missed operations**: set to 0.
-- **Enforce**: enabled — makes coverage failures break the build.
+- **Coverage threshold**: align with Specmatic's reference samples. The
+  reference BFF uses 70%, the reference backend uses 65%. Use these as
+  baselines — do not set to 100% since WIP tags and filtered paths reduce
+  achievable coverage.
+- **Max missed operations**: 1 for BFF, up to 4 for backend (mirrors reference repos).
+- **Enforce**: true — makes coverage failures break the build when below threshold.
 - **Report formats**: include HTML for readable reports.
 
 For the exact syntax, consult the Specmatic configuration docs at
@@ -238,14 +240,20 @@ third-party class.
 
 Resolve generically:
 
-1. Look up the latest released Specmatic version for the selected language
-   from its package registry before setting the dependency version. Do not
-   rely on training data — always check online for the current latest release.
-   - **Open source (JVM)**: check Maven Central for `io.specmatic:junit5-support`
-   - **Enterprise**: check Docker Hub tags for `specmatic/enterprise` (Docker
-     Hub is updated before Maven Central for Enterprise releases)
+1. Look up the latest released Specmatic Enterprise version before setting the
+   dependency version. Do not rely on training data — always check online.
+   - **JVM**: check Docker Hub tags for `specmatic/enterprise` for the latest
+     version, then use the corresponding Maven artifact
+     `io.specmatic.enterprise:specmatic-enterprise`
    - **Node.js**: check npm for `specmatic`
    - **Python**: check PyPI for `specmatic`
+   - **Docker image**: `specmatic/enterprise` (always use Enterprise, not the
+     open-source `specmatic/specmatic` image)
+
+   Always use Specmatic Enterprise for ALL generated samples regardless of
+   protocol. Enterprise includes schema resiliency tests, Smart Resiliency
+   Orchestration (429/202), full API coverage reporting, and all protocol
+   support. Open-source Specmatic should not be used in generated samples.
 2. Pick a Specmatic test-library version that supports the generated
    `specmatic.yaml` schema version. Each language binding (JVM, Node.js,
    Python, etc.) publishes its own schema-version-to-library-version mapping
@@ -312,9 +320,7 @@ than as a language dependency or a Testcontainers-managed container.
 
 - Start the generated app and any dependency mocks/stubs needed by the sample.
 - Run Specmatic with `docker run` from the generated test command or test
-  adapter. Use the official `specmatic/specmatic` image for
-  community-supported protocols and `specmatic/enterprise` when the selected
-  protocol requires Enterprise.
+  adapter. Use the official `specmatic/enterprise` image for all protocols.
 - Mount the root `specmatic.yaml`, any local contract/example files, and the
   report output directory into the container. Mount the config read-only when
   the selected tooling supports it. If contracts are fetched from git, pass the
@@ -337,9 +343,7 @@ test suite.
 - Add the selected language's standard Testcontainers dependency and generate a
   test adapter that starts the generated app, then starts the Specmatic
   container.
-- Use the official `specmatic/specmatic` image for community-supported
-  protocols and `specmatic/enterprise` when the selected protocol requires
-  Enterprise.
+- Use the official `specmatic/enterprise` image for all protocols.
 - Mount the root `specmatic.yaml`, any local contract/example files, and the
   report output directory into the container. Mount the config read-only when
   the selected tooling supports it. If contracts are fetched from git, pass
