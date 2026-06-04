@@ -151,15 +151,34 @@ command.
 
 ## Schema Resiliency Tests Configuration
 
-Generated samples include a `schemaResiliencyTests` setting under
-`specmatic.settings.test`. This controls how many tests Specmatic generates
+Generated samples include a `schemaResiliencyTests` setting under the
+top-level `specmatic:` key. This controls how many tests Specmatic generates
 beyond the named examples in the contract.
 
+**CRITICAL: The correct path is `specmatic.settings.test`, NOT
+`components.settings.test`.** Some Specmatic documentation pages show the
+setting under `components:` — this is WRONG and will be silently ignored.
+Always use the top-level `specmatic:` key as shown below:
+
 ```yaml
+# ✅ CORRECT — settings under top-level specmatic: key
 specmatic:
+  governance:
+    successCriteria:
+      minCoveragePercentage: 70
+      maxMissedOperationsInSpec: 1
+      enforce: true
   settings:
     test:
-      schemaResiliencyTests: none  # or: positiveOnly, all
+      schemaResiliencyTests: all
+```
+
+```yaml
+# ❌ WRONG — this is silently ignored
+components:
+  settings:
+    test:
+      schemaResiliencyTests: all
 ```
 
 | Value | Behavior |
@@ -205,6 +224,10 @@ https://docs.specmatic.io/references/configuration/reports or reference the
 `specmatic.yaml` in `specmatic-order-bff-java` for a working example. The
 config format may evolve between Specmatic versions — always use the syntax
 supported by the resolved Specmatic version.
+
+**Never lower the coverage threshold to make tests pass.** If coverage is below
+the threshold, the correct fix is to implement the missing operations or fix
+the actuator/endpoint-discovery configuration — not to weaken the gate.
 
 ## Path Filtering and Actuator
 
