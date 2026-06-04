@@ -40,51 +40,95 @@ mock/stub started by Specmatic.
 ## Smart Resiliency Orchestration (202 Accepted Pattern)
 
 If the BFF contract defines 202 (Accepted) responses for any operation,
-the BFF must implement the full async monitor pattern. Specmatic Enterprise
-tests this by simulating backend timeouts during contract tests.
+the BFF must implement the full async monitor pattern. This is tested through
+**external examples with delayed stubs** — not magic headers or automatic mock
+timeouts.
 
 ### How it works:
 
-1. Specmatic sends a request to the BFF (e.g., `POST /products`)
-2. BFF calls the backend dependency
-3. Specmatic's mock **simulates a timeout** (the backend doesn't respond in time)
-4. BFF catches the timeout → stores the request in a monitor → returns
-   **202 Accepted** with headers:
-   - `Link: </monitor/{id}>; title="monitor"`
-   - `Retry-After: <seconds>`
-5. Specmatic polls `GET /monitor/{id}` to check completion
-6. BFF's background scheduler retries the backend call
-7. When backend eventually responds, the monitor stores the result
-8. Specmatic's next poll gets the completed response from `/monitor/{id}`
+1. The BFF contract defines both 201 and 202 responses for an operation
+2. **External BFF test examples** tell Specmatic which requests should trigger
+   the 202 path (e.g., a request with a specific field value like `"name": "UniqueName"`)
+3. **External domain service stub examples** tell the backend mock to **delay**
+   its response for those same requests (using `"delay-in-seconds": N` and
+   `"transient": true`)
+4. The BFF has a RestTemplate/HTTP client timeout shorter than the mock's delay
+5. When the test runs: BFF calls backend → mock delays → BFF times out →
+   BFF creates a monitor → returns 202 with `Link: </monitor/{id}>` header
+6. Specmatic polls `GET /monitor/{id}` to check completion
+7. The transient stub is consumed after first use → BFF's retry gets instant
+   response → monitor completes → Specmatic's poll gets the final result
 
 ### Required components when 202 is in the BFF contract:
 
-- **Monitor Controller**: implements `GET /monitor/{id}` — returns the monitor
-  status (pending or completed with the original response)
+- **External BFF examples** (in a directory like `src/test/resources/bff/`):
+  Define which requests expect 202. Format is a partial example JSON with
+  `"http-response": {"status": 202}`.
+- **External domain service stub examples** (in `src/test/resources/domain_service/`):
+  Define delayed stubs with `"transient": true` and `"delay-in-seconds": N`
+  that match the same request patterns.
+- **`specmatic.yaml` data.examples** section pointing to these directories.
+- **Monitor Controller**: implements `GET /monitor/{id}`.
 - **Monitor Service**: manages monitor lifecycle — stores pending requests,
-  retries them on a schedule, stores completed responses
-- **Monitor Database/Store**: in-memory store of monitor entries
-- **Timeout handling in service layer**: catch `SocketTimeoutException` (or
-  equivalent) from backend calls → create a monitor → return 202
-- **Background scheduler**: periodically retries pending monitors against the
-  backend dependency
+  retries them, stores completed responses.
+- **Timeout handling in service layer**: catch timeout exceptions from backend
+  calls → create a monitor → return 202.
+- **Background scheduler or immediate retry**: execute the backend call again
+  (the delayed stub is transient, so the retry gets an instant response).
 - **Monitor response model**: must match the schema defined in the BFF contract
-  (typically includes `request`, `response` with `statusCode`, `body`, `headers`)
+  (includes `request`, `response` with `statusCode`, `body`, `headers`).
+
+### The specmatic.yaml examples configuration:
+
+```yaml
+systemUnderTest:
+  service:
+    data:
+      examples:
+        - directories:
+            - ./src/test/resources/bff
+dependencies:
+  services:
+    - service:
+        data:
+          examples:
+            - directories:
+                - ./src/test/resources/domain_service
+```
+
+### 429 (Too Many Requests) pattern:
+
+For GET endpoints that define a 429 response:
+- An external BFF example triggers the 429 test path
+- A domain service stub with delay simulates backend slowness
+- BFF times out → returns 429 with `Retry-After` header
+
+### Response processor hooks:
+
+If the BFF contract requires dynamic response values (e.g., a `createdOn` date
+derived from request query parameters), use a Specmatic response processor hook:
+
+```yaml
+dependencies:
+  data:
+    adapters:
+      post_specmatic_response_processor: ./hooks/post_specmatic_response_processor.sh
+```
+
+The hook is a shell script that receives the mock response JSON on stdin and
+outputs modified JSON. Use this for computed fields that can't be static
+examples.
 
 ### Key points:
 
-- The BFF **implements** `/monitor/{id}` — it is NOT filtered out from tests
-- The timeout comes from the backend mock (Specmatic simulates it), not from
-  a 429 response
-- The BFF returns 429 (Too Many Requests) to its own consumers for GET
-  endpoints that time out (with `Retry-After` header)
-- The BFF returns 202 (Accepted) for POST/mutation endpoints that time out
-  (with `Link` header pointing to the monitor)
-- If the BFF contract does NOT define 202 responses, skip this entire pattern
-
-### Reference implementation:
-
-See `specmatic-order-bff-java` for the complete working pattern in Kotlin/Spring Boot.
+- The BFF **implements** `/monitor/{id}` — it is NOT filtered from tests
+- SRO is driven by **external examples and delayed transient stubs**, not by
+  a `Specmatic-Response-Code` header or automatic mock timeouts
+- The client timeout must be shorter than the stub delay for the timeout to
+  trigger
+- Transient stubs (`"transient": true`) are consumed after first use, so
+  retries succeed immediately
+- Reference implementation: `specmatic-order-bff-java`
 
 ## Path Filtering
 
