@@ -187,6 +187,51 @@ misconfiguration — stop and investigate rather than proceeding.
   when the contract does not define a 4xx response for that endpoint. This
   creates unresolvable failures — see SKILL.md Step 6 "Level 3 Known Patterns".
 
+## Governance and Coverage Threshold
+
+Generated samples must include a governance section in `specmatic.yaml` that
+enforces 100% API coverage. This ensures every operation in the spec is tested.
+
+```yaml
+specmatic:
+  governance:
+    report:
+      formats:
+        - html
+      outputDirectory: build/reports/specmatic
+    successCriteria:
+      minCoveragePercentage: 100
+      maxMissedOperationsInSpec: 0
+      enforce: true
+  settings:
+    test:
+      schemaResiliencyTests: all
+```
+
+If `enforce: true` is set and coverage is below the threshold, the test command
+fails. This catches cases where endpoints are accidentally skipped.
+
+## Path Filtering and Actuator
+
+For BFF and Backend samples using Spring Boot or frameworks with actuator/health
+endpoints, configure path filters to exclude infrastructure paths that the
+service does not implement as business endpoints:
+
+```yaml
+runOptions:
+  openapi:
+    type: test
+    baseUrl: "{APP_URL:http://localhost:8080}"
+    filter: "PATH!='/health,/monitor/{id},/swagger'"
+    actuatorUrl: "{APP_URL:http://localhost:8080}/actuator/mappings"
+```
+
+- `filter`: excludes paths from contract testing. Use for monitor, health, and
+  swagger paths that exist in the spec for infrastructure purposes.
+- `actuatorUrl`: enables Specmatic to discover implemented endpoints and report
+  coverage accurately (endpoints in spec but not implemented show as "Not
+  Implemented" in the coverage report).
+
 ## Contract Source Of Truth
 
 See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
@@ -206,9 +251,13 @@ third-party class.
 Resolve generically:
 
 1. Look up the latest released Specmatic version for the selected language
-   from its package registry (Maven Central for JVM, npm for Node.js, PyPI
-   for Python) before setting the dependency version. Do not rely on training
-   data — always check online for the current latest release.
+   from its package registry before setting the dependency version. Do not
+   rely on training data — always check online for the current latest release.
+   - **Open source (JVM)**: check Maven Central for `io.specmatic:junit5-support`
+   - **Enterprise**: check Docker Hub tags for `specmatic/enterprise` (Docker
+     Hub is updated before Maven Central for Enterprise releases)
+   - **Node.js**: check npm for `specmatic`
+   - **Python**: check PyPI for `specmatic`
 2. Pick a Specmatic test-library version that supports the generated
    `specmatic.yaml` schema version. Each language binding (JVM, Node.js,
    Python, etc.) publishes its own schema-version-to-library-version mapping

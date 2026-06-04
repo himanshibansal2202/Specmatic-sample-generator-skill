@@ -57,20 +57,13 @@ Ask each question separately. Wait for the user's answer before asking the next.
    - Wait for answer.
 5. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
    - Wait for answer.
-6. Then ask: "What data layer?" — but only if the application type is
-   **backend**. For BFF and Frontend, the data layer is implied by the
-   architecture (BFF calls a dependency service, Frontend calls the BFF).
-
-   For backends, the options describe where the service stores/retrieves data:
-   - `in-memory` — the service keeps its own state in memory (most common for samples)
-
-   Skip this question for BFF and Frontend — set the data layer automatically:
-   - BFF: the data source is always the backend dependency (resolved from contracts)
-   - Frontend: the data source is always the BFF API (resolved from contracts)
-
-   - Wait for answer (backend only).
-7. Then ask: "Where should I create the sample folder? Provide a local path."
+6. Then ask: "Where should I create the sample folder? Provide a local path."
    - Wait for answer.
+
+The data layer is always `in-memory` for all generated samples. Do not ask the
+user about data layer. Backend samples keep state in memory. BFF and Frontend
+samples have no local state — their dependencies are auto-discovered from the
+contract specs.
 
 Only proceed to Step 2 after ALL answers are collected.
 
@@ -178,10 +171,22 @@ contract caches that live inside other generated sample folders.
 Resolve these executable specs by sample type:
 
 - Backend: provider/system-under-test contract for the selected protocol.
-- BFF: system-under-test contract and any Backend dependency mock contract for
-  the selected protocol.
+- BFF: system-under-test contract AND all dependency contracts required by
+  the BFF architecture. Inspect the contract repository for ALL specs that
+  the BFF's system-under-test contract implies — this may include REST backend
+  dependencies AND async dependencies (e.g., Kafka/AsyncAPI). Discover
+  dependencies across ALL protocols, not just the primary selected protocol.
 - Frontend: dependency mock contract for the API, service, broker, or endpoint
   consumed by the generated client.
+
+For BFF samples, examine the contract repository's spec structure to discover
+every dependency. For example, the `specmatic-order-bff-java` reference has:
+- SUT: `product_search_bff_v6.yaml` (REST/OpenAPI)
+- Dependency 1: `api_order_v5.yaml` (REST backend mock)
+- Dependency 2: `kafka.yaml` (AsyncAPI/Kafka mock)
+
+All discovered dependencies must be included in the generated `specmatic.yaml`
+under `dependencies.services` with appropriate `runOptions` for each protocol.
 
 After resolving the applicable specs, inspect the applicable generation guide,
 `guides/protocol-generation.md`, the Specmatic runtime guidance, and the
