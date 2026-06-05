@@ -187,13 +187,19 @@ Generated samples include a `schemaResiliencyTests` setting under the
 top-level `specmatic:` key. This controls how many tests Specmatic generates
 beyond the named examples in the contract.
 
-**CRITICAL: The correct path is `specmatic.settings.test`, NOT
-`components.settings.test`.** Some Specmatic documentation pages show the
-setting under `components:` — this is WRONG and will be silently ignored.
-Always use the top-level `specmatic:` key as shown below:
+**CRITICAL: Do NOT look up specmatic.yaml configuration syntax from online
+documentation.** The online docs are inconsistent and will lead to silently
+broken config. Instead, use the structure from the reference repo
+`specmatic-order-bff-java` (`specmatic.yaml` at the repo root) as the
+authoritative template for `specmatic.yaml` generation.
+
+The correct path for settings is `specmatic.settings.test`, NOT
+`components.settings.test`. The correct path for governance is
+`specmatic.governance`, NOT under `components`. The `filter` and `actuatorUrl`
+go under `runOptions.<protocol>.filter` and `runOptions.<protocol>.actuatorUrl`.
 
 ```yaml
-# ✅ CORRECT — settings under top-level specmatic: key
+# ✅ CORRECT — from specmatic-order-bff-java reference
 specmatic:
   governance:
     successCriteria:
@@ -206,7 +212,7 @@ specmatic:
 ```
 
 ```yaml
-# ❌ WRONG — this is silently ignored
+# ❌ WRONG — silently ignored, DO NOT USE even if online docs show this
 components:
   settings:
     test:
