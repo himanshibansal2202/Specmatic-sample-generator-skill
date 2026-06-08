@@ -18,7 +18,6 @@ The generated sample is only "done" when `./mvnw test` (or equivalent) passes wi
 | Language | Java, TypeScript, JavaScript, Python, Go, C#, etc. |
 | Framework | Spring Boot, Express, React, Flask, Gin, ASP.NET Core, Apollo Server, etc. |
 | Integration Mode | `native`, `cli`, `docker-cli`, `test-container` |
-| Data Layer | in-memory, rest-api, grpc-service, kafka-broker |
 
 ## Repository Structure
 
@@ -60,8 +59,7 @@ Inputs:
 4. Language: java
 5. Framework: spring-boot
 6. Specmatic integration mode: native
-7. Data layer: in-memory
-8. Destination path: /tmp/my-sample
+7. Destination path: /tmp/my-sample
 
 Skip interactive questions and proceed through all workflow steps.
 Report test counts at each level.

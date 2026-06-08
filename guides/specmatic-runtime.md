@@ -257,22 +257,6 @@ See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
 This file only describes how to assemble Specmatic runtime wiring after the
 executable contract paths have been resolved.
 
-## Build Tool Selection for JVM Samples
-
-For JVM (Java/Kotlin) samples using Specmatic Enterprise, prefer **Gradle** over
-Maven. The Enterprise `executable` artifact declares `jackson-bom` as a
-compile-scope dependency without specifying `type=pom`, which causes Maven to
-fail resolving it as a JAR. Gradle handles BOM-type dependencies correctly
-without workarounds.
-
-If Maven must be used, apply these workarounds:
-- Exclude `jackson-bom` from the Enterprise `executable` dependency
-- Import `jackson-bom` separately in `<dependencyManagement>` with `<type>pom</type>` and `<scope>import</scope>`
-- Exclude `org.webjars.npm` and `org.webjars` groups (contain missing artifacts)
-
-The reference samples (`specmatic-order-bff-java`, `specmatic-order-api-java`)
-use Gradle. Follow the same pattern when generating JVM samples.
-
 ## Test-Library / Runtime-Framework Dependency Conflicts
 
 The Specmatic test library ships transitive dependencies at specific versions.
