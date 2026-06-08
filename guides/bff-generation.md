@@ -37,108 +37,13 @@ mock/stub started by Specmatic.
   error shape.
 - BFF samples have no seed data.
 
-## Smart Resiliency Orchestration (202 Accepted Pattern)
-
-If the BFF contract defines 202 (Accepted) responses for any operation,
-the BFF must implement the full async monitor pattern. This is tested through
-**external examples with delayed stubs** — not magic headers or automatic mock
-timeouts.
-
-### How it works:
-
-1. The BFF contract defines both 201 and 202 responses for an operation
-2. **External BFF test examples** tell Specmatic which requests should trigger
-   the 202 path (e.g., a request with a specific field value like `"name": "UniqueName"`)
-3. **External domain service stub examples** tell the backend mock to **delay**
-   its response for those same requests (using `"delay-in-seconds": N` and
-   `"transient": true`)
-4. The BFF has a RestTemplate/HTTP client timeout shorter than the mock's delay
-5. When the test runs: BFF calls backend → mock delays → BFF times out →
-   BFF creates a monitor → returns 202 with `Link: </monitor/{id}>` header
-6. Specmatic polls `GET /monitor/{id}` to check completion
-7. The transient stub is consumed after first use → BFF's retry gets instant
-   response → monitor completes → Specmatic's poll gets the final result
-
-### Required components when 202 is in the BFF contract:
-
-- **External BFF examples** (in a directory like `src/test/resources/bff/`):
-  Define which requests expect 202. Format is a partial example JSON with
-  `"http-response": {"status": 202}`.
-- **External domain service stub examples** (in `src/test/resources/domain_service/`):
-  Define delayed stubs with `"transient": true` and `"delay-in-seconds": N`
-  that match the same request patterns.
-- **`specmatic.yaml` data.examples** section pointing to these directories.
-- **Monitor Controller**: implements `GET /monitor/{id}`.
-- **Monitor Service**: manages monitor lifecycle — stores pending requests,
-  retries them, stores completed responses.
-- **Timeout handling in service layer**: catch timeout exceptions from backend
-  calls → create a monitor → return 202.
-- **Background scheduler or immediate retry**: execute the backend call again
-  (the delayed stub is transient, so the retry gets an instant response).
-- **Monitor response model**: must match the schema defined in the BFF contract
-  (includes `request`, `response` with `statusCode`, `body`, `headers`).
-
-### The specmatic.yaml examples configuration:
-
-```yaml
-systemUnderTest:
-  service:
-    data:
-      examples:
-        - directories:
-            - ./src/test/resources/bff
-dependencies:
-  services:
-    - service:
-        data:
-          examples:
-            - directories:
-                - ./src/test/resources/domain_service
-```
-
-### 429 (Too Many Requests) pattern:
-
-For GET endpoints that define a 429 response:
-- An external BFF example triggers the 429 test path
-- A domain service stub with delay simulates backend slowness
-- BFF times out → returns 429 with `Retry-After` header
-
-### Response processor hooks:
-
-If the BFF contract requires dynamic response values (e.g., a `createdOn` date
-derived from request query parameters), use a Specmatic response processor hook:
-
-```yaml
-dependencies:
-  data:
-    adapters:
-      post_specmatic_response_processor: ./hooks/post_specmatic_response_processor.sh
-```
-
-The hook is a shell script that receives the mock response JSON on stdin and
-outputs modified JSON. Use this for computed fields that can't be static
-examples.
-
-### Key points:
-
-- The BFF **implements** `/monitor/{id}` — it is NOT filtered from tests
-- SRO is driven by **external examples and delayed transient stubs**, not by
-  a `Specmatic-Response-Code` header or automatic mock timeouts
-- The client timeout must be shorter than the stub delay for the timeout to
-  trigger
-- Transient stubs (`"transient": true`) are consumed after first use, so
-  retries succeed immediately
-- Reference implementation: `specmatic-order-bff-java`
-
 ## Path Filtering
 
-Only filter paths that the BFF genuinely does not implement. Do NOT filter
-`/monitor/{id}` if the BFF contract defines 202 responses — the BFF must
-implement and serve that endpoint.
-
-Paths to filter:
-- `/health` — if present in spec but handled by framework actuator
-- `/swagger` — if present in spec but served by a library
+Filter paths that the BFF does not implement or that are handled by framework
+infrastructure:
+- `/health` — handled by framework actuator
+- `/monitor/{id}` — async monitor endpoint (filtered from contract tests)
+- `/swagger` — served by a documentation library
 
 ## Endpoint Mapping
 - Implement BFF endpoints from the BFF system-under-test contract, then map

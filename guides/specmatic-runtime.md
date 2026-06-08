@@ -96,38 +96,6 @@ dependencies:
 If a verified runtime requires a different official configuration shape, use
 that runtime's documented shape, but preserve the single-config rule.
 
-## External Examples and Data Directories
-
-BFF and other consumer samples that need Smart Resiliency Orchestration (202/429
-patterns) must include external example JSON files. These drive Specmatic's test
-generation and mock behavior.
-
-Configure example directories in `specmatic.yaml` under the `data` key:
-
-- **SUT examples**: tell Specmatic which request/response combinations to test.
-  Located under `systemUnderTest.service.data.examples`.
-- **Dependency stub examples**: tell the mock how to behave for specific
-  requests (including delayed responses with `"delay-in-seconds"` and
-  `"transient": true`). Located under each dependency service's `data.examples`.
-- **Response processor hooks**: shell scripts that transform mock responses
-  dynamically. Located under `dependencies.data.adapters`.
-
-Example directory structure:
-```
-src/test/resources/
-├── bff/                          # SUT examples (test expectations)
-│   ├── test_accepted_product_request.json   # expect 202 for specific request
-│   └── test_products_too_many_requests.json # expect 429 for specific request
-└── domain_service/               # Dependency stub examples (mock behavior)
-    ├── stub_product_201.json     # normal response
-    ├── stub_timeout_post_product.json  # delayed response (triggers BFF timeout)
-    └── stub_products_200.json    # normal list response
-```
-
-Transient delayed stubs (`"transient": true, "delay-in-seconds": N`) are
-consumed after first use. This enables the retry pattern: first call times out,
-retry gets an instant response.
-
 ## Runtime Value Templates
 
 Use stable default ports from the root workflow, but make every runtime endpoint
