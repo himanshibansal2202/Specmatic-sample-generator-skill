@@ -21,8 +21,11 @@ mock/stub started by Specmatic.
 
 - Use `guides/specmatic-runtime.md` for Specmatic runtime assembly and contract test adapter behavior.
 - Configure the BFF contract as the system under test.
-- Configure the Backend contract as a Specmatic mock/stub dependency.
-- Start the Backend mock before running BFF contract tests and always stop it afterward.
+- Configure every discovered dependency contract as a Specmatic mock/stub
+  dependency. BFF dependencies may include REST backend mocks and broker/message
+  mocks such as AsyncAPI/Kafka.
+- Start all dependency mocks before running BFF contract tests and always stop
+  them afterward.
 - Keep mock host, mock port, BFF host, BFF port, Backend base URL, service
   endpoint, broker URL, and protocol-specific settings configurable for tests.
 
@@ -39,20 +42,32 @@ mock/stub started by Specmatic.
 
 ## Path Filtering
 
-Filter paths that the BFF does not implement or that are handled by framework
-infrastructure:
+Filter only paths that the BFF does not implement and that are not declared in
+the executable BFF contract, such as framework or documentation endpoints:
 - `/health` — handled by framework actuator
-- `/monitor/{id}` — async monitor endpoint (filtered from contract tests)
 - `/swagger` — served by a documentation library
+
+Do not filter contract-declared BFF paths. If the executable BFF contract
+contains a monitor or polling endpoint such as `/monitor/{id}`, implement it and
+verify it with Specmatic. Add `filter` config only after verifying the exact
+runtime-supported object syntax for the selected Specmatic version.
 
 ## Endpoint Mapping
 - Implement BFF endpoints from the BFF system-under-test contract, then map
   those calls to Backend dependency endpoints from the Backend mock contract.
-- Before coding the BFF adapter, build a comparison table from the two
-  executable contracts that records each BFF operation, its dependency
-  operation, and any required path/topic/method/action, status/error, request
-  body/message, response body/message, query/header/metadata, or security
-  transformation.
+- Before coding the BFF adapter, build a comparison table across all executable
+  dependency contracts that records each BFF workflow, its dependency
+  operation/message, and any required path/topic/method/action, status/error,
+  request body/message, response body/message, query/header/metadata, or
+  security transformation.
+- Do not infer dependencies only from direct references inside the SUT OpenAPI
+  file. Use the contract repository's role structure and BFF mapping across
+  protocols. If an AsyncAPI/Kafka dependency is named by that mapping or by an
+  equivalent reference example for the selected contract family, include it in
+  `specmatic.yaml` even when the OpenAPI contract does not reference it
+  directly. Treat reference examples as discovery guidance, not hardcoded
+  mappings for unrelated samples. If multiple async candidates remain
+  plausible, stop and report the ambiguity instead of skipping them.
 - Satisfy Backend dependency security schemes in outbound calls even when the
   BFF contract does not declare the same incoming credential. Use a sample
   credential value only to satisfy the mock contract shape.
