@@ -97,9 +97,9 @@ The `.specmatic-sample-manifest.json` must include:
 6. Upload test report artifact
 7. (On main branch) Build and push Docker image
 
-For non-REST protocols, or any protocol marked `requires_enterprise: true`, CI
-must install or run the documented Enterprise Docker image/artifact and README
-must state the required license/setup variables. Do not rely on accidental
+All generated samples must use Specmatic Enterprise (`specmatic/enterprise`
+Docker image, `io.specmatic.enterprise` Maven artifacts). CI must document the
+required `SPECMATIC_LICENSE_KEY` environment variable in the generated README. Do not rely on accidental
 local license files, preinstalled CLIs, private caches, or checked-out contract
 repo state.
 

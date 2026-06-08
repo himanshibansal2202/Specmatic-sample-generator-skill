@@ -36,34 +36,47 @@ Wait for the user's answer before proceeding to the corresponding workflow.
 
 ### Step 1: Collect Inputs (ONE AT A TIME)
 
-Ask open-ended stack questions with a few example values in parentheses so the
-user understands the expected shape of the answer. Examples are guidance, not an
-exhaustive supported list. As answers are collected, use normal framework and
-application architecture knowledge to avoid offering obviously incoherent later
-choices. If uncertain, keep the option available and let validation plus
-verification decide.
+The generation flow is **spec-driven**: the user provides the API spec first,
+and the skill derives as much as possible from it before asking remaining
+questions.
 
-Ask each question separately. Wait for the user's answer before asking the next. Do NOT ask all questions at once.
+Ask each question separately. Wait for the user's answer before asking the next.
 
-1. First ask: "What application type? (for example: backend, bff, frontend)"
+1. First ask: "What is your contract repo and spec path? (for example:
+   https://github.com/specmatic/specmatic-order-contracts.git with spec
+   io/specmatic/examples/store/openapi/product_search_bff_v6.yaml)"
+   - Wait for answer. Accept either:
+     - A git repo URL + spec path within it
+     - A local file path to a spec
+     - Just a contract repo URL (then ask which spec within it)
+
+2. Then ask: "What application type? (for example: backend, bff, frontend)"
    - Wait for answer.
-2. Then ask: "What protocol? (for example: rest/openapi, kafka/asyncapi, grpc, graphql, soap/wsdl)"
-   - Wait for answer.
+
 3. Then ask: "What language? (for example: javascript, typescript, java, python)"
    - Wait for answer.
+
 4. Then ask: "What framework? (for example: express, spring-boot, flask)" —
    examples may be adjusted for the selected application type, protocol, or
    language.
    - Wait for answer.
+
 5. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
    - Wait for answer.
+
 6. Then ask: "Where should I create the sample folder? Provide a local path."
    - Wait for answer.
 
-The data layer is always `in-memory` for all generated samples. Do not ask the
-user about data layer. Backend samples keep state in memory. BFF and Frontend
-samples have no local state — their dependencies are auto-discovered from the
-contract specs.
+The **protocol** is inferred from the spec format (OpenAPI → REST, AsyncAPI →
+Kafka, .proto → gRPC, .graphql → GraphQL, .wsdl → SOAP). Do not ask the user
+for the protocol — derive it from the spec they provided.
+
+The **data layer** is always `in-memory` for all generated samples. Do not ask.
+Backend samples keep state in memory. BFF and Frontend samples have no local
+state — their dependencies are auto-discovered from the contract specs.
+
+The **contract version** is inferred from the spec filename or content. Do not
+ask unless it cannot be determined.
 
 Only proceed to Step 2 after ALL answers are collected.
 

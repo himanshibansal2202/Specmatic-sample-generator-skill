@@ -37,32 +37,13 @@ mock/stub started by Specmatic.
   error shape.
 - BFF samples have no seed data.
 
-## Smart Resiliency Handling (429 and 202)
-
-If the BFF's dependency contract defines 429 (Too Many Requests) responses:
-- Implement retry logic in the BFF's outbound client calls.
-- Respect `Retry-After` header if present; otherwise use exponential backoff.
-- Specmatic Enterprise's mock will return 429 during contract tests to verify
-  this behavior.
-
-If the BFF's dependency contract defines 202 (Accepted) responses with a
-`Link` header pointing to a monitor endpoint:
-- The BFF should poll the monitor URL until the operation completes.
-- The `/monitor/{id}` path is an infrastructure endpoint for async polling —
-  the BFF does not implement it as its own endpoint.
-
 ## Path Filtering
 
-If the BFF contract includes paths that the BFF does not implement (e.g.,
-`/monitor/{id}` used for Specmatic's 202 Accepted polling), filter them from
-contract tests using the Specmatic filter configuration:
-
-```yaml
-# In specmatic.yaml or test configuration
-filter: "PATH!='/monitor/*'"
-```
-
-This prevents Specmatic from generating tests for paths the BFF doesn't serve.
+Filter paths that the BFF does not implement or that are handled by framework
+infrastructure:
+- `/health` — handled by framework actuator
+- `/monitor/{id}` — async monitor endpoint (filtered from contract tests)
+- `/swagger` — served by a documentation library
 
 ## Endpoint Mapping
 - Implement BFF endpoints from the BFF system-under-test contract, then map

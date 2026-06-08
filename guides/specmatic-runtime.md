@@ -151,15 +151,40 @@ command.
 
 ## Schema Resiliency Tests Configuration
 
-Generated samples include a `schemaResiliencyTests` setting under
-`specmatic.settings.test`. This controls how many tests Specmatic generates
+Generated samples include a `schemaResiliencyTests` setting under the
+top-level `specmatic:` key. This controls how many tests Specmatic generates
 beyond the named examples in the contract.
 
+**CRITICAL: Do NOT look up specmatic.yaml configuration syntax from online
+documentation.** The online docs are inconsistent and will lead to silently
+broken config. Instead, use the structure from the reference repo
+`specmatic-order-bff-java` (`specmatic.yaml` at the repo root) as the
+authoritative template for `specmatic.yaml` generation.
+
+The correct path for settings is `specmatic.settings.test`, NOT
+`components.settings.test`. The correct path for governance is
+`specmatic.governance`, NOT under `components`. The `filter` and `actuatorUrl`
+go under `runOptions.<protocol>.filter` and `runOptions.<protocol>.actuatorUrl`.
+
 ```yaml
+# ✅ CORRECT — from specmatic-order-bff-java reference
 specmatic:
+  governance:
+    successCriteria:
+      minCoveragePercentage: 70
+      maxMissedOperationsInSpec: 1
+      enforce: true
   settings:
     test:
-      schemaResiliencyTests: none  # or: positiveOnly, all
+      schemaResiliencyTests: all
+```
+
+```yaml
+# ❌ WRONG — silently ignored, DO NOT USE even if online docs show this
+components:
+  settings:
+    test:
+      schemaResiliencyTests: all
 ```
 
 | Value | Behavior |
@@ -190,12 +215,14 @@ misconfiguration — stop and investigate rather than proceeding.
 ## Governance and Coverage Threshold
 
 Generated samples must include governance configuration in `specmatic.yaml`
-that enforces API coverage. Configure:
+that reports API coverage. Configure:
 
-- **Coverage threshold**: set to 100% so the build fails if any operation in
-  the spec is missed.
-- **Max missed operations**: set to 0.
-- **Enforce**: enabled — makes coverage failures break the build.
+- **Coverage threshold**: align with Specmatic's reference samples. The
+  reference BFF uses 70%, the reference backend uses 65%. Use these as
+  baselines — do not set to 100% since WIP tags and filtered paths reduce
+  achievable coverage.
+- **Max missed operations**: 1 for BFF, up to 4 for backend (mirrors reference repos).
+- **Enforce**: true — makes coverage failures break the build when below threshold.
 - **Report formats**: include HTML for readable reports.
 
 For the exact syntax, consult the Specmatic configuration docs at
@@ -203,6 +230,10 @@ https://docs.specmatic.io/references/configuration/reports or reference the
 `specmatic.yaml` in `specmatic-order-bff-java` for a working example. The
 config format may evolve between Specmatic versions — always use the syntax
 supported by the resolved Specmatic version.
+
+**Never lower the coverage threshold to make tests pass.** If coverage is below
+the threshold, the correct fix is to implement the missing operations or fix
+the actuator/endpoint-discovery configuration — not to weaken the gate.
 
 ## Path Filtering and Actuator
 
@@ -226,6 +257,22 @@ See `SKILL.md` Step 3 for contract source resolution and source-of-truth rules.
 This file only describes how to assemble Specmatic runtime wiring after the
 executable contract paths have been resolved.
 
+## Build Tool Selection for JVM Samples
+
+For JVM (Java/Kotlin) samples using Specmatic Enterprise, prefer **Gradle** over
+Maven. The Enterprise `executable` artifact declares `jackson-bom` as a
+compile-scope dependency without specifying `type=pom`, which causes Maven to
+fail resolving it as a JAR. Gradle handles BOM-type dependencies correctly
+without workarounds.
+
+If Maven must be used, apply these workarounds:
+- Exclude `jackson-bom` from the Enterprise `executable` dependency
+- Import `jackson-bom` separately in `<dependencyManagement>` with `<type>pom</type>` and `<scope>import</scope>`
+- Exclude `org.webjars.npm` and `org.webjars` groups (contain missing artifacts)
+
+The reference samples (`specmatic-order-bff-java`, `specmatic-order-api-java`)
+use Gradle. Follow the same pattern when generating JVM samples.
+
 ## Test-Library / Runtime-Framework Dependency Conflicts
 
 The Specmatic test library ships transitive dependencies at specific versions.
@@ -238,14 +285,20 @@ third-party class.
 
 Resolve generically:
 
-1. Look up the latest released Specmatic version for the selected language
-   from its package registry before setting the dependency version. Do not
-   rely on training data — always check online for the current latest release.
-   - **Open source (JVM)**: check Maven Central for `io.specmatic:junit5-support`
-   - **Enterprise**: check Docker Hub tags for `specmatic/enterprise` (Docker
-     Hub is updated before Maven Central for Enterprise releases)
+1. Look up the latest released Specmatic Enterprise version before setting the
+   dependency version. Do not rely on training data — always check online.
+   - **JVM**: check Docker Hub tags for `specmatic/enterprise` for the latest
+     version, then use the corresponding Maven artifact
+     `io.specmatic.enterprise:specmatic-enterprise`
    - **Node.js**: check npm for `specmatic`
    - **Python**: check PyPI for `specmatic`
+   - **Docker image**: `specmatic/enterprise` (always use Enterprise, not the
+     open-source `specmatic/specmatic` image)
+
+   Always use Specmatic Enterprise for ALL generated samples regardless of
+   protocol. Enterprise includes schema resiliency tests, Smart Resiliency
+   Orchestration (429/202), full API coverage reporting, and all protocol
+   support. Open-source Specmatic should not be used in generated samples.
 2. Pick a Specmatic test-library version that supports the generated
    `specmatic.yaml` schema version. Each language binding (JVM, Node.js,
    Python, etc.) publishes its own schema-version-to-library-version mapping
@@ -312,9 +365,7 @@ than as a language dependency or a Testcontainers-managed container.
 
 - Start the generated app and any dependency mocks/stubs needed by the sample.
 - Run Specmatic with `docker run` from the generated test command or test
-  adapter. Use the official `specmatic/specmatic` image for
-  community-supported protocols and `specmatic/enterprise` when the selected
-  protocol requires Enterprise.
+  adapter. Use the official `specmatic/enterprise` image for all protocols.
 - Mount the root `specmatic.yaml`, any local contract/example files, and the
   report output directory into the container. Mount the config read-only when
   the selected tooling supports it. If contracts are fetched from git, pass the
@@ -337,9 +388,7 @@ test suite.
 - Add the selected language's standard Testcontainers dependency and generate a
   test adapter that starts the generated app, then starts the Specmatic
   container.
-- Use the official `specmatic/specmatic` image for community-supported
-  protocols and `specmatic/enterprise` when the selected protocol requires
-  Enterprise.
+- Use the official `specmatic/enterprise` image for all protocols.
 - Mount the root `specmatic.yaml`, any local contract/example files, and the
   report output directory into the container. Mount the config read-only when
   the selected tooling supports it. If contracts are fetched from git, pass
