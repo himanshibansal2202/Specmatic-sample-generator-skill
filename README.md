@@ -64,6 +64,39 @@ Skip interactive questions and proceed through all workflow steps.
 Report test counts at each level.
 ```
 
+## Skill Architecture
+
+The skill is structured so that the AI loads only what it needs for a given generation. `SKILL.md` is the entry point — it defines the workflow and tells the AI which guide files to read based on the user's inputs.
+
+### File Purposes
+
+| File | Purpose | When the AI reads it |
+|------|---------|---------------------|
+| `SKILL.md` | Defines the generate/maintain workflow, input collection, and step sequencing | Always (first file read) |
+| `guides/specmatic-runtime.md` | How to assemble `specmatic.yaml`, configure test/mock modes, schema resiliency settings, coverage governance | Every generation — this is the Specmatic config bible |
+| `guides/acceptance-criteria.md` | Definition of "done" — what must be true before the sample is considered complete (tests pass, CI works, manifest written) | Every generation — checked at the end |
+| `guides/backend-generation.md` | Backend-specific patterns: in-memory data store, seed data, how to handle CRUD endpoints | When app type = backend |
+| `guides/bff-generation.md` | BFF-specific patterns: forwarding to backend mock, path filtering, dependency mapping | When app type = bff |
+| `guides/frontend-generation.md` | Frontend-specific patterns: stub mode, UI test setup | When app type = frontend |
+| `guides/protocol-generation.md` | Protocol-specific notes: Kafka broker config, gRPC proto handling, WSDL specifics | When protocol ≠ REST |
+| `guides/readme-generation.md` | Template for the generated sample's README (architecture diagrams, run instructions, OS variants) | At the end of generation |
+| `config/contract-resolution.yaml` | Maps contract repos to spec file paths, defines discovery patterns for dependencies | During dependency resolution |
+| `test-data/backend-seed-data.md` | Exact seed data (product/order IDs and fields) that backend samples must pre-load so contract test assertions pass | When app type = backend |
+| `assets/*.gif` | Architecture diagrams embedded in generated READMEs | During README generation |
+| `agents/openai.yaml` | OpenAI/Codex agent configuration | By Codex runtime |
+
+### Design Patterns
+
+**Separation of concerns**: `SKILL.md` handles workflow orchestration. Guides handle domain knowledge. This means you can fix a BFF-specific issue without touching the core workflow.
+
+**Spec-driven**: The user provides a contract spec file path. The skill infers protocol, dependencies, and required behaviors from the spec itself — no manual enumeration of endpoints.
+
+**Progressive verification**: Samples are tested at three resiliency levels (none → positiveOnly → all). This catches silent misconfigurations — if test count doesn't increase between levels, something is wrong.
+
+**Learnings accumulate**: Each failed generation run produces insights that get added to the relevant guide. The skill gets smarter over time without changing its workflow.
+
+**Contract as source of truth**: The guides provide patterns and heuristics, but when there's a conflict, the executable contract wins. The AI reads the actual spec to determine exact schemas, status codes, and behaviors.
+
 ## Repository Structure
 
 ```
