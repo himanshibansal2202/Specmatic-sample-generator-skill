@@ -44,7 +44,7 @@ git clone https://github.com/himanshibansal2202/Specmatic-sample-generator-skill
 | Tool | Model |
 |------|-------|
 | Claude Code | claude-opus-4-7 |
-| Codex | codex-1 |
+| Codex | gpt-5.5-medium |
 
 ### Example Prompt
 
