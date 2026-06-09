@@ -64,13 +64,10 @@ Skip interactive questions and proceed through all workflow steps.
 Report test counts at each level.
 ```
 
-See [USAGE.md](USAGE.md) for more invocation patterns.
-
 ## Repository Structure
 
 ```
 ├── SKILL.md                    # Core workflow (the AI reads this first)
-├── USAGE.md                    # Invocation patterns for different AI tools
 ├── config/
 │   └── contract-resolution.yaml  # Contract repo URLs, spec paths, discovery patterns
 ├── guides/
