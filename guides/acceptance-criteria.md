@@ -25,6 +25,15 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] Generated Dockerfiles build from source and do not depend on local build
   outputs that are excluded by `.dockerignore`, such as `target/`, `dist/`, or
   `build/`
+- [ ] `README.md` complies with `guides/readme-generation.md`: required
+  sections are present and in order, contract links point to the resolved
+  executable specs, role-appropriate architecture assets are included when
+  available, run commands cover Unix/macOS, Windows PowerShell, and Windows
+  Command Prompt, test modes are documented, and project structure matches the
+  generated files
+- [ ] README-required assets, such as architecture GIFs copied from `assets/`,
+  are included inside the sample folder and listed in
+  `.specmatic-sample-manifest.json`
 - [ ] Local verification artifacts are ignored and are not left as source files in the generated sample folder
 
 ## Required Files

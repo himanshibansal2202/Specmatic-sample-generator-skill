@@ -282,6 +282,21 @@ folder.
 
 For every sample, generate the complete file set listed in `guides/acceptance-criteria.md`.
 
+Before writing any generated project file, load and apply all generation guides
+that control the files you will emit:
+
+- selected role guide (`guides/backend-generation.md`,
+  `guides/bff-generation.md`, or `guides/frontend-generation.md`)
+- `guides/protocol-generation.md`
+- `guides/specmatic-runtime.md`
+- `guides/readme-generation.md`
+- `guides/acceptance-criteria.md`
+
+Treat this as a pre-write gate. Do not generate source code, tests, CI,
+Dockerfiles, manifests, or README content until these guides have been read for
+the current sample. The README is not a generic setup file — it must be
+generated from `guides/readme-generation.md`.
+
 Use `guides/specmatic-runtime.md` for Specmatic runtime structure and adapter
 behavior for the selected integration mode, then fill generated files with
 resolved contract paths, spec format, run option key, and role-specific
@@ -469,6 +484,17 @@ After verification completes, update `.specmatic-sample-manifest.json` with:
   conflicts, contract gaps, framework quirks, workarounds applied. Use an
   empty array if generation was clean.
 
+Before reporting completion, run a final guide-compliance pass:
+
+1. Compare `README.md` against `guides/readme-generation.md` and verify all
+   required sections are present, in order, and populated with the resolved
+   contract links, run commands, architecture asset, test modes, and project
+   structure.
+2. Verify any README-required assets copied into the sample are listed in
+   `.specmatic-sample-manifest.json`.
+3. Compare the generated file set and final state against
+   `guides/acceptance-criteria.md`.
+
 Only report "done" when tests are green.
 
 ## Key Rules
@@ -605,6 +631,9 @@ Regenerate from current best practices (only the approved items):
 - `README.md` — update per `guides/readme-generation.md`: add missing required
   sections (e.g., "Why Specmatic", "How It Works"), refresh versions/commands/links
   to match current state, preserve any user-added sections
+
+If `README.md` is updated, load `guides/readme-generation.md` before editing
+and validate the final README against that guide before reporting completion.
 
 #### 4d: Run Tests
 
