@@ -198,6 +198,23 @@ every dependency. For example, the `specmatic-order-bff-java` reference has:
 - Dependency 1: `api_order_v5.yaml` (REST backend mock)
 - Dependency 2: `kafka.yaml` (AsyncAPI/Kafka mock)
 
+Do not rely only on direct `$ref` entries, `servers`, operation descriptions,
+file names, or textual references inside the BFF system-under-test OpenAPI file
+to discover dependencies. BFF dependency discovery must combine the selected
+SUT contract, the contract repository's role structure, and this skill's role
+mapping across all protocols. As a reference example, the Store BFF contract
+`io/specmatic/examples/store/openapi/product_search_bff_v6.yaml` maps to both a
+REST backend mock (`io/specmatic/examples/store/openapi/api_order_v5.yaml`) and
+an AsyncAPI/Kafka mock (`io/specmatic/examples/store/asyncapi/kafka.yaml`).
+Use this as an example of cross-protocol discovery, not as a hardcoded mapping
+for unrelated samples.
+
+If async specs are present in the same contract domain and the BFF role mapping
+or reference structure names one as a dependency, include it even when the SUT
+OpenAPI file does not reference it directly. If multiple async dependency
+candidates are plausible and the role mapping does not resolve them, stop with
+an explicit ambiguity report instead of silently skipping async dependencies.
+
 All discovered dependencies must be included in the generated `specmatic.yaml`
 under `dependencies.services` with appropriate `runOptions` for each protocol.
 

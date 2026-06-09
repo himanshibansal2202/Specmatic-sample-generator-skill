@@ -231,15 +231,28 @@ https://docs.specmatic.io/references/configuration/reports or reference the
 config format may evolve between Specmatic versions — always use the syntax
 supported by the resolved Specmatic version.
 
-**Never lower the coverage threshold to make tests pass.** If coverage is below
-the threshold, the correct fix is to implement the missing operations or fix
-the actuator/endpoint-discovery configuration — not to weaken the gate.
+**Never lower the checked-in coverage threshold to make tests pass.** Treat
+governance thresholds as final-state gates, not temporary convergence values.
+If coverage is below the threshold during early example-only debugging, fix the
+missing operations, negative/error responses, resiliency behavior, or
+actuator/endpoint-discovery configuration. When progressive verification reaches
+the final shipped `schemaResiliencyTests` level, keep or restore the threshold
+to the appropriate baseline (70% for BFF samples) or higher if the verified
+coverage supports it. Do not leave a weakened threshold in the delivered
+`specmatic.yaml`.
 
 ## Path Filtering and Actuator
 
-For BFF and Backend samples, configure path filters to exclude infrastructure
-paths that the service does not implement as business endpoints (e.g.,
-`/health`, `/monitor/{id}`, `/swagger`).
+For BFF and Backend samples, configure path filters only for framework or
+infrastructure endpoints that are not contract-owned business behavior (e.g.,
+`/health`, `/swagger`).
+
+Do not filter endpoints that are declared in the executable contract. If a
+monitoring or polling endpoint such as `/monitor/{id}` appears in the
+system-under-test contract, implement and verify it instead of excluding it.
+Only emit a `filter` block after verifying the exact object shape supported by
+the selected Specmatic runtime and configuration schema. Runtime versions may
+reject or reinterpret stale filter syntax.
 
 Also configure the actuator/endpoint-discovery URL when the framework supports
 it (e.g., Spring Boot's `/actuator/mappings`). This enables Specmatic to report
