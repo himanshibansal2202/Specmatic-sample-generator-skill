@@ -83,7 +83,6 @@ The skill is structured so that the AI loads only what it needs for a given gene
 | `config/contract-resolution.yaml` | Maps contract repos to spec file paths, defines discovery patterns for dependencies | During dependency resolution |
 | `test-data/backend-seed-data.md` | Exact seed data (product/order IDs and fields) that backend samples must pre-load so contract test assertions pass | When app type = backend |
 | `assets/*.gif` | Architecture diagrams embedded in generated READMEs | During README generation |
-| `agents/openai.yaml` | OpenAI/Codex agent configuration | By Codex runtime |
 
 ### Design Patterns
 
@@ -117,8 +116,6 @@ The skill is structured so that the AI loads only what it needs for a given gene
 │   ├── specmatic-order-backend-architecture.gif
 │   ├── specmatic-order-bff-architecture.gif
 │   └── specmatic-order-frontend-architecture.gif
-└── agents/
-    └── openai.yaml               # OpenAI agent configuration
 ```
 
 ## Key Design Decisions
