@@ -1,13 +1,13 @@
 # Specmatic Sample Generator Skill
 
-An AI skill that generates and maintains working Specmatic contract testing sample projects. Give it a tech stack, and it produces a complete, tested, ready-to-run sample — verified against real Specmatic contract tests.
+An AI skill for Claude Code and Codex that generates and maintains working Specmatic contract testing sample projects. Give it a tech stack, and it produces a complete, tested, ready-to-run sample — verified against real Specmatic contract tests.
 
 ## What It Does
 
 - **Generate mode**: Creates a new sample project from scratch for any supported stack combination
 - **Maintain mode**: Updates existing samples — bumps versions, refreshes config, fixes contract drift
 
-The generated sample is only "done" when `./mvnw test` (or equivalent) passes with zero Specmatic failures.
+The generated sample is only "done" when tests pass with zero Specmatic failures.
 
 ## Supported Stacks
 
@@ -19,11 +19,51 @@ The generated sample is only "done" when `./mvnw test` (or equivalent) passes wi
 | Framework | Spring Boot, Express, React, Flask, Gin, ASP.NET Core, Apollo Server, etc. |
 | Integration Mode | `native`, `cli`, `docker-cli`, `test-container` |
 
+## How to Use
+
+### Codex
+
+Install as a Codex skill:
+
+```bash
+mkdir -p ~/.codex/skills
+git clone https://github.com/himanshibansal2202/Specmatic-sample-generator-skill.git ~/.codex/skills/generate-specmatic-sample
+```
+
+### Claude Code
+
+Install as a personal skill:
+
+```bash
+mkdir -p ~/.claude/skills
+git clone https://github.com/himanshibansal2202/Specmatic-sample-generator-skill.git ~/.claude/skills/generate-specmatic-sample
+```
+
+### Example Prompt
+
+```
+Read the SKILL.md file and all referenced files. Then follow the generate workflow.
+
+Inputs:
+1. Contract repo: https://github.com/specmatic/specmatic-order-contracts.git
+   Spec: io/specmatic/examples/store/openapi/api_order_v5.yaml
+2. Application type: backend
+3. Language: java
+4. Framework: spring-boot
+5. Specmatic integration mode: native
+6. Destination path: /tmp/my-sample
+
+Skip interactive questions and proceed through all workflow steps.
+Report test counts at each level.
+```
+
+See [USAGE.md](USAGE.md) for more invocation patterns.
+
 ## Repository Structure
 
 ```
-├── SKILL.md                    # Core workflow (the AI reads this)
-├── USAGE.md                    # How to invoke the skill in different AI tools
+├── SKILL.md                    # Core workflow (the AI reads this first)
+├── USAGE.md                    # Invocation patterns for different AI tools
 ├── config/
 │   └── contract-resolution.yaml  # Contract repo URLs, spec paths, discovery patterns
 ├── guides/
@@ -44,36 +84,11 @@ The generated sample is only "done" when `./mvnw test` (or equivalent) passes wi
     └── openai.yaml               # OpenAI agent configuration
 ```
 
-## How to Use
-
-### Kiro CLI
-
-```
-Read the SKILL.md file at /path/to/Specmatic-sample-generator-skill/SKILL.md
-and all referenced files. Then follow the generate workflow.
-
-Inputs:
-1. Application type: backend
-2. Protocol: rest
-3. Contract version: v3
-4. Language: java
-5. Framework: spring-boot
-6. Specmatic integration mode: native
-7. Destination path: /tmp/my-sample
-
-Skip interactive questions and proceed through all workflow steps.
-Report test counts at each level.
-```
-
-### Claude Code / Codex
-
-See [USAGE.md](USAGE.md) for installation as a personal skill.
-
 ## Key Design Decisions
 
 ### Progressive Test Verification
 
-Generated samples are verified in three levels before delivery:
+Generated samples are verified in three levels:
 
 | Level | Setting | What it tests |
 |-------|---------|---------------|
@@ -81,51 +96,55 @@ Generated samples are verified in three levels before delivery:
 | 2 | `positiveOnly` | All valid input combinations — enum permutations, optional fields |
 | 3 | `all` | Negative/boundary tests — nulls, wrong types, missing fields (expects 400) |
 
-If Level 3 passes fully → ship with `all`. If unresolvable contract gaps remain → ship with `none`.
-
 Test count must strictly increase between levels. A flat count means the config is silently ignored.
 
 ### Contract Source of Truth
 
-The executable contract (fetched from [specmatic-order-contracts](https://github.com/specmatic/specmatic-order-contracts)) always wins. If local guides contradict the contract, implement the contract.
+The executable contract (from [specmatic-order-contracts](https://github.com/specmatic/specmatic-order-contracts)) always wins. If local guides contradict the contract, implement the contract.
 
 ### Stub vs Test Mode
 
-- **Backend/BFF**: Specmatic runs in `test` mode — it generates requests and validates responses. Progressive verification applies.
-- **Frontend**: Specmatic runs in `stub` mode — it responds to the app's requests. Progressive verification is skipped (test count is determined by the app's own test suite).
+- **Backend/BFF**: Specmatic runs in `test` mode — generates requests and validates responses. Progressive verification applies.
+- **Frontend**: Specmatic runs in `stub` mode — responds to the app's requests. Progressive verification is skipped.
 
-### Maintain Mode: Plan Before Acting
+## Maintaining This Skill
 
-Maintain mode shows what will be updated and waits for confirmation before changing anything. Users can selectively skip framework upgrades while still bumping Specmatic.
+### How it works
 
-## Known Patterns (from real generation runs)
+The AI reads `SKILL.md` first, which references other files via relative paths. The AI follows those references to load guides, config, and test data as needed. The skill is self-contained — no external dependencies beyond the contract repo.
+
+### Adding learnings
+
+When a generation run reveals a new pattern or pitfall:
+1. Add it to the relevant guide file (not SKILL.md unless it's a workflow change)
+2. Be specific and actionable — describe the symptom, root cause, and fix
+3. If it's a specmatic.yaml config issue, add it to `guides/specmatic-runtime.md`
+4. If it's role-specific (backend/BFF/frontend), add it to the corresponding guide
+
+### Editing guidelines
+
+- **Don't delete content** unless it's explicitly wrong or redundant — make additive edits
+- **Keep guides generic** — they should help the AI generate for any language/framework, not just Java
+- **Test after changes** — run a generation and verify test counts still match expectations
+- **Use branches + PRs** — never commit directly to main
+
+### Reference repos for validation
+
+These are the "bible" — generated samples should achieve similar test counts:
+- Backend: [specmatic-order-api-java](https://github.com/specmatic/specmatic-order-api-java) (293 tests)
+- BFF: [specmatic-order-bff-java](https://github.com/specmatic/specmatic-order-bff-java) (269 tests)
+
+### Known patterns (from real generation runs)
 
 | Pattern | Resolution |
 |---------|-----------|
 | Kotlin version conflict with Spring Boot | Override `kotlin.version` to match Specmatic's requirement |
 | Framework adds `path` field to error responses | Override default error handler to return only contract-defined fields |
 | `schemaResiliencyTests` silently ignored | Must be under `specmatic.settings.test`, not `components.settings.test` |
-| Enum without 4xx response in contract | Unresolvable gap — accept failures, document in manifest |
 | Docker not available on macOS/Windows CI | `docker-cli`/`test-container` modes → ubuntu-only CI |
-
-## Quick Verification
-
-After a sample is generated:
-
-```bash
-# Java/Spring Boot
-cd <sample-folder> && ./mvnw test
-
-# Node.js/TypeScript
-cd <sample-folder> && npm install && npm test
-
-# Python
-cd <sample-folder> && pip install -r requirements.txt && pytest test -v -s
-```
 
 ## Links
 
 - [Specmatic Website](https://specmatic.io)
 - [Specmatic Documentation](https://docs.specmatic.io)
 - [Contract Repository](https://github.com/specmatic/specmatic-order-contracts)
-- [Sample Monorepo](https://github.com/himanshibansal2202/specmatic-sample-monorepo)
