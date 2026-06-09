@@ -39,6 +39,13 @@ mkdir -p ~/.claude/skills
 git clone https://github.com/himanshibansal2202/Specmatic-sample-generator-skill.git ~/.claude/skills/generate-specmatic-sample
 ```
 
+### Required Models
+
+| Tool | Model |
+|------|-------|
+| Claude Code | claude-opus-4-7 |
+| Codex | codex-1 |
+
 ### Example Prompt
 
 ```
