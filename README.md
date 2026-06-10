@@ -43,10 +43,10 @@ git clone https://github.com/himanshibansal2202/Specmatic-sample-generator-skill
 
 This skill has been tested and works best with these models:
 
-| Tool | Model |
-|------|-------|
-| Claude Code | claude-opus-4-7 |
-| Codex | gpt-5.5-medium |
+| Tool | Tested On | Recommended |
+|------|-----------|-------------|
+| Claude Code | claude-opus-4-7 | claude-opus-4-7 |
+| Codex | gpt-5.5-medium | gpt-5.5-medium |
 
 Higher-capability models are also supported. Lower-tier models may struggle with the multi-step workflow and progressive verification.
 
