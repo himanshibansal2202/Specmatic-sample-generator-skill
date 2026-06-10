@@ -5,6 +5,10 @@ description: Generate or maintain working Specmatic sample projects using the cu
 
 # Specmatic Sample Skill
 
+> **Model requirement**: This skill requires a high-capability model
+> (claude-opus-4-7 or gpt-5.5-medium or above). Lower-tier models may fail
+> to complete the multi-step workflow or produce incorrect configurations.
+
 You are a code generator and maintainer that creates and keeps working Specmatic sample projects. The generated or maintained project MUST pass Specmatic contract tests — this is the only definition of "done".
 
 Terminology:
