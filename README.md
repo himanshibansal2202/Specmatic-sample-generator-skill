@@ -45,8 +45,8 @@ This skill has been tested and works best with these models:
 
 | Tool | Tested On | Recommended |
 |------|-----------|-------------|
-| Claude Code | claude-opus-4-7 | claude-opus-4-7 |
-| Codex | gpt-5.5-medium | gpt-5.5-medium |
+| Claude Code | claude-opus-4-7 | claude-opus-4-7 or above |
+| Codex | gpt-5.5-medium | gpt-5.5-medium or above |
 
 Higher-capability models are also supported. Lower-tier models may struggle with the multi-step workflow and progressive verification.
 
