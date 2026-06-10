@@ -264,12 +264,12 @@ Derive the sample folder name from the validated enum values:
 ```
 
 Use the selected enum values directly. For example,
-`backend + rest + javascript + express + in-memory` becomes
-`backend-rest-javascript-express-in-memory`.
+`backend + rest + javascript + express` becomes
+`backend-rest-javascript-express`.
 
-Do not include the Specmatic integration mode in the sample folder name. If the
-same application/protocol/language/framework/data-layer combination is
-generated again with a different integration mode, update the same sample
+Do not include the Specmatic integration mode or data layer in the sample
+folder name. If the same application/protocol/language/framework combination
+is generated again with a different integration mode, update the same sample
 folder.
 
 - Create or update the sample at `<destination>/<sample-id>/`.

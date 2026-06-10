@@ -44,7 +44,7 @@ To use this skill in Kiro, start a new session and say:
 
 ```
 Read all files in /path/to/generate-specmatic-sample/ (SKILL.md, contracts/*, guides/*, test-data/*, config/*).
-Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + cli + in-memory.
+Then follow the SKILL.md workflow to generate a Backend REST sample using JavaScript + Express + cli.
 Ask me for the destination path, create the sample as a self-contained folder under that location, install deps, and run tests until green.
 ```
 
@@ -67,7 +67,7 @@ Generated samples are written as folders named from the selected enum values:
 
 ```text
 <provided-location>/
-└── backend-rest-javascript-express-in-memory/
+└── backend-rest-javascript-express/
     ├── specmatic.yaml
     ├── contracts/
     ├── .github/workflows/ci.yml
