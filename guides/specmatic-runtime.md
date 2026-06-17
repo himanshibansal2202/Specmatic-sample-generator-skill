@@ -300,11 +300,15 @@ Resolve generically:
 
 1. Look up the latest released Specmatic Enterprise version before setting the
    dependency version. Do not rely on training data — always check online.
-   - **JVM**: check Docker Hub tags for `specmatic/enterprise` for the latest
-     version, then use the corresponding Maven artifact
-     `io.specmatic.enterprise:specmatic-enterprise`
-   - **Node.js**: check npm for `specmatic`
-   - **Python**: check PyPI for `specmatic`
+   - **CLI/JAR**: check Maven Central metadata for the latest official
+     Enterprise executable artifact. Default to
+     `io.specmatic.enterprise:executable-all:<latest>` unless official
+     Enterprise documentation identifies a more appropriate executable artifact.
+   - **JVM native/test library**: use only `io.specmatic.enterprise:*`
+     artifacts.
+   - **Node.js/Python/native packages**: use only documented Enterprise-native
+     language artifacts/APIs. The public `specmatic` npm package is not an
+     Enterprise runtime source.
    - **Docker image**: `specmatic/enterprise` (always use Enterprise, not the
      open-source `specmatic/specmatic` image)
 
@@ -312,6 +316,11 @@ Resolve generically:
    protocol. Enterprise includes schema resiliency tests, Smart Resiliency
    Orchestration (429/202), full API coverage reporting, and all protocol
    support. Open-source Specmatic should not be used in generated samples.
+   A runtime that prints a license initialization message is not sufficient;
+   verify the artifact coordinate, package name, jar path, or Docker image.
+   Forbidden generated runtime dependencies include `npm exec specmatic`,
+   `npx specmatic`, `specmatic@...`, `node_modules/specmatic/specmatic.jar`,
+   `specmatic/specmatic`, and any non-`io.specmatic.enterprise` Maven artifact.
 2. Pick a Specmatic test-library version that supports the generated
    `specmatic.yaml` schema version. Each language binding (JVM, Node.js,
    Python, etc.) publishes its own schema-version-to-library-version mapping
@@ -334,19 +343,19 @@ After installing dependencies, verify how the selected language/runtime invokes
 Specmatic for the selected integration mode before finalizing the generated test
 adapter:
 
-- For `cli`, verify the package CLI, standalone CLI, or downloaded JAR command.
-  Prefer current official documentation or Maven Central executable artifacts
-  when selecting the runtime. Do not copy or infer Specmatic runtime versions
-  from existing samples.
-- For `docker-cli`, verify Docker availability and the official Specmatic image
-  tag needed for the selected protocol.
+- For `cli`, verify the official Enterprise executable artifact and generated
+  `java -jar` command. Default to the latest
+  `io.specmatic.enterprise:executable-all` Maven artifact. Do not use the
+  public npm `specmatic` package or its bundled jar.
+- For `docker-cli`, verify Docker availability and the official
+  `specmatic/enterprise` image tag needed for the selected protocol.
 - For `test-container`, verify the language's Testcontainers dependency and the
-  official Specmatic Docker image tag needed for the selected protocol.
-- For `native`, verify the official native test dependency and API for the
-  selected language, protocol, and test framework.
+  official `specmatic/enterprise` image tag needed for the selected protocol.
+- For `native`, verify the official Enterprise-native test dependency and API
+  for the selected language, protocol, and test framework.
 - If the installed package cannot parse the generated `specmatic.yaml` version,
-  select a compatible package/runtime combination and reinstall before changing
-  contract behavior.
+  select a compatible Enterprise runtime combination and reinstall before
+  changing contract behavior.
 
 ## Integration Modes
 
@@ -359,10 +368,14 @@ README instructions, and CI setup. It does not change contract resolution,
 Use `cli` when the sample should invoke Specmatic as an external executable.
 
 - Start the generated app and any dependency mocks/stubs needed by the sample.
-- Run Specmatic with the verified CLI command, standalone JAR, or package CLI.
-  For standalone JAR wiring, the command shape is `java -jar specmatic.jar test`
-  from the generated sample root unless the verified distribution documents a
+- Run Specmatic with an official Enterprise executable JAR. Default to
+  resolving `io.specmatic.enterprise:executable-all:<latest>` from Maven
+  Central and invoke it with `java -jar <enterprise-jar> test` from the
+  generated sample root unless official Enterprise documentation requires a
   different invocation.
+- Do not generate `npm exec specmatic`, `npx specmatic`,
+  `specmatic@<version>`, or any dependency on the public npm package's bundled
+  `specmatic.jar`.
 - Pass endpoint, port, broker, examples, and report settings through
   `specmatic.yaml`, environment variables, or CLI flags supported by the
   verified Specmatic version.
@@ -378,7 +391,8 @@ than as a language dependency or a Testcontainers-managed container.
 
 - Start the generated app and any dependency mocks/stubs needed by the sample.
 - Run Specmatic with `docker run` from the generated test command or test
-  adapter. Use the official `specmatic/enterprise` image for all protocols.
+  adapter. Use the official `specmatic/enterprise` image for all protocols and
+  never use `specmatic/specmatic`.
 - Mount the root `specmatic.yaml`, any local contract/example files, and the
   report output directory into the container. Mount the config read-only when
   the selected tooling supports it. If contracts are fetched from git, pass the
@@ -401,7 +415,8 @@ test suite.
 - Add the selected language's standard Testcontainers dependency and generate a
   test adapter that starts the generated app, then starts the Specmatic
   container.
-- Use the official `specmatic/enterprise` image for all protocols.
+- Use the official `specmatic/enterprise` image for all protocols and never use
+  `specmatic/specmatic`.
 - Mount the root `specmatic.yaml`, any local contract/example files, and the
   report output directory into the container. Mount the config read-only when
   the selected tooling supports it. If contracts are fetched from git, pass
@@ -417,22 +432,19 @@ test suite.
 
 ### Native
 
-Use `native` when the selected language has an official native Specmatic test
-integration for the selected protocol. This covers Java/Kotlin test interfaces,
-Python pytest APIs, Node.js/TypeScript package APIs, and other documented
-language-level integrations.
+Use `native` only when the selected language has an official Enterprise-native
+Specmatic test integration for the selected protocol. Community adapters or
+open-source packages are not acceptable native runtimes.
 
-- Generate the native contract test class/module using the current official API
-  for the language and test framework. For JVM/JUnit 5 stacks, prefer
-  `io.specmatic.test.SpecmaticContractTest` when current official documentation
-  uses it, rather than older support-class names.
+- Generate the native contract test class/module using the current official
+  Enterprise API for the language and test framework. JVM native integrations
+  must use `io.specmatic.enterprise:*` artifacts.
 - Keep `specmatic.yaml` at the sample root and configure the native test
   integration to read it, start the generated app, and run the contract tests.
-- For Python, use the official Specmatic Python API/decorator style published
-  for the selected package version, with pytest if that is the generated test
-  framework.
-- For Node.js/TypeScript, use the official Specmatic npm package API when it
-  supports the selected protocol, such as `testWithApiCoverage` for OpenAPI.
+- For Python or Node.js/TypeScript, proceed only when a documented
+  Enterprise-native package/API is verified for the selected protocol. If only
+  the public/open-source package is available, reject `native` and ask the user
+  to choose `cli`, `docker-cli`, or `test-container`.
 - Fail fast when the app cannot start or the native Specmatic result contains
   failures. Do not hide failures behind ordinary unit-test assertions.
 - Local and CI prerequisites follow the native package. JVM native integration
@@ -440,12 +452,11 @@ language-level integrations.
 
 ## Protocol Support By Mode
 
+- All protocols, including REST/OpenAPI, must use an official Specmatic
+  Enterprise runtime artifact.
 - REST/OpenAPI may use `cli`, `docker-cli`, `test-container`, or `native` when
-  the selected language/framework supports the chosen adapter.
-- gRPC/Protobuf, GraphQL SDL, SOAP/WSDL, and Kafka/AsyncAPI must use an
-  Enterprise-capable Specmatic runtime unless current official documentation
-  proves community support for that protocol and mode.
-- For Enterprise protocols, prefer `docker-cli` or `test-container` when a
+  the selected language/framework supports the chosen Enterprise adapter.
+- Prefer `docker-cli` or `test-container` when a
   native Enterprise language artifact is not verified. Do not accept a native
   adapter that parses `specmatic.yaml` but reports no executable contract tests.
 - For gRPC/Protobuf with Docker-based Enterprise runtimes, keep host, port,

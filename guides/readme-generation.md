@@ -78,14 +78,18 @@ Markdown reference in README:
 
 Numbered list of key technologies:
 1. Language + Framework (e.g., "Spring Boot service written in Java")
-2. Specmatic (or Specmatic Enterprise for non-REST protocols)
+2. Specmatic Enterprise with the exact runtime artifact or Docker image used
 3. Docker Desktop (when the integration mode requires it)
 4. Any notable runtime requirement (e.g., "JRE 17+", "Node 20+")
 
 ### 6. Run Contract Tests
 
 Structure:
-- **Prerequisites** — list what must be installed (JRE 17+, language runtime, etc.)
+- **Prerequisites** — list what must be installed (JRE 17+, language runtime, etc.).
+  Include `SPECMATIC_LICENSE_KEY` and the exact Enterprise runtime artifact
+  used by the sample, such as `io.specmatic.enterprise:executable-all:<version>`
+  or `specmatic/enterprise:<tag>`. Do not describe the public/open-source
+  `specmatic` npm package as the runtime.
 - **Using the build tool** — the primary single-command path with all three OS variants:
 
 ```markdown

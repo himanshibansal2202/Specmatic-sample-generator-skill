@@ -64,10 +64,9 @@ SOAP/WSDL:
   contracts before coding. Record the required mapping between operations,
   message shapes, metadata/headers, topics/endpoints, status/errors, and
   security.
-- For non-REST protocols, or any protocol marked `requires_enterprise: true`,
-  use the documented Specmatic Enterprise Docker image or language artifact in
-  generated tests and CI, and document the license/setup requirement in the
-  generated README.
+- For every protocol, use the documented Specmatic Enterprise Docker image or
+  language artifact in generated tests and CI, and document the license/setup
+  requirement in the generated README.
 - Keep all protocol endpoints, base URLs, broker URLs, ports, import paths, and
   example directories configurable through environment variables or generated
   config.
