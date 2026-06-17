@@ -461,11 +461,15 @@ at a third-party class, identify the conflicting transitive between the
 Specmatic library and the framework. Override it using the build tool's standard
 dependency override mechanism. This is a build fix, not a behavior fix.
 
-If Level 3 passes fully (zero failures), ship the final `specmatic.yaml` with
+Schema resiliency ON (`all`) is the default shipped configuration. If Level 3
+passes fully (zero failures), ship the final `specmatic.yaml` with
 `schemaResiliencyTests: all` to deliver maximum test coverage out of the box.
 
-If Level 3 has unresolvable contract-gap failures only, ship with
-`schemaResiliencyTests: none` and document the gaps in the manifest learnings.
+If Level 3 has unresolvable contract-gap failures only (see "Level 3 Known
+Patterns"), ship the highest level that passes cleanly (`positiveOnly`, or
+`none` only if `positiveOnly` also has unresolvable failures) and document the
+specific gaps in the manifest learnings. Do not drop below `all` for ordinary,
+fixable failures — fix those instead.
 
 At each level, apply the same fix approach: max 3 retries per level, read
 Specmatic/JUnit/report output, make the smallest change to match the contract.
