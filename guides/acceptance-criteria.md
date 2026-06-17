@@ -24,10 +24,15 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] The delivered `specmatic.yaml` ships with `schemaResiliencyTests: all`
   (schema resiliency ON), unless documented unresolvable contract-gap failures
   force a lower level recorded in the manifest learnings
-- [ ] Governance coverage threshold is set to 100% and reported coverage meets
-  it; endpoint discovery (actuator / swaggerUI / OpenAPI endpoint) is wired and
-  reachable so Specmatic can compute actual coverage (no `Failed to query
-  swaggerUI` / `Actuator is not enabled` / `cannot calculate actual coverage`)
+- [ ] Endpoint discovery (actuator / swaggerUI / OpenAPI endpoint) is wired and
+  reachable, and non-contract infra endpoints are filtered, so Specmatic can
+  compute actual coverage (no `Failed to query swaggerUI` / `Actuator is not
+  enabled` / `cannot calculate actual coverage`)
+- [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
+  fully-implemented, infra-filtered sample actually achieves; baseline is the
+  reference repos (`minCoveragePercentage: 70` / `maxMissedOperationsInSpec: 1`
+  for BFF, ~65% for backend). A 100% gate is applied only when confirmed by the
+  product owner
 - [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
   specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
   adapter; Specmatic resolves and caches contracts itself; the sample does not

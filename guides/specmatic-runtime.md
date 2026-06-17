@@ -221,15 +221,26 @@ misconfiguration — stop and investigate rather than proceeding.
 Generated samples must include governance configuration in `specmatic.yaml`
 that reports API coverage. Configure:
 
-- **Coverage threshold**: target **100%**. Every operation in the resolved
-  contract must be implemented and exercised. A generated sample demonstrates
-  Specmatic by covering the whole contract — partial coverage is a generation
-  defect, not an acceptable baseline. Do not lower the threshold to make a build
-  pass; instead implement the missing operations and wire endpoint discovery
-  (see below) so coverage is reported accurately.
-- **Max missed operations**: 0 — the sample must implement every contract
-  operation. If a contract operation genuinely cannot be implemented, stop and
-  report it rather than silently allowing missed operations.
+- **Hard requirement — endpoint discovery + infra filtering.** Coverage is only
+  meaningful once the actuator/swaggerUI is wired and non-contract infra
+  endpoints are filtered out (see "Path Filtering and Actuator"). This is
+  non-negotiable for every Backend and BFF sample — a sample that reports
+  "cannot calculate actual coverage" is not done. Implement every contract
+  operation so there are no "Not Implemented" rows.
+- **Coverage threshold**: set `minCoveragePercentage` to a value the
+  fully-implemented, infra-filtered sample actually achieves, and aim as high as
+  possible. The canonical reference repos do **not** ship 100%:
+  `specmatic-order-bff-java` uses `minCoveragePercentage: 70` with
+  `maxMissedOperationsInSpec: 1`, and the backend reference is ~65%. Use those
+  as the baseline. A 100% target is desirable but must be confirmed with the
+  product owner before being set as a build-breaking gate — infra accounting and
+  WIP operations can keep the reported number below 100% even when the contract
+  is fully implemented. Never lower the threshold below what the sample actually
+  achieves just to go green; raise it toward 100% only when verified coverage
+  supports it.
+- **Max missed operations**: match the reference baseline (`1` for BFF). Treat
+  every missed operation as something to implement, not to allow — but do not
+  set `0` as a hard gate unless confirmed, since the reference allows `1`.
 - **Enforce**: true — makes coverage failures break the build when below threshold.
 - **Report formats**: include HTML for readable reports.
 
@@ -241,14 +252,15 @@ supported by the resolved Specmatic version.
 
 **Never lower the checked-in coverage threshold to make tests pass.** Treat
 governance thresholds as final-state gates, not temporary convergence values.
-If coverage is below 100% during early example-only debugging, fix the
-missing operations, negative/error responses, resiliency behavior, or
-actuator/endpoint-discovery configuration — do not reduce the threshold. When
-progressive verification reaches the final shipped `schemaResiliencyTests`
-level, the delivered `specmatic.yaml` must keep the 100% threshold. If reported
-coverage is below 100%, the most common cause is that endpoint discovery
-(actuator/swaggerUI) is not wired, so Specmatic cannot see implemented
-endpoints — fix the discovery wiring before treating the gap as real.
+If coverage is below the agreed threshold during early example-only debugging,
+fix the missing operations, negative/error responses, resiliency behavior, or
+actuator/endpoint-discovery configuration — do not reduce the threshold. If
+reported coverage is unexpectedly low (e.g. the 35%-style result), the most
+common cause is that endpoint discovery (actuator/swaggerUI) is not wired, so
+Specmatic cannot see implemented endpoints and cannot credit coverage — fix the
+discovery wiring before treating the gap as real. Only after discovery is wired
+and infra endpoints are filtered does the reported number reflect true contract
+coverage.
 
 ## Path Filtering and Actuator
 
