@@ -13,7 +13,7 @@ contract_resolution:
       protocol: rest
       spec_format: openapi
       run_option_key: openapi
-      requires_enterprise: false
+      requires_enterprise: true
       source:
         git:
           url: https://github.com/specmatic/specmatic-order-contracts.git

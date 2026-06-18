@@ -18,6 +18,10 @@ Terminology:
   file shape, not the Specmatic product/runtime release.
 - **Specmatic runtime version** is the CLI, JAR, Docker image, native package,
   or Enterprise artifact version used to execute tests or mocks.
+- **Specmatic Enterprise runtime artifact** is the official Enterprise artifact
+  used by the selected integration mode. Allowed runtime artifacts are
+  `io.specmatic.enterprise:*` Maven artifacts, `specmatic/enterprise:*` Docker
+  images, and documented Enterprise-native language artifacts only.
 - **Contract spec version** is the API/contract file version resolved from the
   contract repository, such as `api_order_v3.yaml` or
   `product_search_bff_v4.yaml`.
@@ -119,15 +123,28 @@ Validate Specmatic integration modes as follows:
 
 Apply protocol-specific runtime constraints:
 
+- All generated samples, including REST/OpenAPI, must use an official
+  Specmatic Enterprise runtime artifact. Do not use open-source Specmatic
+  runtimes, wrappers, images, or bundled jars even if they can initialize a
+  license at runtime.
 - REST/OpenAPI may use `cli`, `docker-cli`, `test-container`, or `native` when
-  the selected language/framework can support the chosen adapter.
-- gRPC/Protobuf, GraphQL SDL, SOAP/WSDL, and Kafka/AsyncAPI must use an
-  Enterprise-capable Specmatic runtime unless current official documentation
-  proves community support for that protocol and mode.
-- `native` for Enterprise protocols is valid only when the matching Enterprise
+  the selected language/framework can support the chosen Enterprise adapter.
+- `native` is valid only when the matching Enterprise
   language artifact/API is verified during generation. Do not use a community
   native adapter that merely parses `specmatic.yaml` but reports no executable
   contract tests.
+- Before generating files, resolve and record the Enterprise runtime artifact
+  for the selected integration mode:
+  - `cli`: latest official Enterprise executable artifact, defaulting to
+    `io.specmatic.enterprise:executable-all:<latest>`.
+  - `docker-cli` and `test-container`: official `specmatic/enterprise:<tag>`
+    image only.
+  - `native`: documented Enterprise-native language artifact/API only.
+- If the runtime command or dependency resolves to `npm exec specmatic`,
+  `npx specmatic`, `specmatic@...`, `node_modules/specmatic/specmatic.jar`,
+  `specmatic/specmatic`, or any non-Enterprise artifact, stop before writing
+  files and select an official Enterprise runtime. If none exists for the
+  selected mode, ask the user to choose another Enterprise-backed mode.
 
 Before proceeding, resolve the application framework version and language
 runtime target yourself, then ask the user to approve or override only those two
@@ -351,8 +368,10 @@ After generating all files, run verification from inside the generated sample fo
    `specmatic.yaml` configuration schema version before relying on it. If the
    runtime fails on config fields such as `version`, `systemUnderTest`, or
    `components`, classify it as a runtime compatibility failure and switch to a
-   verified runtime/config-schema combination before changing generated app
-   behavior.
+   verified Enterprise runtime/config-schema combination before changing
+   generated app behavior. A license initialization message is not proof of
+   Enterprise runtime usage; verify the artifact coordinate, package name, jar
+   path, or Docker image name.
 3. Run progressive test verification (see below).
 4. Run the generated build/package command when the sample includes compiled output or Docker.
 5. Remove local verification artifacts from the generated sample folder when
@@ -481,6 +500,8 @@ Use the classification to make the smallest behavior change needed to match the
 executable contract, then re-run the documented test command.
 
 After verification completes, update `.specmatic-sample-manifest.json` with:
+- `specmaticRuntime`: record the Enterprise runtime artifact coordinate or
+  Docker image, version/tag, source registry, and invocation mode.
 - `testCoverage`: record the test count, passed, and failed at each level.
   Set `shipped_level` to the `schemaResiliencyTests` value in the delivered
   `specmatic.yaml`.
@@ -532,6 +553,10 @@ Only report "done" when tests are green.
   test adapters, README instructions, and CI around `cli`, `docker-cli`,
   `test-container`, or `native`; do not silently switch modes unless the
   selected mode is impossible for the stack and the user chooses another one.
+- **Enterprise runtime only.** Every integration mode must use an official
+  Specmatic Enterprise artifact. Open-source runtimes such as npm `specmatic`,
+  bundled npm `specmatic.jar`, or the `specmatic/specmatic` Docker image are
+  forbidden generated runtime dependencies.
 - **Keep the test adapter minimal.** Let the selected and verified Specmatic
   integration mode determine whether it uses a CLI, direct Docker command,
   Testcontainers-managed Docker container, native library API, or bundled JAR.

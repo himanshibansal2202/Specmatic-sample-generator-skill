@@ -22,6 +22,14 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
 - [ ] The generated test adapter uses the selected and verified Specmatic
   integration mode: `cli`, `docker-cli`, `test-container`, or `native`
+- [ ] The generated test adapter and CI use only official Specmatic Enterprise
+  artifacts: `io.specmatic.enterprise:*`, `specmatic/enterprise:*`, or a
+  documented Enterprise-native language artifact/API. Generated files must not
+  reference `npm exec specmatic`, `npx specmatic`, `specmatic@`,
+  `node_modules/specmatic/specmatic.jar`, or `specmatic/specmatic`.
+- [ ] `.specmatic-sample-manifest.json` records the exact Enterprise runtime
+  artifact/version/source. A license initialization message alone is not
+  accepted as proof of Enterprise runtime usage.
 - [ ] Generated Dockerfiles build from source and do not depend on local build
   outputs that are excluded by `.dockerignore`, such as `target/`, `dist/`, or
   `build/`
@@ -66,6 +74,12 @@ The `.specmatic-sample-manifest.json` must include:
   "framework": "<framework>",
   "data_layer": "<data-layer>",
   "integration_mode": "<native|cli|docker-cli|test-container>",
+  "specmaticRuntime": {
+    "artifact": "<io.specmatic.enterprise:executable-all|specmatic/enterprise|enterprise-native-artifact>",
+    "version": "<version-or-tag>",
+    "source": "<maven-central|docker-hub|official-enterprise-docs>",
+    "invocation": "<java -jar|docker run|testcontainers|native-api>"
+  },
   "contract_version": "<version>",
   "port": 8080,
   "test_command": "<command>",
@@ -86,6 +100,10 @@ The `.specmatic-sample-manifest.json` must include:
 - `testCoverage`: records test counts at each progressive verification level.
   `shipped_level` indicates which `schemaResiliencyTests` value the delivered
   `specmatic.yaml` uses.
+- `specmaticRuntime`: records the official Enterprise runtime artifact used by
+  the generated sample. It must never identify the public npm `specmatic`
+  package, the bundled npm `specmatic.jar`, or the `specmatic/specmatic` Docker
+  image.
 - `learnings`: array of strings documenting issues encountered during
   generation — dependency conflicts, contract gaps, framework quirks, or
   workarounds applied. Empty array if generation was clean.
@@ -107,10 +125,12 @@ The `.specmatic-sample-manifest.json` must include:
 7. (On main branch) Build and push Docker image
 
 All generated samples must use Specmatic Enterprise (`specmatic/enterprise`
-Docker image, `io.specmatic.enterprise` Maven artifacts). CI must document the
-required `SPECMATIC_LICENSE_KEY` environment variable in the generated README. Do not rely on accidental
-local license files, preinstalled CLIs, private caches, or checked-out contract
-repo state.
+Docker image, `io.specmatic.enterprise` Maven artifacts, or documented
+Enterprise-native language artifacts). CI must document the required
+`SPECMATIC_LICENSE_KEY` environment variable in the generated README. Do not
+rely on accidental local license files, preinstalled CLIs, private caches,
+checked-out contract repo state, the public npm `specmatic` package, or
+open-source Docker images.
 
 For `docker-cli`, CI must make Docker available and run Specmatic through a
 direct `docker run` command or wrapper script using the official Docker image.
@@ -119,11 +139,14 @@ For `test-container`, CI must make Docker available to the test process and run
 Specmatic through the official Docker image from the generated test suite
 instead of requiring a local Java installation for Specmatic itself.
 
-For `cli`, CI must install or download the verified Specmatic CLI/JAR/package
-CLI and run it from the generated test adapter.
+For `cli`, CI must install or download the verified Enterprise executable JAR
+from an `io.specmatic.enterprise:*` Maven artifact and run it from the
+generated test adapter.
 
-For `native`, CI must install the official native Specmatic test dependency for
-the selected language and run the generated native test class or module.
+For `native`, CI must install the official Enterprise-native Specmatic test
+dependency for the selected language and run the generated native test class or
+module. If no Enterprise-native artifact is verified, `native` is invalid for
+that stack.
 
 ## Root Samples CI
 
@@ -137,8 +160,8 @@ When the destination root already has `.github/workflows/samples-ci.yml`, add or
 - Set up the language runtime required by the selected language.
 - Set up Docker when the selected integration mode is `docker-cli` or
   `test-container`.
-- Include the documented Enterprise runtime/license setup for non-REST
-  protocols, or any protocol marked `requires_enterprise: true`.
+- Include the documented Enterprise runtime/license setup for every generated
+  sample.
 - Upload the generated Specmatic/JUnit report artifact when the test command
   produces one.
 
@@ -159,7 +182,8 @@ Single command, green output.
 
 The single test command must use the selected Specmatic integration mode:
 
-- `cli`: starts the app and runs the verified Specmatic CLI/JAR/package CLI.
+- `cli`: starts the app and runs the verified Enterprise executable JAR from an
+  `io.specmatic.enterprise:*` artifact.
 - `docker-cli`: starts the app and runs the official Specmatic Docker image
   through a direct Docker command.
 - `test-container`: starts the app and runs the official Specmatic Docker image
