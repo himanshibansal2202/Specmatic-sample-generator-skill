@@ -232,15 +232,14 @@ that reports API coverage. Configure:
   possible. The canonical reference repos do **not** ship 100%:
   `specmatic-order-bff-java` uses `minCoveragePercentage: 70` with
   `maxMissedOperationsInSpec: 1`, and the backend reference is ~65%. Use those
-  as the baseline. A 100% target is desirable but must be confirmed with the
-  product owner before being set as a build-breaking gate — infra accounting and
-  WIP operations can keep the reported number below 100% even when the contract
-  is fully implemented. Never lower the threshold below what the sample actually
-  achieves just to go green; raise it toward 100% only when verified coverage
-  supports it.
+  as the baseline. 100% is often not reachable even when every operation is
+  implemented, because declared error responses (e.g. 404/422/specific 400s)
+  have no examples to exercise them — closing that gap requires adding examples
+  to the contract itself, not a config change, and would not be fixed by
+  filtering. Never lower the threshold below what the sample actually achieves
+  just to go green; raise it toward 100% only when verified coverage supports it.
 - **Max missed operations**: match the reference baseline (`1` for BFF). Treat
-  every missed operation as something to implement, not to allow — but do not
-  set `0` as a hard gate unless confirmed, since the reference allows `1`.
+  every missed operation as something to implement, not to allow.
 - **Enforce**: true — makes coverage failures break the build when below threshold.
 - **Report formats**: include HTML for readable reports.
 
