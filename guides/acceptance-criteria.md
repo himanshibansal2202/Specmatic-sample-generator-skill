@@ -18,7 +18,23 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
   protocol-specific test settings can be overridden from environment variables
   consumed by the checked-in `specmatic.yaml`
 - [ ] The checked-in root `specmatic.yaml` is the only Specmatic config source;
-  tests do not generate, copy, overwrite, or mutate another Specmatic YAML file
+  tests do not generate, copy, overwrite, or mutate another Specmatic YAML file,
+  and the config is not relocated into build directories (e.g.
+  `build/specmatic-runner/specmatic.yaml`)
+- [ ] The delivered `specmatic.yaml` ships with `schemaResiliencyTests: all`
+  (schema resiliency ON), unless documented unresolvable contract-gap failures
+  force a lower level recorded in the manifest learnings
+- [ ] Endpoint discovery (actuator / swaggerUI / OpenAPI endpoint) is wired and
+  reachable, and non-contract infra endpoints are filtered, so Specmatic can
+  compute actual coverage (no `Failed to query swaggerUI` / `Actuator is not
+  enabled` / `cannot calculate actual coverage`)
+- [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
+  fully-implemented, infra-filtered sample actually achieves (see
+  `guides/specmatic-runtime.md` for reference baselines)
+- [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
+  specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
+  adapter; Specmatic resolves and caches contracts itself; the sample does not
+  clone the contract repo or generate its own test/coverage report
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
 - [ ] The generated test adapter uses the selected and verified Specmatic
   integration mode: `cli`, `docker-cli`, `test-container`, or `native`

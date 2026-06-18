@@ -189,14 +189,18 @@ components:
 
 | Value | Behavior |
 |-------|----------|
-| `none` | Tests from named examples only (default in delivered samples) |
+| `none` | Tests from named examples only |
 | `positiveOnly` | Adds all valid request combinations (enum permutations, optional fields present/absent) |
-| `all` | Adds negative/boundary tests (nulls, wrong types, missing required fields — expects 400 responses) |
+| `all` | Adds negative/boundary tests (nulls, wrong types, missing required fields — expects 400 responses). **Default in delivered samples.** |
 
 During generation, the skill uses progressive verification (none → positiveOnly
 → all) to fix issues incrementally. The final delivered `specmatic.yaml` ships
-with `none` so users get immediate green tests. The generated README documents
-how to enable higher levels.
+with `all` (schema resiliency ON) so samples demonstrate Specmatic's full
+contract-testing rigor out of the box. Only fall back to a lower level when
+`all` has documented, unresolvable contract-gap failures (see SKILL.md Step 6
+"Level 3 Known Patterns"); in that case ship the highest level that passes
+cleanly and record the reason in the manifest learnings. The generated README
+documents what each level does and how to change it.
 
 Test count must not decrease when moving to a higher level. A count drop signals
 misconfiguration — stop and investigate rather than proceeding.
@@ -217,11 +221,25 @@ misconfiguration — stop and investigate rather than proceeding.
 Generated samples must include governance configuration in `specmatic.yaml`
 that reports API coverage. Configure:
 
-- **Coverage threshold**: align with Specmatic's reference samples. The
-  reference BFF uses 70%, the reference backend uses 65%. Use these as
-  baselines — do not set to 100% since WIP tags and filtered paths reduce
-  achievable coverage.
-- **Max missed operations**: 1 for BFF, up to 4 for backend (mirrors reference repos).
+- **Hard requirement — endpoint discovery + infra filtering.** Coverage is only
+  meaningful once the actuator/swaggerUI is wired and non-contract infra
+  endpoints are filtered out (see "Path Filtering and Actuator"). This is
+  non-negotiable for every Backend and BFF sample — a sample that reports
+  "cannot calculate actual coverage" is not done. Implement every contract
+  operation so there are no "Not Implemented" rows.
+- **Coverage threshold**: set `minCoveragePercentage` to a value the
+  fully-implemented, infra-filtered sample actually achieves, and aim as high as
+  possible. The canonical reference repos do **not** ship 100%:
+  `specmatic-order-bff-java` uses `minCoveragePercentage: 70` with
+  `maxMissedOperationsInSpec: 1`, and the backend reference is ~65%. Use those
+  as the baseline. 100% is often not reachable even when every operation is
+  implemented, because declared error responses (e.g. 404/422/specific 400s)
+  have no examples to exercise them — closing that gap requires adding examples
+  to the contract itself, not a config change, and would not be fixed by
+  filtering. Never lower the threshold below what the sample actually achieves
+  just to go green; raise it toward 100% only when verified coverage supports it.
+- **Max missed operations**: match the reference baseline (`1` for BFF). Treat
+  every missed operation as something to implement, not to allow.
 - **Enforce**: true — makes coverage failures break the build when below threshold.
 - **Report formats**: include HTML for readable reports.
 
@@ -233,13 +251,15 @@ supported by the resolved Specmatic version.
 
 **Never lower the checked-in coverage threshold to make tests pass.** Treat
 governance thresholds as final-state gates, not temporary convergence values.
-If coverage is below the threshold during early example-only debugging, fix the
-missing operations, negative/error responses, resiliency behavior, or
-actuator/endpoint-discovery configuration. When progressive verification reaches
-the final shipped `schemaResiliencyTests` level, keep or restore the threshold
-to the appropriate baseline (70% for BFF samples) or higher if the verified
-coverage supports it. Do not leave a weakened threshold in the delivered
-`specmatic.yaml`.
+If coverage is below the agreed threshold during early example-only debugging,
+fix the missing operations, negative/error responses, resiliency behavior, or
+actuator/endpoint-discovery configuration — do not reduce the threshold. If
+reported coverage is unexpectedly low (e.g. the 35%-style result), the most
+common cause is that endpoint discovery (actuator/swaggerUI) is not wired, so
+Specmatic cannot see implemented endpoints and cannot credit coverage — fix the
+discovery wiring before treating the gap as real. Only after discovery is wired
+and infra endpoints are filtered does the reported number reflect true contract
+coverage.
 
 ## Path Filtering and Actuator
 
@@ -254,10 +274,26 @@ Only emit a `filter` block after verifying the exact object shape supported by
 the selected Specmatic runtime and configuration schema. Runtime versions may
 reject or reinterpret stale filter syntax.
 
-Also configure the actuator/endpoint-discovery URL when the framework supports
-it (e.g., Spring Boot's `/actuator/mappings`). This enables Specmatic to report
-coverage accurately — endpoints in the spec but not implemented show as "Not
-Implemented" in the coverage report.
+**Endpoint discovery is required, not optional.** Every Backend and BFF sample
+must expose an endpoint-discovery source that Specmatic can query, and
+`specmatic.yaml` must point to it. Without it Specmatic cannot map implemented
+endpoints to the contract and reports artificially low coverage (you will see
+`Failed to query swaggerUI, status code: 404` / `EndpointsAPI and SwaggerUI URL
+missing; cannot calculate actual coverage` / `Actuator is not enabled` in the
+logs, and coverage stalls well below 100%). Treat any of these messages as a
+generation defect to fix before reporting done — not as an acceptable result.
+
+Wire discovery using whatever the chosen framework supports, then configure the
+matching URL in `specmatic.yaml`:
+
+- Spring Boot: enable the actuator and expose `/actuator/mappings`.
+- Other frameworks: expose the framework's route/endpoint listing, or serve the
+  OpenAPI document via a Swagger UI / OpenAPI endpoint Specmatic can read.
+
+The generated app config and `specmatic.yaml` must agree on the discovery URL,
+and it must be reachable during the test run. With discovery wired correctly,
+endpoints in the spec but not implemented show as "Not Implemented" in the
+coverage report — which is what lets the 100% threshold be meaningful.
 
 For the exact filter and actuator syntax, consult Specmatic's test configuration
 docs or reference the `specmatic-order-bff-java` repo's `specmatic.yaml`.
@@ -351,20 +387,39 @@ README instructions, and CI setup. It does not change contract resolution,
 
 Use `cli` when the sample should invoke Specmatic as an external executable.
 
-- Start the generated app and any dependency mocks/stubs needed by the sample.
-- Run Specmatic with an official Enterprise executable JAR. Default to
-  resolving `io.specmatic.enterprise:executable-all:<latest>` from Maven
+In `cli` mode Specmatic is the test runner — the sample must NOT reimplement
+what Specmatic already does, and it must use an official Enterprise runtime.
+This is the boundary that distinguishes `cli` from `native`:
+
+- Start the generated app and any dependency mocks/stubs needed by the sample
+  before invoking Specmatic.
+- **Run Specmatic directly with an official Enterprise executable JAR.** Default
+  to resolving `io.specmatic.enterprise:executable-all:<latest>` from Maven
   Central and invoke it with `java -jar <enterprise-jar> test` from the
   generated sample root unless official Enterprise documentation requires a
-  different invocation.
-- Do not generate `npm exec specmatic`, `npx specmatic`,
-  `specmatic@<version>`, or any dependency on the public npm package's bundled
-  `specmatic.jar`.
+  different invocation. Do NOT route `cli` mode through a JUnit/`ContractTest`
+  class, Gradle/Maven test task, pytest module, or any extend-class adapter.
+  Routing the CLI through a native test class is a defect — that pattern belongs
+  to `native` mode only.
+- Do not generate `npm exec specmatic`, `npx specmatic`, `specmatic@<version>`,
+  or any dependency on the public npm package's bundled `specmatic.jar`.
+- **Let Specmatic resolve and cache contracts.** Specmatic clones the central
+  contract repo into its own cache (`.specmatic/`) from the `specmatic.yaml`
+  source config. The sample must NOT clone, fetch, or copy the contract repo
+  itself, and must NOT point tests at a hand-managed checkout.
+- **Use Specmatic's own reports.** Specmatic generates its coverage/test report
+  (including HTML). The sample must NOT build or render its own report — capture
+  and surface the report Specmatic produces.
+- **Do not relocate `specmatic.yaml`.** Run from the generated sample root
+  against the checked-in root `specmatic.yaml`. Do not copy or write it into
+  build directories (e.g. `build/specmatic-runner/specmatic.yaml`); a missing
+  config at a relocated path means the adapter is moving the file instead of
+  running Specmatic in place.
 - Pass endpoint, port, broker, examples, and report settings through
   `specmatic.yaml`, environment variables, or CLI flags supported by the
   verified Specmatic version.
-- Capture Specmatic stdout/stderr and generated reports, fail on non-zero exit,
-  and assert that reported failures are zero.
+- Capture Specmatic stdout/stderr and its generated reports, fail on non-zero
+  exit, and assert that reported failures are zero.
 - Local and CI prerequisites include Java 17+ when the selected CLI/JAR requires
   it.
 
