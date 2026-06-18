@@ -29,10 +29,8 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
   compute actual coverage (no `Failed to query swaggerUI` / `Actuator is not
   enabled` / `cannot calculate actual coverage`)
 - [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
-  fully-implemented, infra-filtered sample actually achieves; baseline is the
-  reference repos (`minCoveragePercentage: 70` / `maxMissedOperationsInSpec: 1`
-  for BFF, ~65% for backend). A 100% gate is applied only when confirmed by the
-  product owner
+  fully-implemented, infra-filtered sample actually achieves (see
+  `guides/specmatic-runtime.md` for reference baselines)
 - [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
   specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
   adapter; Specmatic resolves and caches contracts itself; the sample does not
