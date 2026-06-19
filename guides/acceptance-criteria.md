@@ -31,6 +31,10 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
   fully-implemented, infra-filtered sample actually achieves (see
   `guides/specmatic-runtime.md` for reference baselines)
+- [ ] Specmatic is the only producer of HTML test/coverage reports. Generated
+  files may configure report output, capture/upload artifacts, ignore generated
+  report directories, or link to Specmatic's report path, but must not create
+  custom report HTML, templates, pages, or renderers.
 - [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
   specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
   adapter; Specmatic resolves and caches contracts itself; the sample does not

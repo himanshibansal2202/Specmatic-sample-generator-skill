@@ -539,6 +539,10 @@ Only report "done" when tests are green.
 - **Generated ownership must be complete.** Include lockfiles created by package managers when CI or local verification depends on them. Ignore dependency folders, build output, caches, and Specmatic reports.
 - **Prompts must be example-driven.** User-facing stack questions include a few examples in parentheses, but compatibility is reasoned from framework knowledge, role guides, and verification results rather than hardcoded combination rows.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
+- **Specmatic owns HTML reports.** Do not generate custom HTML test/coverage
+  reports, report templates, report pages, or report renderers. Generated
+  samples may configure, capture, upload, ignore, or link to reports produced
+  by Specmatic, but must not synthesize their own report HTML.
 - **Never use samples as references.** In generate mode, do not read, inspect, or copy from other
   sample projects, including existing generated sample folders in the
   destination repository or monorepo and official/public sample repositories.
