@@ -263,6 +263,36 @@ coverage.
 
 ## Path Filtering and Actuator
 
+### Discovery and infra filtering are one step — never wire one without the other
+
+**What discovery does, and why filtering is required.** Endpoint discovery reports
+every route the running application exposes, which is normally a superset of the
+contract's operations: frameworks add infrastructure, health, diagnostic,
+management, and error routes that are not contract behaviour. Specmatic measures
+coverage against whatever discovery reports, so any discovered route that is not
+in the contract enlarges the coverage universe and distorts the result.
+Therefore, whenever the config wires a discovery source, it must also configure a
+filter that excludes every discovered non-contract route, so the coverage
+universe equals the contract.
+
+**Why this is easy to miss.** A sample can pass its contract tests and stay above
+the coverage threshold while still leaking infra routes into the coverage
+universe — so a passing run is not evidence that the universe is clean. The
+filter requirement is tied to discovery being configured, not to whether the run
+passes; do not treat a green build or an above-threshold percentage as proof that
+filtering was unnecessary.
+
+**Match the discovery mechanism to the application.** Use the discovery mechanism
+the application's framework actually provides, and point the discovery source at
+input of the kind that mechanism expects. Pointing a discovery source at input of
+a different kind is a generation defect even when the run still passes, because it
+is being read in the wrong format.
+
+**Verify, don't assume.** After generating, confirm from the coverage report that
+the operations counted equal the contract's operations and that no non-contract
+route appears. If discovery is configured without a matching filter, the sample is
+incomplete regardless of the test result or the coverage percentage.
+
 For BFF and Backend samples, configure path filters only for framework or
 infrastructure endpoints that are not contract-owned business behavior (e.g.,
 `/health`, `/swagger`).
@@ -270,9 +300,10 @@ infrastructure endpoints that are not contract-owned business behavior (e.g.,
 Do not filter endpoints that are declared in the executable contract. If a
 monitoring or polling endpoint such as `/monitor/{id}` appears in the
 system-under-test contract, implement and verify it instead of excluding it.
-Only emit a `filter` block after verifying the exact object shape supported by
-the selected Specmatic runtime and configuration schema. Runtime versions may
-reject or reinterpret stale filter syntax.
+Verify the exact `filter` object shape supported by the selected Specmatic
+runtime and configuration schema before shipping — runtime versions may reject
+or reinterpret stale filter syntax — but verification is a reason to get the
+syntax right, never a reason to omit a required filter.
 
 **Endpoint discovery is required, not optional.** Every Backend and BFF sample
 must expose an endpoint-discovery source that Specmatic can query, and

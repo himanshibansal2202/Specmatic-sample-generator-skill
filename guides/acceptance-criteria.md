@@ -24,10 +24,19 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] The delivered `specmatic.yaml` ships with `schemaResiliencyTests: all`
   (schema resiliency ON), unless documented unresolvable contract-gap failures
   force a lower level recorded in the manifest learnings
+- [ ] Endpoint discovery uses the mechanism the application's framework provides,
+  and the discovery source is of the kind that mechanism expects (a discovery
+  source is never read in the wrong format)
 - [ ] Endpoint discovery (actuator / swaggerUI / OpenAPI endpoint) is wired and
   reachable, and non-contract infra endpoints are filtered, so Specmatic can
   compute actual coverage (no `Failed to query swaggerUI` / `Actuator is not
   enabled` / `cannot calculate actual coverage`)
+- [ ] Whenever endpoint discovery is configured, a matching filter is also
+  present that excludes every discovered non-contract route (infrastructure,
+  health, diagnostic, management, and error routes), verified by a coverage
+  report whose counted operations equal the contract operations and which shows
+  no non-contract route — not inferred from a passing run or an above-threshold
+  percentage
 - [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
   fully-implemented, infra-filtered sample actually achieves (see
   `guides/specmatic-runtime.md` for reference baselines)
