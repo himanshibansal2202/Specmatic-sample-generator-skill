@@ -130,9 +130,16 @@ protobuf:
   port: "{SUT_PORT:8080}"
   importPaths:
     - .specmatic_grpc_working_dir
-  protocVersion: 3.23.4
+  protocVersion: <DERIVE: must equal the protobuf version the build resolves>
   requestTimeout: "{SPECMATIC_REQUEST_TIMEOUT_MS:10000}"
 ```
+
+`protocVersion` above is a placeholder, not a value to copy. It MUST equal the
+protobuf version the build actually resolves (the `protobuf`/`protoc`
+dependency in `pom.xml`/`build.gradle`/lockfile). Read that resolved version and
+write the matching value; never carry a literal over from this example or a
+prior sample. This is acceptance check VER-1 — a mismatch is a generation defect
+even when tests pass.
 
 ```yaml
 asyncapi:
@@ -500,8 +507,9 @@ open-source packages are not acceptable native runtimes.
   adapter that parses `specmatic.yaml` but reports no executable contract tests.
 - For gRPC/Protobuf with Docker-based Enterprise runtimes, keep host, port,
   import paths, `protocVersion`, and request timeout in the root
-  `specmatic.yaml`. Pin or pass the verified `PROTOC_VERSION` when the runtime
-  requires it on the current platform. Staging imported proto files into an
+  `specmatic.yaml`. Derive `protocVersion` from the protobuf version the build
+  resolves (VER-1) — do not hardcode or copy it; a value that does not match the
+  resolved toolchain is a defect even when tests pass. Staging imported proto files into an
   ignored runtime directory is allowed; staging or generating another
   Specmatic config is not allowed.
 
