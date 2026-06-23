@@ -130,16 +130,22 @@ protobuf:
   port: "{SUT_PORT:8080}"
   importPaths:
     - .specmatic_grpc_working_dir
-  protocVersion: <DERIVE: must equal the protobuf version the build resolves>
+  protocVersion: <DERIVE: the protoc COMPILER version the build uses>
   requestTimeout: "{SPECMATIC_REQUEST_TIMEOUT_MS:10000}"
 ```
 
-`protocVersion` above is a placeholder, not a value to copy. It MUST equal the
-protobuf version the build actually resolves (the `protobuf`/`protoc`
-dependency in `pom.xml`/`build.gradle`/lockfile). Read that resolved version and
-write the matching value; never carry a literal over from this example or a
-prior sample. This is acceptance check VER-1 — a mismatch is a generation defect
-even when tests pass.
+`protocVersion` above is a placeholder, not a value to copy. It is the **protoc
+compiler** version Specmatic uses to generate descriptors — a *different
+artifact* from the protobuf runtime library (e.g. `protobuf-java`), and the two
+may legitimately sit on different version lines. Set `protocVersion` to the same
+protoc the build uses to compile the protos (e.g. the `protobuf-maven-plugin`
+`protocArtifact` / a `protoc.version` property), not to the protobuf library
+version. The chosen protoc must be **verified to generate descriptors for this
+contract on this runtime**; if a newer protoc fails, pin an older one that works
+and record the reason in the manifest learnings. Never carry a literal over from
+this example or a prior sample without verifying it. This is acceptance check
+VER-1 — what must hold is consistency with the build's protoc and a version that
+actually works, not equality with the protobuf library.
 
 ```yaml
 asyncapi:
@@ -507,9 +513,10 @@ open-source packages are not acceptable native runtimes.
   adapter that parses `specmatic.yaml` but reports no executable contract tests.
 - For gRPC/Protobuf with Docker-based Enterprise runtimes, keep host, port,
   import paths, `protocVersion`, and request timeout in the root
-  `specmatic.yaml`. Derive `protocVersion` from the protobuf version the build
-  resolves (VER-1) — do not hardcode or copy it; a value that does not match the
-  resolved toolchain is a defect even when tests pass. Staging imported proto files into an
+  `specmatic.yaml`. Set `protocVersion` to the build's protoc **compiler**
+  version (not the protobuf runtime library version — they may differ), verified
+  to generate descriptors on this runtime (VER-1); do not blindly copy a literal,
+  and record the reason if a non-latest protoc is pinned. Staging imported proto files into an
   ignored runtime directory is allowed; staging or generating another
   Specmatic config is not allowed.
 

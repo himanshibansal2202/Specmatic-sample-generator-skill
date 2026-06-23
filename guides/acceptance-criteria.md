@@ -114,14 +114,21 @@ the criteria are advisory prose, not a gate.
 
 ## Version and toolchain consistency
 
-- **VER-1 (declared versions equal resolved versions) · blocker · auto.**
-  Statement: any protocol- or runtime-toolchain version written into config
-  (e.g. a protobuf/compiler version, a runtime version) must equal the version
-  the build actually resolves — declared values are derived from the resolved
-  toolchain, never copied from an example. Artifact: `specmatic.yaml` + build
-  file (`pom.xml`/`build.gradle`/`package.json`/`requirements.txt`) +
-  lockfile. Assert: every version literal in config has a matching resolved
-  version in the build. Oracle: the resolved build toolchain.
+- **VER-1 (declared toolchain versions are consistent and verified) · blocker · auto.**
+  Statement: any toolchain version written into config must match the **same
+  artifact** in the build and be a version that actually works — declared values
+  are derived from the resolved toolchain, never copied from an example. Compare
+  like with like: a compiler version (e.g. `protocVersion`, the protoc compiler)
+  matches the build's compiler version (e.g. `protoc.version` /
+  `protocArtifact`), which is a *different artifact* from the runtime library
+  (e.g. `protobuf-java`) and may legitimately differ from it. A non-latest
+  version pinned because a newer one fails is acceptable when the reason is
+  recorded in the manifest learnings. Artifact: `specmatic.yaml` + build file
+  (`pom.xml`/`build.gradle`/`package.json`/`requirements.txt`) + lockfile +
+  the run (descriptor/codegen step succeeded). Assert: each config version
+  literal equals the corresponding build artifact's version (not a different
+  artifact's), and the toolchain step the version controls succeeded in the run.
+  Oracle: the resolved build toolchain + the run result.
 - **VER-2 (runtime artifact version is resolved) · warning · auto.**
   Artifact: build file + manifest. Assert: the Enterprise artifact version is a
   current/verified version resolved at generation time, not an arbitrary
