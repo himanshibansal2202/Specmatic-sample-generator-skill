@@ -9,7 +9,7 @@ description: Generate or maintain working Specmatic sample projects using the cu
 > (claude-opus-4-7 or gpt-5.5-medium or above). Lower-tier models may fail
 > to complete the multi-step workflow or produce incorrect configurations.
 
-You are a code generator and maintainer that creates and keeps working Specmatic sample projects. The generated or maintained project MUST pass Specmatic contract tests — this is the only definition of "done".
+You are a code generator and maintainer that creates and keeps working Specmatic sample projects. "Done" means every **blocker** check in `guides/acceptance-criteria.md` is verified to hold against the generated artifacts (see Step 6). Passing Specmatic contract tests is necessary but **not** sufficient — a sample can be green while leaking infra routes into coverage, shipping a stale toolchain version, or omitting governance.
 
 Terminology:
 
@@ -376,7 +376,9 @@ After generating all files, run verification from inside the generated sample fo
 4. Run the generated build/package command when the sample includes compiled output or Docker.
 5. Remove local verification artifacts from the generated sample folder when
    they are not source files, then re-run any build command affected by ignore
-   files or build context.
+   files or build context. Do this **only after** the acceptance verification
+   below has read the run's coverage/test report (VAL-2) — never delete the
+   report before the checks that depend on it have run.
 
 #### Progressive Test Verification
 
@@ -513,18 +515,35 @@ After verification completes, update `.specmatic-sample-manifest.json` with:
   conflicts, contract gaps, framework quirks, workarounds applied. Use an
   empty array if generation was clean.
 
-Before reporting completion, run a final guide-compliance pass:
+Before reporting completion, run the **acceptance verification**. This is the
+gate, not a formality. `guides/acceptance-criteria.md` is a registry of checks,
+each naming an artifact to inspect, an assertion that must hold, and the oracle
+(source of truth) to compare against. Treat that registry as the definition of
+done and walk it explicitly:
 
-1. Compare `README.md` against `guides/readme-generation.md` and verify all
+1. For **every blocker check** in `guides/acceptance-criteria.md`, open the named
+   artifact — `specmatic.yaml`, the build file, the file tree, the manifest, and
+   the Specmatic coverage/test report produced by the run — and confirm the
+   assertion holds against its **derived oracle** (the resolved contract's
+   operation count and protocol, the resolved build toolchain's versions, the
+   artifact registry). Confirm against the artifact, never against your own
+   recollection of what you intended to generate.
+2. Honour the validation preconditions (VAL-1..3): rely only on artifacts from an
+   observed run, not on a summary; derive every single-correct-answer value
+   (operation counts, `protocVersion`/toolchain versions, runtime artifact
+   version) rather than reusing a literal from the guides; and keep the run's
+   report until these checks have read it.
+3. Compare `README.md` against `guides/readme-generation.md` and verify all
    required sections are present, in order, and populated with the resolved
    contract links, run commands, architecture asset, test modes, and project
    structure.
-2. Verify any README-required assets copied into the sample are listed in
+4. Verify any README-required assets copied into the sample are listed in
    `.specmatic-sample-manifest.json`.
-3. Compare the generated file set and final state against
-   `guides/acceptance-criteria.md`.
 
-Only report "done" when tests are green.
+A sample is "done" only when the test run is green **and** every blocker
+acceptance check is verified to hold. If any blocker check fails, fix the
+generated sample and re-run both the tests and this verification — do not report
+done on green tests alone.
 
 ## Key Rules
 
