@@ -1,68 +1,243 @@
 # Acceptance Criteria
 
-A generated sample is "done" when ALL of the following are true.
+A generated sample is "done" only when every **blocker** check below holds.
 
-All checks apply inside the generated sample folder at `<provided-location>/<sample-id>/`.
+This file is both the human-readable spec and the basis for an **executable
+validator**. Each check has a stable ID and is marked as `auto` (machine-
+verifiable from artifacts) or `manual` (requires judgement). Auto checks name
+the **Artifact** to inspect, the **Assert** that must hold, and the **Oracle**
+(the source of truth to compare against). The intent is that the auto checks can
+be run by a script that exits non-zero on any blocker failure — a checklist the
+producer self-grades is not a check.
 
-## Must Pass
+All checks apply inside the generated sample folder at
+`<provided-location>/<sample-id>/`.
 
-- [ ] `npm test` (or equivalent) exits with code 0
-- [ ] All Specmatic contract tests pass (0 failures)
-- [ ] Generated behavior matches the executable contract used by Specmatic
-- [ ] No manual intervention needed after generation
-- [ ] Any mismatch between local guides/test data and the executable contract is resolved in favor of the executable contract
-- [ ] No generated files are written at the provided location root except the sample folder itself, unless updating an existing root `.github/workflows/samples-ci.yml`
-- [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
-- [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample
-- [ ] Ports, dependency base URLs, service endpoints, broker URLs, and
-  protocol-specific test settings can be overridden from environment variables
-  consumed by the checked-in `specmatic.yaml`
-- [ ] The checked-in root `specmatic.yaml` is the only Specmatic config source;
-  tests do not generate, copy, overwrite, or mutate another Specmatic YAML file,
-  and the config is not relocated into build directories (e.g.
-  `build/specmatic-runner/specmatic.yaml`)
-- [ ] The delivered `specmatic.yaml` ships with `schemaResiliencyTests: all`
-  (schema resiliency ON), unless documented unresolvable contract-gap failures
-  force a lower level recorded in the manifest learnings
-- [ ] Endpoint discovery (actuator / swaggerUI / OpenAPI endpoint) is wired and
-  reachable, and non-contract infra endpoints are filtered, so Specmatic can
-  compute actual coverage (no `Failed to query swaggerUI` / `Actuator is not
-  enabled` / `cannot calculate actual coverage`)
-- [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
-  fully-implemented, infra-filtered sample actually achieves (see
-  `guides/specmatic-runtime.md` for reference baselines)
-- [ ] Specmatic is the only producer of HTML test/coverage reports. Generated
-  files may configure report output, capture/upload artifacts, ignore generated
-  report directories, or link to Specmatic's report path, but must not create
-  custom report HTML, templates, pages, or renderers.
-- [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
-  specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
-  adapter; Specmatic resolves and caches contracts itself; the sample does not
-  clone the contract repo or generate its own test/coverage report
-- [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
-- [ ] The generated test adapter uses the selected and verified Specmatic
-  integration mode: `cli`, `docker-cli`, `test-container`, or `native`
-- [ ] The generated test adapter and CI use only official Specmatic Enterprise
-  artifacts: `io.specmatic.enterprise:*`, `specmatic/enterprise:*`, or a
-  documented Enterprise-native language artifact/API. Generated files must not
-  reference `npm exec specmatic`, `npx specmatic`, `specmatic@`,
-  `node_modules/specmatic/specmatic.jar`, or `specmatic/specmatic`.
-- [ ] `.specmatic-sample-manifest.json` records the exact Enterprise runtime
-  artifact/version/source. A license initialization message alone is not
-  accepted as proof of Enterprise runtime usage.
-- [ ] Generated Dockerfiles build from source and do not depend on local build
-  outputs that are excluded by `.dockerignore`, such as `target/`, `dist/`, or
-  `build/`
-- [ ] `README.md` complies with `guides/readme-generation.md`: required
-  sections are present and in order, contract links point to the resolved
-  executable specs, role-appropriate architecture assets are included when
-  available, run commands cover Unix/macOS, Windows PowerShell, and Windows
-  Command Prompt, test modes are documented, and project structure matches the
-  generated files
-- [ ] README-required assets, such as architecture GIFs copied from `assets/`,
-  are included inside the sample folder and listed in
-  `.specmatic-sample-manifest.json`
-- [ ] Local verification artifacts are ignored and are not left as source files in the generated sample folder
+## How validation must run (preconditions)
+
+These three properties are what make the checks below trustworthy. Without them
+the criteria are advisory prose, not a gate.
+
+- **VAL-1 (independent re-run) · blocker.** Validation runs on a clean checkout
+  of the generated folder and **re-executes** the test command itself. It does
+  not trust the generator's natural-language summary ("tests passed", "coverage
+  68%") as evidence — only artifacts produced by an observed run.
+- **VAL-2 (preserve evidence) · blocker.** The run artifacts the checks depend
+  on — the Specmatic test/coverage report and the test output — must exist when
+  validation runs. The sample must not be stripped of these before validation;
+  cleaning local caches is allowed only after the checks have consumed them.
+- **VAL-3 (derive oracles, never declare) · blocker.** Every value with a single
+  correct answer is **computed at validation time** from a source of truth — the
+  resolved contract (operation count, protocol), the resolved build toolchain
+  (compiler/runtime versions), the artifact registry (latest Enterprise
+  version). Such values are never read from an example in the guides, and the
+  guides must not present a liftable literal for them.
+
+---
+
+## Test execution
+
+- **TEST-1 (single command green) · blocker · auto.**
+  Artifact: test command exit code + stdout. Assert: the single documented test
+  command exits `0` and prints zero failures/errors (`Failures: 0, Errors: 0`,
+  or the Jest-format equivalent). Oracle: process exit status and report.
+- **TEST-2 (no contract failures) · blocker · auto.**
+  Artifact: Specmatic/JUnit report. Assert: total failures == 0 and errors == 0.
+  Oracle: parsed report.
+- **TEST-3 (behaviour matches the executable contract) · blocker · manual.**
+  The implementation conforms to the executable contract used by Specmatic; any
+  mismatch between local guides/test data and the executable contract is
+  resolved in favour of the contract. (Largely enforced by TEST-1/2; manual
+  spot-check for areas tests cannot reach.)
+- **TEST-4 (no manual intervention) · blocker · manual.**
+  Generation produced a sample that is green with no post-generation hand-edits.
+
+## Specmatic configuration
+
+- **CFG-1 (single config source) · blocker · auto.**
+  Artifact: file tree + test sources. Assert: exactly one checked-in
+  `specmatic.yaml`; tests do not generate, copy, overwrite, or mutate another
+  Specmatic config, and it is not relocated into a build directory (e.g.
+  `build/.../specmatic.yaml`). Oracle: file tree + static scan of test code.
+- **CFG-2 (config schema version) · blocker · auto.**
+  Artifact: `specmatic.yaml`. Assert: top-level `version` is the current
+  supported config-schema version. Oracle: supported schema version for the
+  resolved runtime.
+- **CFG-3 (schema resiliency shipped ON) · blocker · auto.**
+  Artifact: `specmatic.yaml`. Assert:
+  `specmatic.settings.test.schemaResiliencyTests == all`, unless the manifest
+  learnings document an unresolvable contract gap that forced a lower level.
+  Oracle: parsed config + manifest learnings.
+
+## Endpoint discovery and infrastructure filtering
+
+- **DISC-1 (discovery wired and reachable) · blocker · auto.**
+  Applies to: backend, bff. Artifact: `specmatic.yaml` + run log. Assert: a
+  discovery source is configured and was reachable during the run — no
+  `Failed to query swaggerUI` / `Actuator is not enabled` /
+  `cannot calculate actual coverage`. Oracle: parsed config + run log.
+- **DISC-2 (discovery implies a filter) · blocker · auto.**
+  Applies to: backend, bff. Statement: discovery reports a superset of contract
+  operations (frameworks add infrastructure/health/diagnostic/management/error
+  routes), so whenever discovery is configured a filter excluding every
+  discovered non-contract route must also be configured — or the coverage
+  universe is distorted. A passing run or an above-threshold percentage is **not**
+  evidence the filter was unnecessary. Artifact: `specmatic.yaml` + coverage
+  report. Assert: if a discovery source is present, a matching filter is present,
+  AND the coverage report shows no non-contract route and an eligible-operation
+  count equal to the contract operation count. Oracle: coverage report +
+  resolved contract operation count.
+- **DISC-3 (discovery source kind matches the mechanism) · blocker · auto.**
+  Statement: use the discovery mechanism the application's framework actually
+  provides, pointed at input of the kind that mechanism expects. A discovery
+  source read in the wrong format is a defect even when the run passes. Artifact:
+  `specmatic.yaml` + the served discovery source. Assert: the configured
+  discovery source returns the format its key expects. Oracle: the live
+  discovery response shape.
+
+## Coverage governance
+
+- **COV-1 (governance present and enforced) · blocker · auto.**
+  Applies to: backend, bff. Statement: coverage governance is protocol-
+  independent — every backend and bff sample enforces it regardless of protocol
+  (REST, Kafka, gRPC, GraphQL, SOAP). Artifact: `specmatic.yaml`. Assert: a
+  governance/success-criteria block exists with `minCoveragePercentage`,
+  `maxMissedOperationsInSpec`, and `enforce: true`. Oracle: parsed config +
+  role/protocol from manifest.
+- **COV-2 (threshold is achieved, with margin, not lowered to pass) · blocker · auto.**
+  Artifact: `specmatic.yaml` + coverage report. Assert: achieved coverage `>=`
+  configured `minCoveragePercentage`, AND configured `>=` the role baseline, AND
+  the threshold is not pinned exactly to the achieved value (leave margin so
+  normal variance does not red the build). The threshold is never lowered below
+  what the sample actually achieves to go green. Oracle: achieved coverage from
+  the report + role baselines from `guides/specmatic-runtime.md`.
+
+## Version and toolchain consistency
+
+- **VER-1 (declared versions equal resolved versions) · blocker · auto.**
+  Statement: any protocol- or runtime-toolchain version written into config
+  (e.g. a protobuf/compiler version, a runtime version) must equal the version
+  the build actually resolves — declared values are derived from the resolved
+  toolchain, never copied from an example. Artifact: `specmatic.yaml` + build
+  file (`pom.xml`/`build.gradle`/`package.json`/`requirements.txt`) +
+  lockfile. Assert: every version literal in config has a matching resolved
+  version in the build. Oracle: the resolved build toolchain.
+- **VER-2 (runtime artifact version is resolved) · warning · auto.**
+  Artifact: build file + manifest. Assert: the Enterprise artifact version is a
+  current/verified version resolved at generation time, not an arbitrary
+  hardcoded constant. Oracle: the artifact registry's latest/verified version.
+
+## Runtime is Specmatic Enterprise
+
+- **RT-1 (Enterprise-only artifacts) · blocker · auto.**
+  Artifact: all generated files. Assert: the adapter and CI reference only
+  `io.specmatic.enterprise:*`, `specmatic/enterprise:*`, or a documented
+  Enterprise-native language artifact/API; the build file actually declares such
+  an artifact. Oracle: static scan of generated files.
+- **RT-2 (no open-source / public fallbacks) · blocker · auto.**
+  Artifact: all generated files. Assert: no reference to `npm exec specmatic`,
+  `npx specmatic`, `specmatic@`, `node_modules/specmatic/specmatic.jar`, or
+  `specmatic/specmatic`. Oracle: static scan.
+- **RT-3 (manifest records real runtime, reconciled) · blocker · auto.**
+  Artifact: manifest + build file. Assert: `specmaticRuntime`
+  artifact/version/source/invocation are present AND match the artifact actually
+  referenced by the build/adapter. A license-initialization log line alone is
+  not accepted as proof. Oracle: build file reconciliation.
+- **REP-1 (Specmatic owns reports) · blocker · auto.**
+  Artifact: generated files. Assert: no custom report HTML/templates/renderers;
+  generated files may configure/capture/ignore/link Specmatic's report output
+  only. Oracle: static scan.
+
+## Integration mode
+
+- **MODE-1 (adapter uses the selected, verified mode) · blocker · auto.**
+  Artifact: manifest + contract test adapter. Assert: the adapter implements the
+  declared `integration_mode` (`cli`/`docker-cli`/`test-container`/`native`),
+  and the mode is verified for the stack. Oracle: adapter static scan.
+- **MODE-2 (cli is invoked directly) · blocker · auto.**
+  Applies to: `cli`. Assert: Specmatic is invoked directly (the executable JAR
+  runs `test`); it is not routed through a native test adapter; the sample does
+  not clone the contract repo or build its own report — Specmatic resolves and
+  caches contracts itself. Oracle: adapter static scan.
+- **MODE-3 (native requires a verified Enterprise-native artifact) · blocker · manual+auto.**
+  Applies to: `native`. Assert: an official Enterprise-native artifact/API
+  exists for the stack and is used; if none is verified, `native` is rejected
+  and a supported mode chosen — never a fake adapter. Oracle: artifact registry
+  lookup. (Treat a failed registry lookup as inconclusive, not as proof of
+  absence — confirm before rejecting.)
+
+## Environment overridability
+
+- **ENV-1 (runtime values overridable) · blocker · auto.**
+  Artifact: `specmatic.yaml`. Assert: ports, dependency base URLs, service
+  endpoints, broker URLs, and protocol-specific test settings are env-override
+  templates (e.g. `{SUT_PORT:...}`). Oracle: parsed config.
+
+## Consumer / dependency wiring
+
+- **DEP-1 (dependency mapping documented and implemented) · blocker · manual.**
+  Applies to: bff, frontend, any consumer. The contract-derived mapping between
+  SUT/consumer operations and dependency mock operations is documented and
+  implemented.
+
+## Files and structure
+
+- **FILE-1 (no stray files at destination root) · blocker · auto.**
+  Artifact: destination root. Assert: nothing written at the provided root
+  except the sample folder, except an updated existing root
+  `.github/workflows/samples-ci.yml`. Oracle: file tree diff.
+- **FILE-2 (self-contained) · blocker · auto.**
+  Assert: the sample folder needs no shared generated assets outside itself.
+- **FILE-3 (Dockerfile builds from source) · blocker · auto.**
+  Applies to: when a `Dockerfile` is generated. Assert: it builds from source and
+  does not copy local build outputs excluded by `.dockerignore` (`target/`,
+  `dist/`, `build/`). Oracle: Dockerfile + `.dockerignore` scan.
+- **FILE-4 (no local verification artifacts shipped) · blocker · auto.**
+  Assert: local run/verification artifacts are git-ignored and not left as source
+  files in the folder.
+- **FILE-5 (required files present) · blocker · auto.**
+  Assert: every file in **Required Files** below exists and is non-empty.
+
+## Documentation
+
+- **DOC-1 (README compliant) · blocker · manual+auto.**
+  Artifact: `README.md`. Assert: complies with `guides/readme-generation.md` —
+  required sections present and ordered, contract links point to the resolved
+  executable specs, role-appropriate architecture assets included when available,
+  run commands cover Unix/macOS + Windows PowerShell + Windows Command Prompt,
+  test modes documented, project structure matches generated files.
+- **DOC-2 (README assets shipped and listed) · blocker · auto.**
+  Assert: README-required assets (e.g. architecture GIFs from `assets/`) are
+  inside the sample folder and listed in the manifest.
+
+## Manifest
+
+- **MANI-1 (required fields present) · blocker · auto.**
+  Assert: `.specmatic-sample-manifest.json` contains all fields in **Manifest
+  Required Fields** below.
+- **MANI-2 (manifest reconciles with reality) · blocker · auto.**
+  Artifact: manifest + report + resolved spec. Assert: `protocol` matches the
+  resolved spec format; `testCoverage` counts match the counts in the re-run
+  report; `generated_files`/`assets` exist on disk. The manifest records claims
+  that validation verifies — it is not taken on trust. Oracle: report + spec +
+  file tree.
+
+## CI
+
+- **CI-1 (per-mode OS matrix) · blocker · auto.**
+  Assert: `native`/`cli` → `[ubuntu, macos, windows]`; `docker-cli`/
+  `test-container` → `ubuntu-latest` only. Oracle: workflow + manifest mode.
+- **CI-2 (runtime + license setup) · blocker · auto.**
+  Assert: CI sets up the required JRE/language runtime and the documented
+  Enterprise runtime/license (`SPECMATIC_LICENSE_KEY`), uploads the report, and
+  does not rely on incidental local state. Oracle: workflow scan.
+- **CI-3 (root samples-ci job) · blocker · auto.**
+  Applies to: when the destination root has `.github/workflows/samples-ci.yml`.
+  Assert: it includes a job for this sample (job named by sample id,
+  `working-directory: <sample-id>`, correct install/test commands, runtime +
+  Docker setup per mode, report upload). Oracle: workflow scan.
+
+---
 
 ## Required Files
 
@@ -119,11 +294,11 @@ The `.specmatic-sample-manifest.json` must include:
 
 - `testCoverage`: records test counts at each progressive verification level.
   `shipped_level` indicates which `schemaResiliencyTests` value the delivered
-  `specmatic.yaml` uses.
+  `specmatic.yaml` uses. (Validated by MANI-2 against the re-run report.)
 - `specmaticRuntime`: records the official Enterprise runtime artifact used by
   the generated sample. It must never identify the public npm `specmatic`
   package, the bundled npm `specmatic.jar`, or the `specmatic/specmatic` Docker
-  image.
+  image. (Validated by RT-3.)
 - `learnings`: array of strings documenting issues encountered during
   generation — dependency conflicts, contract gaps, framework quirks, or
   workarounds applied. Empty array if generation was clean.
@@ -234,3 +409,30 @@ When tests fail, use the generated Specmatic/JUnit/report files to identify the
 exact contract mismatch. Fix status codes, content types, request/response
 shape, RPC/message shape, GraphQL selection/variables, SOAP XML, examples,
 stubs, or startup configuration until the report has zero failures.
+
+---
+
+## Check Index
+
+Quick map of blocker checks for the validator. `auto` checks are intended to be
+script-enforced; `manual` checks need judgement.
+
+| ID | Method | What it guards |
+|----|--------|----------------|
+| VAL-1..3 | auto | Independent re-run, preserved evidence, derived oracles |
+| TEST-1..2 | auto | Single command green, zero failures |
+| TEST-3..4 | manual | Behaviour matches contract, no manual fixups |
+| CFG-1..3 | auto | One config source, schema version, resiliency `all` |
+| DISC-1..3 | auto | Discovery wired, discovery⇒filter, source-kind match |
+| COV-1..2 | auto | Governance present (role-based), threshold achieved with margin |
+| VER-1 | auto | Declared toolchain versions equal resolved versions |
+| VER-2 | warning | Runtime artifact version resolved, not hardcoded |
+| RT-1..3, REP-1 | auto | Enterprise-only, no public fallbacks, manifest reconciled, Specmatic owns reports |
+| MODE-1..2 | auto | Adapter matches mode, cli invoked directly |
+| MODE-3 | manual+auto | Native only with a verified artifact |
+| ENV-1 | auto | Runtime values env-overridable |
+| DEP-1 | manual | Dependency mapping documented + implemented |
+| FILE-1..5 | auto | No stray root files, self-contained, Dockerfile from source, no local artifacts, required files present |
+| DOC-1..2 | manual+auto | README compliant, assets shipped + listed |
+| MANI-1..2 | auto | Manifest fields present and reconciled with reality |
+| CI-1..3 | auto | Per-mode OS matrix, runtime/license setup, root samples-ci job |
