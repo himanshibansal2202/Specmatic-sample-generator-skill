@@ -24,17 +24,16 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] The delivered `specmatic.yaml` ships with `schemaResiliencyTests: all`
   (schema resiliency ON), unless documented unresolvable contract-gap failures
   force a lower level recorded in the manifest learnings
-- [ ] Endpoint discovery (actuator / swaggerUI / OpenAPI endpoint) is wired and
-  reachable, and non-contract infra endpoints are filtered, so Specmatic can
-  compute actual coverage (no `Failed to query swaggerUI` / `Actuator is not
-  enabled` / `cannot calculate actual coverage`)
-- [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
-  fully-implemented, infra-filtered sample actually achieves (see
-  `guides/specmatic-runtime.md` for reference baselines)
-- [ ] Specmatic is the only producer of HTML test/coverage reports. Generated
-  files may configure report output, capture/upload artifacts, ignore generated
-  report directories, or link to Specmatic's report path, but must not create
-  custom report HTML, templates, pages, or renderers.
+- [ ] Specmatic is configured to generate HTML and CTRF reports. The verified
+  runtime report location is recorded in the manifest and used by the README;
+  generated files may capture/upload, ignore, or link to that output, but must
+  not create custom report HTML, templates, pages, or renderers.
+- [ ] For OpenAPI Backend and BFF samples, endpoint discovery (actuator /
+  swaggerUI / OpenAPI endpoint) is wired and reachable, non-contract infra
+  endpoints are filtered, and governance coverage is enforced (`enforce: true`)
+  at the measured final threshold and missed-operation allowance.
+- [ ] Non-OpenAPI and mock-only samples retain HTML/CTRF reports without
+  unsupported API-coverage success criteria.
 - [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
   specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
   adapter; Specmatic resolves and caches contracts itself; the sample does not
@@ -111,6 +110,11 @@ The `.specmatic-sample-manifest.json` must include:
     "level3_all": { "tests": 0, "passed": 0, "failed": 0 },
     "shipped_level": "all"
   },
+  "reports": {
+    "formats": ["html", "ctrf"],
+    "outputDirectory": "<verified-runtime-report-directory>",
+    "coverageGovernance": null
+  },
   "learnings": [
     "Brief description of any issue encountered and how it was resolved"
   ]
@@ -127,6 +131,10 @@ The `.specmatic-sample-manifest.json` must include:
 - `learnings`: array of strings documenting issues encountered during
   generation — dependency conflicts, contract gaps, framework quirks, or
   workarounds applied. Empty array if generation was clean.
+- `reports`: records the Specmatic report formats and location. For applicable
+  OpenAPI provider samples, replace `coverageGovernance: null` with the final
+  measured `minCoveragePercentage`, `maxMissedOperationsInSpec`, and
+  `enforce: true` values.
 
 ## CI Workflow Must Include
 

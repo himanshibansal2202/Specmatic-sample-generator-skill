@@ -75,7 +75,7 @@ The skill is structured so that the AI loads only what it needs for a given gene
 | File | Purpose | When the AI reads it |
 |------|---------|---------------------|
 | `SKILL.md` | Defines the generate/maintain workflow, input collection, and step sequencing | Always (first file read) |
-| `guides/specmatic-runtime.md` | How to assemble `specmatic.yaml`, configure test/mock modes, schema resiliency settings, coverage governance | Every generation — this is the Specmatic config bible |
+| `guides/specmatic-runtime.md` | Runtime integration policy, report defaults, and verified configuration gaps | Every generation — read alongside the applicable official Specmatic configuration pages |
 | `guides/acceptance-criteria.md` | Definition of "done" — what must be true before the sample is considered complete (tests pass, CI works, manifest written) | Every generation — checked at the end |
 | `guides/backend-generation.md` | Backend-specific patterns: in-memory data store, seed data, how to handle CRUD endpoints | When app type = backend |
 | `guides/bff-generation.md` | BFF-specific patterns: forwarding to backend mock, path filtering, dependency mapping | When app type = bff |
@@ -98,6 +98,14 @@ The skill is structured so that the AI loads only what it needs for a given gene
 
 **Contract as source of truth**: The guides provide patterns and heuristics, but when there's a conflict, the executable contract wins. The AI reads the actual spec to determine exact schemas, status codes, and behaviors.
 
+**Configuration as documentation-driven**: Official Specmatic v3 documentation
+defines `specmatic.yaml` fields and structure. The runtime guide supplies only
+generator-owned inputs, integration policy, and narrow runtime-verified gaps.
+Generated samples always configure Specmatic HTML and CTRF reports in
+the verified runtime report directory; that location is recorded in the sample
+manifest and README. OpenAPI Backend/BFF coverage governance is derived from
+the final measured report.
+
 ## Repository Structure
 
 ```
@@ -107,7 +115,7 @@ The skill is structured so that the AI loads only what it needs for a given gene
 ├── guides/
 │   ├── acceptance-criteria.md    # Definition of "done" for a generated sample
 │   ├── readme-generation.md      # How to generate the sample's README
-│   ├── specmatic-runtime.md      # specmatic.yaml structure, test config, integration modes
+│   ├── specmatic-runtime.md      # runtime policy and verified config gaps
 │   ├── backend-generation.md     # Backend role behavior
 │   ├── bff-generation.md         # BFF role behavior
 │   ├── frontend-generation.md    # Frontend role behavior
@@ -147,14 +155,17 @@ The executable contract (from [specmatic-order-contracts](https://github.com/spe
 
 ### How it works
 
-The AI reads `SKILL.md` first, which references other files via relative paths. The AI follows those references to load guides, config, and test data as needed. The skill is self-contained — no external dependencies beyond the contract repo.
+The AI reads `SKILL.md` first, which references other files via relative paths.
+It loads guides, config, test data, and the applicable official Specmatic v3
+configuration pages before creating or refreshing `specmatic.yaml`.
 
 ### Adding learnings
 
 When a generation run reveals a new pattern or pitfall:
 1. Add it to the relevant guide file (not SKILL.md unless it's a workflow change)
 2. Be specific and actionable — describe the symptom, root cause, and fix
-3. If it's a specmatic.yaml config issue, add it to `guides/specmatic-runtime.md`
+3. If it is a documentation/runtime config discrepancy, add a version-scoped,
+   verified entry to `guides/specmatic-runtime.md`
 4. If it's role-specific (backend/BFF/frontend), add it to the corresponding guide
 
 ### Editing guidelines
@@ -164,19 +175,12 @@ When a generation run reveals a new pattern or pitfall:
 - **Test after changes** — run a generation and verify test counts still match expectations
 - **Use branches + PRs** — never commit directly to main
 
-### Reference repos for validation
-
-These are the "bible" — generated samples should achieve similar test counts:
-- Backend: [specmatic-order-api-java](https://github.com/specmatic/specmatic-order-api-java) (293 tests)
-- BFF: [specmatic-order-bff-java](https://github.com/specmatic/specmatic-order-bff-java) (269 tests)
-
 ### Known patterns (from real generation runs)
 
 | Pattern | Resolution |
 |---------|-----------|
 | Kotlin version conflict with Spring Boot | Override `kotlin.version` to match Specmatic's requirement |
 | Framework adds `path` field to error responses | Override default error handler to return only contract-defined fields |
-| `schemaResiliencyTests` silently ignored | Must be under `specmatic.settings.test`, not `components.settings.test` |
 | Docker not available on macOS/Windows CI | `docker-cli`/`test-container` modes → ubuntu-only CI |
 
 ## Links

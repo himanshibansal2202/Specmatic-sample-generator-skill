@@ -1,122 +1,104 @@
 # Specmatic Runtime & Contract Test Patterns
 
-Generator guidance for assembling the Specmatic runtime configuration and the
-contract test adapter in a generated sample. It describes intent and structure;
-contract behavior always comes from the executable contract, not this guide.
+This guide contains generator policy, integration wiring, and documentation/runtime gaps.
+The current official Specmatic documentation defines the `specmatic.yaml`
+schema and field syntax. Do not maintain or copy a local schema template here.
 
-For all config syntax, use the official Specmatic documentation as the source of
-truth (the syntax is version-dependent and changes between releases):
+## Documentation-driven configuration
 
-| Topic | Official doc |
-|---|---|
-| Full `specmatic.yaml` / `specmatic.json` attributes | https://docs.specmatic.io/documentation/specmatic_json.html |
-| Contract tests: `filter`, `actuatorUrl`, coverage | https://docs.specmatic.io/documentation/contract_tests.html |
-| Contract testing concepts | https://docs.specmatic.io/contract_driven_development/contract_testing.html |
-| Resiliency / generative tests | https://docs.specmatic.io/getting_started/mcp_auto_test.html |
+Before creating or refreshing `specmatic.yaml`, read the official v3 pages that
+apply to the sample:
 
-Concrete contract repository URLs, spec formats, run option keys, and spec paths
-come from `config/contract-resolution.yaml`, user input, or runtime contract
-discovery. Default ports come from the root `SKILL.md` conventions.
+- [Getting Started with Configuration](https://docs.specmatic.io/references/configuration/getting-started)
+  for the v3 component model and top-level wiring.
+- [Contract Management](https://docs.specmatic.io/references/configuration/contract-management)
+  for the selected source type and service definitions.
+- [Test Configuration](https://docs.specmatic.io/references/configuration/test-configuration)
+  for test-mode settings.
+- [Mock Configuration](https://docs.specmatic.io/references/configuration/mock-configuration)
+  when the SUT or a dependency is mocked.
+- [Template Values](https://docs.specmatic.io/references/configuration/template-values)
+  when runtime values are environment-configurable.
+- [Reports](https://docs.specmatic.io/references/configuration/reports) for
+  reports and OpenAPI coverage governance.
 
-## Required Inputs
+Populate documented fields directly. For configuration version 3, define
+sources, services, and protocol run options under `components`, then wire the
+system under test and each dependency by `$ref`. Use the resolved contract
+source, spec paths, service IDs, run-option key, and protocol values from user
+input, the executable contract, and `config/contract-resolution.yaml`; those
+are generator inputs, not a replacement schema.
 
-Resolve these before writing the generated sample's `specmatic.yaml`:
+Place the generated `specmatic.yaml` at the sample root. It is the only
+Specmatic configuration source: adapters must not create, copy, relocate, or
+mutate another config file.
 
-| Input | Notes |
-|---|---|
-| `CONTRACT_REPO_URL` | Source Specmatic fetches contracts from |
-| `SPEC_FORMAT` | `openapi`, `asyncapi`, `protobuf`, `graphqlsdl`, `wsdl` |
-| `RUN_OPTION_KEY` | Resolved from `config/contract-resolution.yaml` |
-| `SUT_SPEC_PATH` | System-under-test contract path |
-| `SUT_ENDPOINT_ENV` / `SUT_DEFAULT_ENDPOINT` | Endpoint + env override |
-| `DEPENDENCY_*` (repo, spec path, endpoint env, default) | One set per dependency mock, when needed |
-| `SPECMATIC_INTEGRATION_MODE` | `cli`, `docker-cli`, `test-container`, `native` |
-| Protocol-specific values | broker URL/host/port, import paths, protoc version, request timeout, examples dirs — only when the protocol requires them |
+### Runtime values
 
-## specmatic.yaml Assembly
+Keep endpoints, ports, broker settings, import paths, examples directories, and
+timeouts configurable through the documented template syntax. The generated app
+and the configuration must use the same environment-variable names. Use the
+root workflow defaults unless the resolved contract requires another value:
 
-Rules of intent (for exact shape, follow the docs linked above):
+- SUT HTTP base URL: `SUT_BASE_URL`, defaulting to `http://localhost:8080`.
+- Dependency HTTP mock URL: `STUB_BASE_URL`, defaulting to
+  `http://localhost:8090`.
+- gRPC and Kafka host, port, broker, import-path, `protoc`, and timeout values:
+  derive their exact fields from the selected protocol documentation and the
+  resolved contract.
 
-- The generated `specmatic.yaml` sits at the sample root and is the **single**
-  Specmatic config source. Test adapters must not build YAML strings, write a
-  second config, copy YAML over the root config, or mutate it during tests.
-- Define the SUT and each dependency once and reference them, so service and
-  run-option definitions are not duplicated. See `specmatic_json.html`.
-- Consumer samples (BFF, Frontend) declare each dependency mock as a service.
-- Keep base URLs, endpoints, broker URLs, ports, import paths, and examples
-  directories overridable via environment variables consumed by the config, so
-  tests can avoid occupied resources. The generated app config and
-  `specmatic.yaml` must use the same env var names.
+### Reports and governance
 
-Use the resolved `run_option_key` from `config/contract-resolution.yaml`:
+Every sample configures Specmatic-owned reports with `html` and `ctrf` formats.
+Do not hard-code an `outputDirectory`: use the selected runtime's documented
+default or a sample-specific configured location, verify the produced location,
+record it in the manifest, and use that exact location in the generated README.
+Do not create a sample-owned report renderer.
 
-| Protocol | Spec format | Run option key | Endpoint/config shape |
-|---|---|---|---|
-| REST/OpenAPI | `openapi` | `openapi` | HTTP base URL |
-| Kafka/AsyncAPI | `asyncapi` | `asyncapi` | broker/server settings from the resolved contract |
-| gRPC | `protobuf` | `protobuf` | host, port, import paths, protoc version |
-| GraphQL | `graphqlsdl` | `graphqlsdl` | host, port, examples directory when required |
-| SOAP/WSDL | `wsdl` | `wsdl` | HTTP base URL plus WSDL SOAP metadata |
+For OpenAPI Backend and BFF samples, finish verification before writing
+`successCriteria`: set `enforce: true`, `minCoveragePercentage`, and
+`maxMissedOperationsInSpec` from the measured, infra-filtered final report.
+This creates a regression gate without assuming a fixed threshold. API coverage
+governance is not emitted for non-OpenAPI or mock-only samples because the
+official reports documentation supports API coverage configuration for OpenAPI.
 
-Recommended overridable value names (defaults from the root workflow):
+For applicable OpenAPI provider samples, expose endpoint discovery and filter
+only non-contract infrastructure paths. The discovery URL, filter syntax, and
+run-option placement must come from the selected runtime's current official
+documentation and be validated in the generated test run.
 
-| Purpose | Env var → default |
-|---|---|
-| SUT HTTP base URL | `SUT_BASE_URL` → `http://localhost:8080` |
-| SUT gRPC host / port | `SPECMATIC_SUT_HOST` (`host.docker.internal` for Docker, `localhost` for host-network) / `SUT_PORT` → `8080` |
-| Dependency HTTP mock URL | `STUB_BASE_URL` → `http://localhost:8090` |
-| Dependency gRPC mock host / port | `SPECMATIC_STUB_HOST` → `localhost` / `STUB_PORT` → `8090` |
-| Kafka/AsyncAPI broker | `BROKER_HOST` / `BROKER_PORT` (`9092`) / `BROKER_URL` |
+### Resiliency verification policy
 
-## Schema Resiliency Tests
+Use the documentation-supported `schemaResiliencyTests` setting during the
+existing `none` → `positiveOnly` → `all` verification workflow. Ship `all`
+unless an unresolvable contract gap is recorded in the manifest. Test counts
+must increase at each level; otherwise stop and diagnose the generated config
+and runtime combination.
 
-`schemaResiliencyTests` controls how many tests Specmatic generates beyond the
-named examples. Configure it per the docs (resiliency link above). Levels:
+## Documentation/runtime discrepancy policy
 
-| Value | Behavior |
-|---|---|
-| `none` | Tests from named examples only |
-| `positiveOnly` | Adds all valid request combinations (enum permutations, optional fields present/absent) |
-| `all` | Adds negative/boundary tests (nulls, wrong types, missing required fields — expects 4xx) |
+| Gap | Canonical generation rule | Verification |
+|---|---|---|
+| Some official v3 examples nest `runOptions` inside `service` and place `settings` under `components`, while the Getting Started and migration guides describe sibling service/run-options wiring and top-level `specmatic` settings. | Generate sibling `service` and `runOptions` references; put global test settings and governance under top-level `specmatic`. | Parse and execute the generated config with the selected Enterprise runtime before shipping. |
 
-The skill uses progressive verification (none → positiveOnly → all) during
-generation to isolate failures by category (see `SKILL.md` Step 6). Ship the
-highest level that passes cleanly; only drop below `all` for documented,
-unresolvable contract gaps (see Findings).
+The selected Enterprise runtime must parse and execute the canonical layout
+before a sample ships. If it fails, record a version-scoped verified runtime gap
+with the runtime version, symptom, workaround, and regression scenario instead
+of turning the workaround into a general template. Remove the entry when the
+documentation and runtime converge.
 
-## Governance and Coverage
+## Runtime and integration policy
 
-Generated Backend and BFF samples must report API coverage with governance
-enforced. Configure `successCriteria` (threshold, max missed operations,
-`enforce`) per `contract_tests.html`. Principles:
+All generated samples must use an official Specmatic Enterprise runtime. Allowed
+artifacts are `io.specmatic.enterprise:*` Maven artifacts,
+`specmatic/enterprise:*` Docker images, and documented Enterprise-native
+language artifacts. Never use the public npm `specmatic` package, its bundled
+JAR, or the `specmatic/specmatic` image.
 
-- Endpoint discovery + infra filtering is a **hard requirement** — coverage is
-  meaningless without it. A sample reporting "cannot calculate actual coverage"
-  is not done.
-- Set the threshold to a value the fully-implemented, infra-filtered sample
-  actually achieves; aim high, never lower it just to go green.
-- Treat every missed/Not-Implemented operation as something to implement.
-
-## Path Filtering and Actuator
-
-Configure `filter` and `actuatorUrl` per `contract_tests.html` (syntax is
-version-dependent; verify against the resolved runtime).
-
-- Filter only framework/infrastructure endpoints that are not contract-owned
-  (e.g. `/health`, `/swagger`). Never filter contract-declared endpoints — if a
-  contract declares `/monitor/{id}`, implement and verify it.
-- Endpoint discovery is required, not optional. Wire it with whatever the
-  framework supports, then point `specmatic.yaml` at it:
-  - Spring Boot: enable the actuator, expose `/actuator/mappings`.
-  - Other frameworks: expose a route/endpoint listing, or serve the OpenAPI
-    document via a Swagger UI / OpenAPI endpoint Specmatic can read.
-- The app config and `specmatic.yaml` must agree on the discovery URL, and it
-  must be reachable during the run.
-
-## Integration Modes
-
-The mode is a user input. It controls test wiring, dependencies, README, and CI.
-It does **not** change contract resolution, `specmatic.yaml`, or app behavior.
+After installing dependencies, verify the selected runtime can parse the
+generated configuration version before changing application behavior. A license
+initialization message is not proof of Enterprise usage: verify the artifact,
+image, package, or JAR path.
 
 | Mode | When | Runtime artifact | Local/CI prereqs | Key constraint |
 |---|---|---|---|---|
@@ -125,105 +107,39 @@ It does **not** change contract resolution, `specmatic.yaml`, or app behavior.
 | `test-container` | Run Specmatic from Docker inside the test suite | `specmatic/enterprise:<tag>` | Docker, no local Java outside the container | Use the language's Testcontainers dep; stream container logs; fail on non-zero exit. |
 | `native` | Language has an official Enterprise-native test integration | `io.specmatic.enterprise:*` (JVM) or documented Enterprise-native package | Per package (JVM normally JDK/JRE 17+) | Use the official Enterprise API. Reject `native` if only the open-source/public package exists — ask the user for another mode. |
 
-Common to all modes: start the app (and any dependency mocks/stubs) first; let
-Specmatic resolve/cache contracts from `specmatic.yaml` (do not clone/copy the
-repo yourself); run against the checked-in root config in place (do not relocate
-it into build dirs); capture Specmatic's own reports (do not render your own);
-fail on non-zero exit and assert zero reported failures.
+Resolve the official Enterprise executable and run it directly from the sample
+root against the checked-in config. Let Specmatic fetch and cache contracts;
+the sample must not clone or copy the contract repository. Capture output and
+reports, fail on a non-zero exit, and require Java 17+ when the artifact needs
+it.
 
-### Protocol notes
+### Docker CLI and test-container
 
-- All protocols, including REST/OpenAPI, use an official Enterprise runtime.
-- Prefer `docker-cli` or `test-container` when a native Enterprise language
-  artifact is not verified. Do not accept a native adapter that parses
-  `specmatic.yaml` but reports no executable contract tests.
-- gRPC with Docker runtimes: keep host, port, import paths, `protocVersion`, and
-  request timeout in `specmatic.yaml`; staging imported protos into an ignored
-  runtime dir is allowed, staging another config is not.
+Use only the official `specmatic/enterprise` image. Mount the root config,
+needed support files, and report directory; make the config read-only when
+possible. Pass endpoint overrides through the documented template values and
+use host access or network aliases rather than container-local `localhost`.
+Stream logs, fail on a non-zero exit, and require Docker but not local Java for
+Specmatic.
 
-## Contract Test Adapter
+### Native
 
-The adapter starts the app, runs Specmatic, then stops the app. It must surface
-startup/listen errors and Specmatic failures clearly.
+Use native mode only after verifying an official Enterprise-native language API
+for the selected protocol. Keep the root config as the single source; start the
+app and dependencies, run the native contract tests, surface failures, and tear
+down every process. If no official native artifact exists, require `cli`,
+`docker-cli`, or `test-container` instead.
 
-| Requirement | Detail |
-|---|---|
-| Resolve runtime values | host, port, base URL, endpoint, broker URL, import paths, examples dirs, timeouts — from app config/env, mirrored into `specmatic.yaml` template values |
-| Start dependencies first | Start dependency mocks/stubs before consumer-side tests; ensure mock and app agree on the same endpoint/broker |
-| Fail fast | If the app or any mock cannot bind its port, fail immediately |
-| Assert, don't print | Assert zero Specmatic failures, not just log results |
-| Teardown always | Stop app and all mocks in teardown, even when Specmatic fails |
-| Stage support files only | If a runtime needs imported protos etc., stage only those into ignored runtime dirs |
+## Contract test adapter requirements
 
-Language notes: Node/TS samples include the test-framework dep and configure ESM
-when needed; Java samples use the JUnit 5 support dep (`native`), Testcontainers
-(`test-container`), direct Docker (`docker-cli`), or CLI/JAR (`cli`); Python
-samples use pytest + the Enterprise-native package (`native`) or the equivalent
-wiring per mode.
-
-## How Specmatic Tests Work
-
-1. Reads the generated `specmatic.yaml`.
-2. Fetches the configured contract source.
-3. Parses the resolved contract for the selected protocol.
-4. Sends requests / RPC calls / GraphQL ops / SOAP messages / broker messages
-   to the app at the configured endpoint.
-5. Validates status, content type, schema, payload, metadata, or protocol output.
-6. Reports pass/fail.
-
-On failure, read the JUnit XML / Specmatic report before changing code, then
-classify: SUT contract mismatch · dependency mock mismatch · runtime/tooling
-mismatch · startup/config mismatch · runtime config duplication. Fix the
-reported mismatch only.
-
-## Contract Source Of Truth
-
-See `SKILL.md` Step 3 for contract resolution and source-of-truth rules. This
-file only covers runtime wiring after the contract paths are resolved.
-
-## Test-Library / Framework Dependency Conflicts
-
-The Specmatic test library ships transitive dependencies at specific versions; a
-chosen framework may pin the same transitives older, causing
-linkage/missing-method/class-not-found errors at test time. Resolve as a build
-fix: look up the latest Enterprise version online (do not rely on training
-data), pick a library version that supports the generated config schema version,
-then override the conflicting transitive via the build tool's standard
-mechanism — pinning only to the version Specmatic declares. See Findings.
-
-## Exceptions / Caveats / Findings
-
-Hard-won knowledge. These are findings to account for, not config to copy.
-
-- **Resiliency yaml path is silent on error.** `schemaResiliencyTests` belongs
-  under `specmatic.settings.test` (top-level `specmatic:` key), not under
-  `components`. A wrong path is silently ignored — the run looks green with no
-  generative tests. Verify the test count actually increases none → positiveOnly
-  → all; a count that does not increase means the setting is being ignored.
-- **Generative tests default.** Official docs indicate generative/resiliency
-  tests are ON by default and disabled via `DISABLE_GENERATIVE_TESTS=true`.
-  Reconcile with the `schemaResiliencyTests` value against the installed runtime
-  version rather than assuming.
-- **Test count must never drop across levels.** A decrease signals
-  misconfiguration — stop and investigate, do not accept it as "all pass."
-- **Enum without a 4xx response = unresolvable contract gap.** At `all`,
-  Specmatic sends invalid enum values expecting 4xx; if the contract defines no
-  4xx for that endpoint, 200 fails ("expected 4xx") and 400 fails ("spec has no
-  4xx response"). This is a contract gap, not an app bug — document it and ship
-  the highest cleanly-passing level. Confirm you are on the latest runtime first.
-- **Reference repos do not ship 100% coverage.** `specmatic-order-bff-java` uses
-  threshold 70 + max missed 1; the backend reference is ~65%. 100% is often
-  unreachable because declared error responses (404/422/specific 400s) lack
-  examples to exercise them — that requires examples in the contract, not a
-  config or filter change.
-- **Unexpectedly low coverage usually means discovery is not wired.** A ~35%
-  result is typically the actuator/swaggerUI not being reachable, not a real
-  gap. Log signatures: `Failed to query swaggerUI, status code: 404`,
-  `EndpointsAPI and SwaggerUI URL missing; cannot calculate actual coverage`,
-  `Actuator is not enabled`. Wire discovery before treating the gap as real.
-- **License message ≠ Enterprise proof.** A license-initialization log does not
-  prove the Enterprise runtime is in use. Verify the artifact coordinate,
-  package name, jar path, or Docker image.
-- **Config syntax is version-dependent.** Always confirm `specmatic.yaml`
-  attribute names and shapes against the official docs for the resolved runtime
-  version, not from memory or older samples.
+- Read host, port, base URL, broker, imports, examples, and timeout values from
+  the generated app configuration or environment, then expose the same values
+  to Specmatic through the root config.
+- Start dependency mocks before the app; fail fast on bind/startup errors.
+- Run Specmatic against the configured endpoint and require zero failures.
+- Always stop the app and mocks in teardown.
+- Stage only protocol support files, such as imported protos, in ignored runtime
+  directories; never stage another Specmatic configuration file.
+- Read Specmatic reports before changing generated behavior. Classify failures
+  as SUT mismatch, dependency mismatch, runtime mismatch, startup/config
+  mismatch, or duplicated configuration before applying the smallest fix.
