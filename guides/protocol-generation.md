@@ -1,19 +1,23 @@
 # Protocol Generation Guide
 
-Use this guide after resolving the executable contract source in
-`config/contract-resolution.yaml`. The executable contract and Specmatic output
-remain the final source of truth for every protocol.
+Use this guide after resolving the executable contract source from the
+user-provided repo/spec path or the checked-in `specmatic.yaml`. The executable
+contract and Specmatic output remain the final source of truth for every
+protocol.
 
-## Protocol Aliases
+## Contract Format Detection
 
-- `rest` / `openapi`: OpenAPI over HTTP.
-- `kafka` / `asyncapi`: AsyncAPI over Kafka unless the resolved contract
-  declares another transport.
-- `grpc`: Protobuf/gRPC.
-- `graphql`: GraphQL SDL.
-- `soap` / `wsdl`: SOAP over HTTP using WSDL.
+Detect the contract format from parsed content first, using file extension only
+as fallback evidence:
 
-Reject only combinations that are incoherent for the selected protocol. For
+- OpenAPI: top-level `openapi`, implemented as HTTP routes/controllers.
+- AsyncAPI: top-level `asyncapi`, implemented as broker/message handlers unless
+  the resolved contract declares another transport.
+- Protobuf/gRPC: `.proto` syntax, package, service, and rpc declarations.
+- GraphQL SDL: schema, type, query, mutation, or subscription SDL.
+- WSDL/SOAP: XML WSDL definitions, bindings, services, and SOAP metadata.
+
+Reject only combinations that are incoherent for the detected format. For
 example, a browser-only frontend can consume GraphQL or HTTP APIs directly, but
 should not be generated as a native gRPC server unless the stack includes a
 gRPC-web or gateway layer.

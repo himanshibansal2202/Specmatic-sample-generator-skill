@@ -170,34 +170,37 @@ Source-of-truth order:
 5. Existing generated samples and official sample repositories must not be used
    as references for generation.
 
-Normalize protocol aliases before resolving contracts:
+Resolve contracts from the user-provided contract source. The user-provided
+spec is the primary contract source for generation. For maintenance, recover
+the contract source from the checked-in `specmatic.yaml`; if it is missing or
+ambiguous, ask the user for the contract repo/spec path before changing files.
 
-- `rest` and `openapi` use the OpenAPI spec format.
-- `kafka` and `asyncapi` use the AsyncAPI spec format.
-- `grpc` uses the Protobuf spec format.
-- `graphql` uses the GraphQL SDL spec format.
-- `soap` and `wsdl` use the WSDL spec format.
+Detect the contract format from parsed content first, using file extension only
+as fallback evidence. Use `guides/protocol-generation.md` for the format
+markers and protocol-specific implementation expectations.
 
-Read `config/contract-resolution.yaml` and use the selected protocol plus
-application type to resolve the contract source for the selected sample. The
-contract repository URL is required because Specmatic fetches the executable
-contracts from it. Contract spec paths are resolved the same way for every
-protocol:
+Resolve Specmatic `runOptions`, service wiring, and `specmatic.yaml` structure
+from the applicable current official Specmatic configuration documentation and
+verify the selected Enterprise runtime can parse and execute the generated
+config.
 
-1. Inspect filenames under the configured `spec_root` in the contract
-   repository.
-2. Match the selected role's discovery patterns for the selected spec format
-   across all discovered compatible contract versions.
-3. Select the latest compatible discovered version for each required
-   system-under-test or dependency contract role.
-4. Resolve exactly one system-under-test contract and exactly one contract for
-   each required dependency. Write these exact resolved paths into the
-   generated `specmatic.yaml`.
-5. If multiple candidates match the same role/version, fail with a clear error
-   instead of guessing.
-6. If any required system-under-test or dependency contract cannot be resolved
-   from the configured central contract repo, stop before generating source code
-   and ask the user for an explicit contract repo/path to use.
+Resolve these contract facts before generating source code:
+
+1. Read the exact user-provided git repo/spec path or local spec path.
+2. Use the provided spec as the system-under-test contract for Backend and BFF
+   samples.
+3. Use the provided spec as the consumed dependency contract for Frontend
+   samples unless the user explicitly provides a separate consumer-facing API
+   contract.
+4. For BFF samples, discover required dependency contracts from the same
+   repository/domain by comparing role intent, operation compatibility,
+   message/schema shape, transport, naming, and nearby contract structure.
+5. Resolve exactly one system-under-test contract and exactly one contract for
+   each required dependency. Write these exact paths into the generated
+   `specmatic.yaml`.
+6. If the contract format, system-under-test, or any dependency is ambiguous,
+   stop before generating source code and emit the structured ambiguity JSON
+   described below instead of guessing.
 
 Before fetching from the network, check only approved contract-source locations:
 the current generated sample's own `.specmatic/repos/<repo-name>` cache, an
@@ -206,40 +209,47 @@ contract caches that live inside other generated sample folders.
 
 Resolve these executable specs by sample type:
 
-- Backend: provider/system-under-test contract for the selected protocol.
-- BFF: system-under-test contract AND all dependency contracts required by
-  the BFF architecture. Inspect the contract repository for ALL specs that
-  the BFF's system-under-test contract implies — this may include REST backend
-  dependencies AND async dependencies (e.g., Kafka/AsyncAPI). Discover
-  dependencies across ALL protocols, not just the primary selected protocol.
-- Frontend: dependency mock contract for the API, service, broker, or endpoint
+- Backend: the user-provided provider/system-under-test contract.
+- BFF: the user-provided system-under-test contract and all dependency
+  contracts required by the BFF architecture. Inspect the user-provided
+  repository/domain for ALL specs the BFF contract implies; this may include
+  HTTP, async, RPC, GraphQL, or SOAP dependencies.
+- Frontend: the user-provided contract for the API, service, broker, or endpoint
   consumed by the generated client.
 
 For BFF samples, examine the contract repository's spec structure to discover
-every dependency. For example, the `specmatic-order-bff-java` reference has:
-- SUT: `product_search_bff_v6.yaml` (REST/OpenAPI)
-- Dependency 1: `api_order_v5.yaml` (REST backend mock)
-- Dependency 2: `kafka.yaml` (AsyncAPI/Kafka mock)
+every dependency. The dependency search is scoped to the user-provided
+repo/domain and must be validated by contract compatibility.
 
 Do not rely only on direct `$ref` entries, `servers`, operation descriptions,
 file names, or textual references inside the BFF system-under-test OpenAPI file
 to discover dependencies. BFF dependency discovery must combine the selected
-SUT contract, the contract repository's role structure, and this skill's role
-mapping across all protocols. As a reference example, the Store BFF contract
-`io/specmatic/examples/store/openapi/product_search_bff_v6.yaml` maps to both a
-REST backend mock (`io/specmatic/examples/store/openapi/api_order_v5.yaml`) and
-an AsyncAPI/Kafka mock (`io/specmatic/examples/store/asyncapi/kafka.yaml`).
-Use this as an example of cross-protocol discovery, not as a hardcoded mapping
-for unrelated samples.
+SUT contract, nearby contract repository structure, parsed contract semantics,
+and operation/message compatibility across all discovered contract formats.
 
-If async specs are present in the same contract domain and the BFF role mapping
-or reference structure names one as a dependency, include it even when the SUT
-OpenAPI file does not reference it directly. If multiple async dependency
-candidates are plausible and the role mapping does not resolve them, stop with
-an explicit ambiguity report instead of silently skipping async dependencies.
+If multiple dependency candidates are plausible, stop with a structured
+ambiguity report instead of silently skipping or selecting a dependency.
 
 All discovered dependencies must be included in the generated `specmatic.yaml`
 under `dependencies.services` with appropriate `runOptions` for each protocol.
+
+When dependency discovery is ambiguous, stop and report this JSON shape:
+
+```json
+{
+  "dependencyResolutionStatus": "ambiguous",
+  "systemUnderTest": "path/to/bff.yaml",
+  "candidates": [
+    {
+      "role": "backend",
+      "specPath": "path/to/backend.yaml",
+      "detectedSpecFormat": "openapi",
+      "reason": "compatible HTTP operations and backend role naming"
+    }
+  ],
+  "requiredUserInput": "Select the dependency contract path to use."
+}
+```
 
 After resolving the applicable specs, inspect the applicable generation guide,
 `guides/protocol-generation.md`, the Specmatic runtime guidance, and the
@@ -489,7 +499,8 @@ When modifying `specmatic.yaml` between levels, use your environment's native
 file-editing tools (file write/replace operations). Do not use shell text
 processors like `sed`, `perl`, or `awk` for file modifications.
 
-**First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
+**First run may take 1-3 minutes** — Specmatic may clone the user-provided
+contract repo. Subsequent runs are usually faster when cached in `.specmatic/`.
 
 **Timeout guidance:** If the test command runs for more than 5 minutes, something is wrong. Cancel and check:
 - Is the required runtime available? For example, Java 17+ for CLI/JAR or JVM
@@ -562,9 +573,9 @@ Only report "done" when tests are green.
   runtime versions. Any other existing sample must not be referred to for code,
   configuration, documentation, dependency choices, or runtime choices. Every
   file must be generated from this skill's `guides/`, `test-data/`,
-  `config/contract-resolution.yaml`, the configured central contract repo,
-  isolated temporary checkouts of that contract repo, official product/protocol
-  documentation, or user-provided contract paths only.
+  the user-provided contract source, isolated temporary checkouts of that
+  contract source, official product/protocol documentation when syntax is
+  unclear, or user-provided contract paths only.
   Existing samples may target a different stack or contract version and will
   silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
@@ -589,7 +600,7 @@ Only report "done" when tests are green.
 
 - `guides/` — Role generation notes, Specmatic runtime guidance, and acceptance criteria
 - `test-data/backend-seed-data.md` — Required backend data entries for tests to pass
-- `config/contract-resolution.yaml` — Contract repositories, protocol roots, and runtime discovery patterns
+- user-provided contract source — Executable contract specs and dependency candidates
 
 ---
 
@@ -607,7 +618,11 @@ If the user provides a monorepo path with multiple samples, list the discovered 
 
 ### Step 2: Discover and Read
 
-Scan the provided path for `.specmatic-sample-manifest.json`. Read the manifest to recover the original inputs (application type, protocol, language, framework, data layer, contract source).
+Scan the provided path for `.specmatic-sample-manifest.json`. Read the manifest
+to recover the original inputs it already contains, then read the checked-in
+`specmatic.yaml` to recover contract source and spec paths. If either source is
+missing required information, ask the user for the contract repo/spec path
+before planning maintenance.
 
 If no manifest is found, inform the user and ask if they want to generate a new sample instead.
 
@@ -654,12 +669,13 @@ Apply only the updates the user approved in Step 3.
 
 #### 4a: Update Contract Config (always)
 
-Re-resolve the contract source using `config/contract-resolution.yaml` and the
-manifest inputs. Read the applicable current official v3 configuration pages,
-then regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require
-it) with the latest resolved contract paths and required HTML/CTRF report
-configuration. Recalculate OpenAPI provider coverage governance only after the
-updated sample's final report is available.
+Re-resolve the contract source using the checked-in `specmatic.yaml` contract
+source and spec paths, or the user-provided contract repo/spec path when the
+config is missing or ambiguous. Regenerate `specmatic.yaml` (or
+`specmatic.json` for stacks that require it) with the latest resolved contract
+paths and any dependency updates discovered from the same contract source. If a
+previously resolved dependency is now ambiguous, stop and report the structured
+ambiguity JSON instead of changing app code.
 
 #### 4b: Update Dependencies (when approved)
 

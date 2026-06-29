@@ -61,13 +61,12 @@ runtime-supported object syntax for the selected Specmatic version.
   request body/message, response body/message, query/header/metadata, or
   security transformation.
 - Do not infer dependencies only from direct references inside the SUT OpenAPI
-  file. Use the contract repository's role structure and BFF mapping across
-  protocols. If an AsyncAPI/Kafka dependency is named by that mapping or by an
-  equivalent reference example for the selected contract family, include it in
-  `specmatic.yaml` even when the OpenAPI contract does not reference it
-  directly. Treat reference examples as discovery guidance, not hardcoded
-  mappings for unrelated samples. If multiple async candidates remain
-  plausible, stop and report the ambiguity instead of skipping them.
+  file. Use the user-provided repository's nearby contract structure, parsed
+  contract semantics, role intent, and operation/message compatibility across
+  protocols. If an async dependency is implied by the selected contract family,
+  include it in `specmatic.yaml` even when the OpenAPI contract does not
+  reference it directly. If multiple async candidates remain plausible, stop and
+  report the structured ambiguity JSON instead of skipping them.
 - Satisfy Backend dependency security schemes in outbound calls even when the
   BFF contract does not declare the same incoming credential. Use a sample
   credential value only to satisfy the mock contract shape.

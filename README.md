@@ -82,7 +82,6 @@ The skill is structured so that the AI loads only what it needs for a given gene
 | `guides/frontend-generation.md` | Frontend-specific patterns: stub mode, UI test setup | When app type = frontend |
 | `guides/protocol-generation.md` | Protocol-specific notes: Kafka broker config, gRPC proto handling, WSDL specifics | When protocol ≠ REST |
 | `guides/readme-generation.md` | Template for the generated sample's README (architecture diagrams, run instructions, OS variants) | At the end of generation |
-| `config/contract-resolution.yaml` | Maps contract repos to spec file paths, defines discovery patterns for dependencies | During dependency resolution |
 | `test-data/backend-seed-data.md` | Exact seed data (product/order IDs and fields) that backend samples must pre-load so contract test assertions pass | When app type = backend |
 | `assets/*.gif` | Architecture diagrams embedded in generated READMEs | During README generation |
 
@@ -110,8 +109,6 @@ the final measured report.
 
 ```
 ├── SKILL.md                    # Core workflow (the AI reads this first)
-├── config/
-│   └── contract-resolution.yaml  # Contract repo URLs, spec paths, discovery patterns
 ├── guides/
 │   ├── acceptance-criteria.md    # Definition of "done" for a generated sample
 │   ├── readme-generation.md      # How to generate the sample's README
@@ -144,7 +141,8 @@ Test count must strictly increase between levels. A flat count means the config 
 
 ### Contract Source of Truth
 
-The executable contract (from [specmatic-order-contracts](https://github.com/specmatic/specmatic-order-contracts)) always wins. If local guides contradict the contract, implement the contract.
+The user-provided executable contract always wins. If local guides contradict
+the contract, implement the contract.
 
 ### Stub vs Test Mode
 
@@ -156,8 +154,8 @@ The executable contract (from [specmatic-order-contracts](https://github.com/spe
 ### How it works
 
 The AI reads `SKILL.md` first, which references other files via relative paths.
-It loads guides, config, test data, and the applicable official Specmatic v3
-configuration pages before creating or refreshing `specmatic.yaml`.
+The AI follows those references to load guides and test data as needed. The
+skill is self-contained except for the user-provided contract source.
 
 ### Adding learnings
 

@@ -67,7 +67,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 
 | File | Purpose |
 |------|---------|
-| `specmatic.yaml` | Points to central contract repo, defines test config, and contains environment-template runtime values |
+| `specmatic.yaml` | Points to the resolved user-provided contract source, defines test config, and contains environment-template runtime values |
 | Build file (`package.json` / `pom.xml` / `build.gradle` / `requirements.txt`) | Dependencies including Specmatic |
 | Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
 | Source code (controllers/routes/services/resolvers/handlers) | Implements all operations from the contract |
