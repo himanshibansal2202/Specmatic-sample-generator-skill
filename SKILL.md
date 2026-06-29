@@ -162,8 +162,10 @@ Source-of-truth order:
 
 1. Passing Specmatic tests is the final definition of correctness.
 2. The executable contract/spec referenced by `specmatic.yaml` is the behavioral source of truth.
-3. Official Specmatic configuration and protocol documentation should be
-   consulted when configuration syntax or contract semantics are unclear.
+3. Official Specmatic configuration and protocol documentation defines the
+   generated configuration structure and syntax. Consult the applicable v3
+   configuration pages before creating or refreshing `specmatic.yaml`; use the
+   skill only for generator inputs and verified documentation/runtime gaps.
 4. Local markdown files under `guides/` and `test-data/` are helper summaries. They must not override the executable contract.
 5. Existing generated samples and official sample repositories must not be used
    as references for generation.
@@ -318,8 +320,10 @@ Dockerfiles, manifests, or README content until these guides have been read for
 the current sample. The README is not a generic setup file — it must be
 generated from `guides/readme-generation.md`.
 
-Use `guides/specmatic-runtime.md` for Specmatic runtime structure and adapter
-behavior for the selected integration mode, then fill generated files with
+Use the applicable official Specmatic v3 configuration pages for
+`specmatic.yaml` structure and syntax. Use `guides/specmatic-runtime.md` only
+for runtime integration behavior, generator-owned inputs, report defaults, and
+verified documentation gaps. Fill the documented configuration fields with
 resolved contract paths, spec format, run option key, and role-specific
 ports/base URLs/broker settings.
 Generate routes/controllers, message handlers, RPC services, GraphQL resolvers,
@@ -340,6 +344,13 @@ Default port conventions:
 - All ports, base URLs, broker URLs, and service endpoints must be configurable
   through environment variables consumed by the generated app config and
   checked-in `specmatic.yaml` so tests can avoid occupied resources.
+- Every sample must configure Specmatic-owned `html` and `ctrf` reports. Do
+  not hard-code a report output path: resolve the selected runtime's configured
+  or default output location during verification, record it in the manifest,
+  and use that exact location in the generated README. For OpenAPI Backend and
+  BFF samples, add enforced coverage success criteria only after the final
+  measured coverage report is available; do not apply OpenAPI coverage
+  governance to other protocols or mock-only samples.
 
 For a **Backend** sample, use `guides/backend-generation.md` for role behavior. Key differences:
 - The Backend owns local Products and Orders state
@@ -541,8 +552,8 @@ Only report "done" when tests are green.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
 - **Specmatic owns HTML reports.** Do not generate custom HTML test/coverage
   reports, report templates, report pages, or report renderers. Generated
-  samples may configure, capture, upload, ignore, or link to reports produced
-  by Specmatic, but must not synthesize their own report HTML.
+  samples must configure, capture, upload, ignore, or link to Specmatic's HTML
+  and CTRF reports, but must not synthesize their own report HTML.
 - **Never use samples as references.** In generate mode, do not read, inspect, or copy from other
   sample projects, including existing generated sample folders in the
   destination repository or monorepo and official/public sample repositories.
@@ -553,7 +564,7 @@ Only report "done" when tests are green.
   file must be generated from this skill's `guides/`, `test-data/`,
   `config/contract-resolution.yaml`, the configured central contract repo,
   isolated temporary checkouts of that contract repo, official product/protocol
-  documentation when syntax is unclear, or user-provided contract paths only.
+  documentation, or user-provided contract paths only.
   Existing samples may target a different stack or contract version and will
   silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
@@ -643,7 +654,12 @@ Apply only the updates the user approved in Step 3.
 
 #### 4a: Update Contract Config (always)
 
-Re-resolve the contract source using `config/contract-resolution.yaml` and the manifest inputs. Regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require it) with the latest resolved contract paths.
+Re-resolve the contract source using `config/contract-resolution.yaml` and the
+manifest inputs. Read the applicable current official v3 configuration pages,
+then regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require
+it) with the latest resolved contract paths and required HTML/CTRF report
+configuration. Recalculate OpenAPI provider coverage governance only after the
+updated sample's final report is available.
 
 #### 4b: Update Dependencies (when approved)
 
