@@ -24,10 +24,10 @@ apply to the sample:
 
 Populate documented fields directly. For configuration version 3, define
 sources, services, and protocol run options under `components`, then wire the
-system under test and each dependency by `$ref`. Use the resolved contract
-source, spec paths, service IDs, run-option key, and protocol values from user
-input, the executable contract, and `config/contract-resolution.yaml`; those
-are generator inputs, not a replacement schema.
+system under test and each dependency by `$ref` using the layout accepted by the
+selected Enterprise runtime. Use the resolved contract source, spec paths,
+service IDs, run-option key, and protocol values from user input and the
+executable contract; those are generator inputs, not a replacement schema.
 
 Place the generated `specmatic.yaml` at the sample root. It is the only
 Specmatic configuration source: adapters must not create, copy, relocate, or
@@ -77,15 +77,17 @@ and runtime combination.
 
 ## Documentation/runtime discrepancy policy
 
-| Gap | Canonical generation rule | Verification |
-|---|---|---|
-| Some official v3 examples nest `runOptions` inside `service` and place `settings` under `components`, while the Getting Started and migration guides describe sibling service/run-options wiring and top-level `specmatic` settings. | Generate sibling `service` and `runOptions` references; put global test settings and governance under top-level `specmatic`. | Parse and execute the generated config with the selected Enterprise runtime before shipping. |
+When official v3 pages conflict, use the shape accepted by the selected
+Enterprise runtime and record version-scoped workarounds in the manifest.
+Treat rejected config fields as config/runtime issues before changing app code.
 
-The selected Enterprise runtime must parse and execute the canonical layout
-before a sample ships. If it fails, record a version-scoped verified runtime gap
-with the runtime version, symptom, workaround, and regression scenario instead
-of turning the workaround into a general template. Remove the entry when the
-documentation and runtime converge.
+Verified Enterprise `1.19.0` config behavior:
+
+| Area | Symptom | Runtime-accepted generation rule |
+|---|---|---|
+| `runOptions` placement | Rejects sibling `systemUnderTest.runOptions` with known property `service` only. | Nest `runOptions` under the `service` object for the system under test and each dependency, for example `systemUnderTest.service.runOptions` and `dependencies.services[].service.runOptions`. |
+| Report configuration | Rejects `specmatic.reports`; top-level known properties include `governance`, `license`, and `settings`. | Configure Specmatic-owned reports under `specmatic.governance.report` with `formats` and the verified `outputDirectory`. |
+| Test settings | Some examples place settings under `components`. | Keep global test settings under top-level `specmatic.settings.test`, including `schemaResiliencyTests`. |
 
 ## Runtime and integration policy
 
