@@ -121,7 +121,7 @@ same directory also contains the CTRF output for CI tooling.
 Always show commands for all three OS variants: Unix/macOS, Windows PowerShell,
 and Windows Command Prompt.
 
-Include a note about first-run timing: "First run takes 1-2 minutes as Specmatic clones the contract repository. Subsequent runs are fast (cached in `.specmatic/`)."
+Include a note about first-run timing: "First run may take 1-2 minutes as Specmatic clones the configured contract repository. Subsequent runs are fast (cached in `.specmatic/`)."
 
 Link to the specmatic.yaml file and explain it configures which contracts are tested.
 
