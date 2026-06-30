@@ -36,21 +36,37 @@ mock/stub started by Specmatic.
   matching Backend dependency contract (for example idempotency, auth,
   pagination). Do not hardcode names that the executable contracts do not
   declare.
-- Catch backend errors and return their status/response body or protocol-native
-  error shape.
 - BFF samples have no seed data.
+- Implement every endpoint the executable BFF contract declares, including
+  monitor or polling endpoints such as `/monitor/{id}`. Do not filter a
+  contract-declared path. For endpoint discovery and path-filter syntax, follow
+  `guides/specmatic-runtime.md`, which sources the filter syntax from the
+  official Specmatic documentation.
 
-## Path Filtering
+### Dependency boundary integrity (required)
 
-Filter only paths that the BFF does not implement and that are not declared in
-the executable BFF contract, such as framework or documentation endpoints:
-- `/health` — handled by framework actuator
-- `/swagger` — served by a documentation library
+A BFF sample exists to prove the BFF preserves its backend dependency contract.
+The contract test must fail when that boundary breaks — it must not pass on
+fabricated data. Optimizing only for "the Specmatic suite is green" instead of
+"the BFF preserves the backend contract" produces a sample that is hollow at the
+dependency boundary: Specmatic only sees the BFF's outward responses, so a broken
+backend integration stays invisible.
 
-Do not filter contract-declared BFF paths. If the executable BFF contract
-contains a monitor or polling endpoint such as `/monitor/{id}`, implement it and
-verify it with Specmatic. Add `filter` config only after verifying the exact
-runtime-supported object syntax for the selected Specmatic version.
+- Derive every backend-backed response from the actual dependency response (the
+  Specmatic dependency mock or the dependency contract). Never return hardcoded
+  or default payloads such as a canned id, product, or order.
+- Do not wrap outbound dependency calls in a blanket `catch (Exception)` (or the
+  language equivalent) that swallows the error. Catch only to rethrow, or to map
+  a real backend error onto the status/response shape the BFF contract declares.
+- A backend failure must be visible: if the dependency mock is unreachable or
+  returns an unexpected payload, the test must fail rather than silently pass.
+- Only synthesize data for behavior the BFF contract itself defines (for example
+  monitor or aggregation state), never for core dependency results.
+- Return only the status codes the BFF contract declares for that operation. Do
+  not add a 4xx/5xx the contract does not define, even for inputs that look
+  invalid; doing so also produces "missing in spec" coverage entries.
+- Verify the dependency mock is actually exercised, not just that the BFF returns
+  the right outward shape.
 
 ## Endpoint Mapping
 - Implement BFF endpoints from the BFF system-under-test contract, then map
@@ -80,3 +96,24 @@ runtime-supported object syntax for the selected Specmatic version.
 - Do not re-create schema definitions from markdown; read exact request,
   response, message, and error fields from the executable contracts or
   Specmatic report output.
+
+## Caveats and Findings
+
+Behavior that is not obvious from the schema and not currently covered by the
+official Specmatic documentation. Each entry must be verifiable from a real run,
+not an assumption. These are recorded so the Specmatic team can review whether
+they belong in the official docs; remove an entry once the documentation covers
+it.
+
+```json
+[
+  {
+    "id": "BFF-001",
+    "area": "operation with multiple success responses",
+    "finding": "When an operation declares more than one success response for the same request (for example 201 and 202 on POST /products), the request alone cannot determine which response to return. Specmatic sends a request header 'Specmatic-Response-Code' to the provider indicating which response status it is currently testing; the provider must branch on it to return the matching response.",
+    "evidence": "product_search_bff_v6.yaml POST /products and POST /orders each declare both 201 and 202. The CTRF coverage report marks the 202 operation covered with 12 matches, and the only provider code path returning 202 is the branch on the 'Specmatic-Response-Code' header.",
+    "docStatus": "not found in searchable Specmatic documentation; documented Specmatic headers are X-Specmatic-Result, X-Specmatic-Type, and X-Specmatic-Group",
+    "specmaticTeamReview": true
+  }
+]
+```
