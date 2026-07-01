@@ -47,26 +47,38 @@ mock/stub started by Specmatic.
 
 A BFF sample exists to prove the BFF preserves its backend dependency contract.
 The contract test must fail when that boundary breaks — it must not pass on
-fabricated data. Optimizing only for "the Specmatic suite is green" instead of
-"the BFF preserves the backend contract" produces a sample that is hollow at the
-dependency boundary: Specmatic only sees the BFF's outward responses, so a broken
-backend integration stays invisible.
+fabricated or ignored dependency data. Optimizing only for "the Specmatic suite
+is green" instead of "the BFF preserves the backend contract" produces a sample
+that is hollow at the dependency boundary: Specmatic only sees the BFF's outward
+responses, so a broken backend integration stays invisible.
 
-- Derive every backend-backed response from the actual dependency response (the
-  Specmatic dependency mock or the dependency contract). Never return hardcoded
-  or default payloads such as a canned id, product, or order.
+Two anti-patterns both defeat the test and are forbidden:
+
+1. Swallowing the dependency call — a blanket `catch (Exception)` or a response
+   handler that discards the outcome — and returning fabricated data.
+2. Making the dependency call but ignoring its response, then returning a
+   hardcoded body (for example forwarding only the backend status/headers while
+   synthesizing the payload).
+
+- Derive the BFF response — status, headers, **and body** — from the actual
+  dependency response (the Specmatic dependency mock or the dependency contract).
+  Reading only the status line or headers is not enough; the response body a
+  consumer receives must come from the dependency, not a canned id, product, or
+  order.
 - Do not wrap outbound dependency calls in a blanket `catch (Exception)` (or the
   language equivalent) that swallows the error. Catch only to rethrow, or to map
   a real backend error onto the status/response shape the BFF contract declares.
-- A backend failure must be visible: if the dependency mock is unreachable or
-  returns an unexpected payload, the test must fail rather than silently pass.
+- A backend failure must be visible: if the dependency mock is unreachable,
+  stalls, or returns an unexpected payload, the test must fail rather than
+  silently pass. If a runtime prevents consuming the dependency body, fix the
+  runtime (see the caveats below) rather than fabricating the body.
 - Only synthesize data for behavior the BFF contract itself defines (for example
   monitor or aggregation state), never for core dependency results.
 - Return only the status codes the BFF contract declares for that operation. Do
   not add a 4xx/5xx the contract does not define, even for inputs that look
   invalid; doing so also produces "missing in spec" coverage entries.
-- Verify the dependency mock is actually exercised, not just that the BFF returns
-  the right outward shape.
+- Verify the dependency mock's response actually flows into the BFF response, not
+  merely that the mock was called.
 
 ## Endpoint Mapping
 - Implement BFF endpoints from the BFF system-under-test contract, then map
@@ -113,6 +125,14 @@ it.
     "finding": "When an operation declares more than one success response for the same request (for example 201 and 202 on POST /products), the request alone cannot determine which response to return. Specmatic sends a request header 'Specmatic-Response-Code' to the provider indicating which response status it is currently testing; the provider must branch on it to return the matching response.",
     "evidence": "product_search_bff_v6.yaml POST /products and POST /orders each declare both 201 and 202. The CTRF coverage report marks the 202 operation covered with 12 matches, and the only provider code path returning 202 is the branch on the 'Specmatic-Response-Code' header.",
     "docStatus": "not found in searchable Specmatic documentation; documented Specmatic headers are X-Specmatic-Result, X-Specmatic-Type, and X-Specmatic-Group",
+    "specmaticTeamReview": true
+  },
+  {
+    "id": "BFF-002",
+    "area": "consuming dependency mock responses",
+    "finding": "Reading a Specmatic Enterprise mock response body can stall (response-framing stall) when the outbound HTTP client is a JDK/reactive default in some framework versions. The workaround is a client that consumes the body reliably (for example Apache HttpClient 5). This must not be worked around by forwarding only the dependency status/headers and fabricating the body — that reintroduces a hollow dependency boundary.",
+    "evidence": "Generating bff-rest-java-spring-boot on Spring Boot 4.1.0 with the default JDK HTTP client stalled on Specmatic Enterprise 1.19.0 mock responses; switching to Apache HttpClient 5 resolved it. Recorded in the sample manifest learnings.",
+    "docStatus": "not found in Specmatic documentation; observed at Enterprise 1.19.0",
     "specmaticTeamReview": true
   }
 ]
