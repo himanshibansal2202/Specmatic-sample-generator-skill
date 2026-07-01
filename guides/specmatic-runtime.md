@@ -148,45 +148,27 @@ down every process. If no official native artifact exists, require `cli`,
 
 ### Provider responses with multiple status codes
 
-When a test-mode operation declares more than one response for the same request
-(for example both `201` and `202`, or a `4xx` alongside a `2xx`), the request
-alone cannot determine which response the provider should return. For each test
-Specmatic selects one target response and sends its status in the
-`Specmatic-Response-Code` request header; the generated provider must branch on
-that header and return the matching response. This applies to any test-mode
-provider sample (Backend and BFF). See the header in the Specmatic getting
-started CLI quick start:
+For a test-mode operation with multiple responses for one request (for example
+`201` and `202`), Specmatic sends the target status per test in the
+`Specmatic-Response-Code` request header; the provider must branch on it. Applies
+to Backend and BFF providers. Doc:
 <https://docs.specmatic.io/getting_started/cli_quick_start>.
 
 ### Dependency boundary integrity
 
-Applies to any sample whose system under test calls a dependency that Specmatic
-mocks during tests, such as BFF and Frontend samples. The sample exists to prove
-the app preserves the dependency contract, so the contract test must fail when
-that boundary breaks — it must not pass on fabricated or ignored dependency data.
-Specmatic only observes the app's outward responses, so a broken dependency
-integration is otherwise invisible. This defect reproduces across models
-(observed on both a low and a current mid-tier model), so it is a generation
-rule, not a model quirk.
+For samples whose SUT calls a Specmatic-mocked dependency (BFF, Frontend): the
+test must fail when the boundary breaks, not pass on fabricated data.
 
-- Derive the app's response — status, headers, and body — from the actual
-  dependency response (the Specmatic dependency mock or the dependency contract).
-  Reading only the status line or headers is not enough; the body a consumer
-  receives must come from the dependency, not a canned value.
-- Do not swallow the dependency call: no blanket `catch (Exception)` (or language
-  equivalent) and no response handler that discards the outcome. Catch only to
-  rethrow, or to map a real dependency error onto a status/response the app's own
-  contract declares.
-- A dependency failure must be visible: if the mock is unreachable, stalls, or
-  returns an unexpected payload, the test must fail rather than silently pass.
-- Only synthesize data for behavior the app's own contract defines (for example a
-  BFF monitor or aggregation endpoint), never for core dependency results.
-- Verify the dependency mock's response actually flows into the app's response,
-  not merely that the mock was called.
+- Derive the app response (status, headers, and body) from the actual dependency
+  response; do not return canned values.
+- Do not swallow the dependency call (no blanket `catch (Exception)` or discarded
+  response); catch only to rethrow or map a real dependency error to a
+  contract-declared response.
+- Make dependency failures visible; verify the mock's response reaches the app
+  response.
+- Synthesize data only for behavior the app's own contract defines (for example a
+  BFF monitor/aggregation endpoint).
 
-Verified Enterprise `1.19.0` runtime caveat: consuming a dependency mock response
-body can stall (response-framing stall) with some default HTTP clients — observed
-with the Spring Boot 4.1.0 JDK client. Use a client that consumes the body
-reliably (for example Apache HttpClient 5). Do not work around it by forwarding
-only the dependency status/headers and fabricating the body, which reintroduces a
-hollow boundary.
+Enterprise `1.19.0` caveat: consuming a dependency mock body can stall on some
+default HTTP clients (seen with the Spring Boot 4.1.0 JDK client); use one that
+consumes the body, such as Apache HttpClient 5, rather than fabricating it.
