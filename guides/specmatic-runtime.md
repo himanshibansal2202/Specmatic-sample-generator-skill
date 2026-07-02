@@ -145,3 +145,30 @@ down every process. If no official native artifact exists, require `cli`,
 - Read Specmatic reports before changing generated behavior. Classify failures
   as SUT mismatch, dependency mismatch, runtime mismatch, startup/config
   mismatch, or duplicated configuration before applying the smallest fix.
+
+### Provider responses with multiple status codes
+
+For a test-mode operation with multiple responses for one request (for example
+`201` and `202`), Specmatic sends the target status per test in the
+`Specmatic-Response-Code` request header; the provider must branch on it. Applies
+to Backend and BFF providers. Doc:
+<https://docs.specmatic.io/getting_started/cli_quick_start>.
+
+### Dependency boundary integrity
+
+For samples whose SUT calls a Specmatic-mocked dependency (BFF, Frontend): the
+test must fail when the boundary breaks, not pass on fabricated data.
+
+- Derive the app response (status, headers, and body) from the actual dependency
+  response; do not return canned values.
+- Do not swallow the dependency call (no blanket `catch (Exception)` or discarded
+  response); catch only to rethrow or map a real dependency error to a
+  contract-declared response.
+- Make dependency failures visible; verify the mock's response reaches the app
+  response.
+- Synthesize data only for behavior the app's own contract defines (for example a
+  BFF monitor/aggregation endpoint).
+
+Enterprise `1.19.0` caveat: consuming a dependency mock body can stall on some
+default HTTP clients (seen with the Spring Boot 4.1.0 JDK client); use one that
+consumes the body, such as Apache HttpClient 5, rather than fabricating it.

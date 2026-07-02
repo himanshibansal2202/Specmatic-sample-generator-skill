@@ -36,21 +36,23 @@ mock/stub started by Specmatic.
   matching Backend dependency contract (for example idempotency, auth,
   pagination). Do not hardcode names that the executable contracts do not
   declare.
-- Catch backend errors and return their status/response body or protocol-native
-  error shape.
 - BFF samples have no seed data.
+- Implement every endpoint the executable BFF contract declares, including
+  monitor or polling endpoints such as `/monitor/{id}`. Do not filter a
+  contract-declared path. For endpoint discovery and path-filter syntax, follow
+  `guides/specmatic-runtime.md`, which sources the filter syntax from the
+  official Specmatic documentation.
 
-## Path Filtering
+### Dependency boundary integrity
 
-Filter only paths that the BFF does not implement and that are not declared in
-the executable BFF contract, such as framework or documentation endpoints:
-- `/health` — handled by framework actuator
-- `/swagger` — served by a documentation library
-
-Do not filter contract-declared BFF paths. If the executable BFF contract
-contains a monitor or polling endpoint such as `/monitor/{id}`, implement it and
-verify it with Specmatic. Add `filter` config only after verifying the exact
-runtime-supported object syntax for the selected Specmatic version.
+The BFF calls the Backend dependency mock during tests, so it must preserve the
+Backend dependency contract. Follow the dependency boundary integrity rules in
+`guides/specmatic-runtime.md`: derive the BFF response body from the actual
+dependency response, never swallow the dependency call or fabricate payloads, and
+make dependency failures visible. The only data a BFF may synthesize is behavior
+its own contract defines, such as a monitor or aggregation endpoint. Return only
+the status codes the BFF contract declares for an operation; do not add a 4xx/5xx
+the contract does not define.
 
 ## Endpoint Mapping
 - Implement BFF endpoints from the BFF system-under-test contract, then map
