@@ -163,9 +163,9 @@ Source-of-truth order:
 1. Passing Specmatic tests is the final definition of correctness.
 2. The executable contract/spec referenced by `specmatic.yaml` is the behavioral source of truth.
 3. Official Specmatic configuration and protocol documentation defines the
-   generated configuration structure and syntax. Consult the applicable v3
-   configuration pages before creating or refreshing `specmatic.yaml`; use the
-   skill only for generator inputs and verified documentation/runtime gaps.
+   generated configuration structure and syntax. Use only the documentation
+   allowlist and access rules in `guides/specmatic-runtime.md`; use this skill
+   only for generator inputs and verified documentation/runtime gaps.
 4. Local markdown files under `guides/` and `test-data/` are helper summaries. They must not override the executable contract.
 5. Existing generated samples and official sample repositories must not be used
    as references for generation.
@@ -180,9 +180,9 @@ as fallback evidence. Use `guides/protocol-generation.md` for the format
 markers and protocol-specific implementation expectations.
 
 Resolve Specmatic `runOptions`, service wiring, and `specmatic.yaml` structure
-from the applicable current official Specmatic configuration documentation and
-verify the selected Enterprise runtime can parse and execute the generated
-config.
+from the applicable allowlisted official Specmatic configuration documentation
+in `guides/specmatic-runtime.md` and verify the selected Enterprise runtime can
+parse and execute the generated config.
 
 Resolve these contract facts before generating source code:
 
@@ -330,12 +330,12 @@ Dockerfiles, manifests, or README content until these guides have been read for
 the current sample. The README is not a generic setup file — it must be
 generated from `guides/readme-generation.md`.
 
-Use the applicable official Specmatic v3 configuration pages for
-`specmatic.yaml` structure and syntax. Use `guides/specmatic-runtime.md` only
-for runtime integration behavior, generator-owned inputs, report defaults, and
-verified documentation gaps. Fill the documented configuration fields with
-resolved contract paths, spec format, run option key, and role-specific
-ports/base URLs/broker settings.
+Use only the applicable allowlisted official Specmatic v3 configuration pages
+from `guides/specmatic-runtime.md` for `specmatic.yaml` structure and syntax.
+Use `guides/specmatic-runtime.md` only for runtime integration behavior,
+generator-owned inputs, report defaults, and verified documentation gaps. Fill
+the documented configuration fields with resolved contract paths, spec format,
+run option key, and role-specific ports/base URLs/broker settings.
 Generate routes/controllers, message handlers, RPC services, GraphQL resolvers,
 SOAP handlers, client calls, schemas, seed data, examples, and adapter
 transformations from the contract facts summary produced in Step 3. Use role
@@ -361,6 +361,9 @@ Default port conventions:
   BFF samples, add enforced coverage success criteria only after the final
   measured coverage report is available; do not apply OpenAPI coverage
   governance to other protocols or mock-only samples.
+- For OpenAPI Backend and BFF samples, apply the API coverage endpoint
+  discovery and infrastructure-exclusion rules in `guides/specmatic-runtime.md`
+  before the first final verification run.
 
 For a **Backend** sample, use `guides/backend-generation.md` for role behavior. Key differences:
 - The Backend owns local Products and Orders state
@@ -574,8 +577,8 @@ Only report "done" when tests are green.
   configuration, documentation, dependency choices, or runtime choices. Every
   file must be generated from this skill's `guides/`, `test-data/`,
   the user-provided contract source, isolated temporary checkouts of that
-  contract source, official product/protocol documentation when syntax is
-  unclear, or user-provided contract paths only.
+  contract source, allowlisted official product/protocol documentation when
+  syntax is unclear, or user-provided contract paths only.
   Existing samples may target a different stack or contract version and will
   silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.

@@ -75,7 +75,7 @@ The skill is structured so that the AI loads only what it needs for a given gene
 | File | Purpose | When the AI reads it |
 |------|---------|---------------------|
 | `SKILL.md` | Defines the generate/maintain workflow, input collection, and step sequencing | Always (first file read) |
-| `guides/specmatic-runtime.md` | Runtime integration policy, report defaults, and verified configuration gaps | Every generation — read alongside the applicable official Specmatic configuration pages |
+| `guides/specmatic-runtime.md` | Runtime integration policy, report defaults, verified configuration gaps, and the closed official docs allowlist | Every generation — read alongside only the allowlisted official Specmatic configuration pages |
 | `guides/acceptance-criteria.md` | Definition of "done" — what must be true before the sample is considered complete (tests pass, CI works, manifest written) | Every generation — checked at the end |
 | `guides/backend-generation.md` | Backend-specific patterns: in-memory data store, seed data, how to handle CRUD endpoints | When app type = backend |
 | `guides/bff-generation.md` | BFF-specific patterns: forwarding to backend mock, path filtering, dependency mapping | When app type = bff |
@@ -99,11 +99,11 @@ The skill is structured so that the AI loads only what it needs for a given gene
 
 **Configuration as documentation-driven**: Official Specmatic v3 documentation
 defines `specmatic.yaml` fields and structure. The runtime guide supplies only
-generator-owned inputs, integration policy, and narrow runtime-verified gaps.
-Generated samples always configure Specmatic HTML and CTRF reports in
-the verified runtime report directory; that location is recorded in the sample
-manifest and README. OpenAPI Backend/BFF coverage governance is derived from
-the final measured report.
+generator-owned inputs, integration policy, a closed docs allowlist, and narrow
+runtime-verified gaps. Generated samples always configure Specmatic HTML and
+CTRF reports in the verified runtime report directory; that location is recorded
+in the sample manifest and README. OpenAPI Backend/BFF coverage governance is
+derived from the final measured report.
 
 ## Repository Structure
 

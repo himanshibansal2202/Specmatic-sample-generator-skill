@@ -40,8 +40,7 @@ mock/stub started by Specmatic.
 - Implement every endpoint the executable BFF contract declares, including
   monitor or polling endpoints such as `/monitor/{id}`. Do not filter a
   contract-declared path. For endpoint discovery and path-filter syntax, follow
-  `guides/specmatic-runtime.md`, which sources the filter syntax from the
-  official Specmatic documentation.
+  `guides/specmatic-runtime.md`.
 
 ### Dependency boundary integrity
 
