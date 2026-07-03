@@ -7,7 +7,7 @@ schema and field syntax. Do not maintain or copy a local schema template here.
 ## Documentation-driven configuration
 
 Before creating or refreshing `specmatic.yaml`, read the official v3 pages that
-apply to the sample:
+apply to the sample. The URLs in this list are a closed allowlist:
 
 - [Getting Started with Configuration](https://docs.specmatic.io/references/configuration/getting-started)
   for the v3 component model and top-level wiring.
@@ -21,6 +21,16 @@ apply to the sample:
   when runtime values are environment-configurable.
 - [Reports](https://docs.specmatic.io/references/configuration/reports) for
   reports and OpenAPI coverage governance.
+- [CLI Quick Start](https://docs.specmatic.io/getting_started/cli_quick_start)
+  for `Specmatic-Response-Code` provider behavior with multiple response
+  status codes.
+
+Do not follow links from these pages. This includes sidebar links,
+previous/next links, edit links, GitHub links, related documentation links,
+embedded cross-references, and example/sample-project links. Same-page content
+loaded from an allowlisted URL may be read, but navigation to another URL or
+fragment must not be used during generation. If another documentation page is
+needed, stop and ask for it to be added to this allowlist before using it.
 
 Populate documented fields directly. For configuration version 3, define
 sources, services, and protocol run options under `components`, then wire the
@@ -44,7 +54,7 @@ root workflow defaults unless the resolved contract requires another value:
 - Dependency HTTP mock URL: `STUB_BASE_URL`, defaulting to
   `http://localhost:8090`.
 - gRPC and Kafka host, port, broker, import-path, `protoc`, and timeout values:
-  derive their exact fields from the selected protocol documentation and the
+  derive their exact fields from the allowlisted protocol documentation and the
   resolved contract.
 
 ### Reports and governance
@@ -62,10 +72,15 @@ This creates a regression gate without assuming a fixed threshold. API coverage
 governance is not emitted for non-OpenAPI or mock-only samples because the
 official reports documentation supports API coverage configuration for OpenAPI.
 
-For applicable OpenAPI provider samples, expose endpoint discovery and filter
-only non-contract infrastructure paths. The discovery URL, filter syntax, and
-run-option placement must come from the selected runtime's current official
-documentation and be validated in the generated test run.
+For applicable OpenAPI provider samples, expose endpoint discovery. When the
+generated app has non-contract infrastructure paths such as `/health`,
+`/heartbeat`, `/internal/metrics`, `/swagger`, or `/v3/api-docs`, exclude only
+those paths from API coverage with the runtime-accepted OpenAPI `filter` run
+option.
+
+The discovery URL and filter syntax must come from the allowlisted official
+configuration documentation for the selected runtime, then be validated in the
+generated test run and final API coverage report.
 
 ### Resiliency verification policy
 
@@ -151,8 +166,7 @@ down every process. If no official native artifact exists, require `cli`,
 For a test-mode operation with multiple responses for one request (for example
 `201` and `202`), Specmatic sends the target status per test in the
 `Specmatic-Response-Code` request header; the provider must branch on it. Applies
-to Backend and BFF providers. Doc:
-<https://docs.specmatic.io/getting_started/cli_quick_start>.
+to Backend and BFF providers.
 
 ### Dependency boundary integrity
 
