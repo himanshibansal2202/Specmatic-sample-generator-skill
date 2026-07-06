@@ -61,13 +61,8 @@ the contract does not define.
   operation/message, and any required path/topic/method/action, status/error,
   request body/message, response body/message, query/header/metadata, or
   security transformation.
-- Do not infer dependencies only from direct references inside the SUT OpenAPI
-  file. Use the user-provided repository's nearby contract structure, parsed
-  contract semantics, role intent, and operation/message compatibility across
-  protocols. If an async dependency is implied by the selected contract family,
-  include it in `specmatic.yaml` even when the OpenAPI contract does not
-  reference it directly. If multiple async candidates remain plausible, stop and
-  report the structured ambiguity JSON instead of skipping them.
+- Use the dependency spec paths the user provided during input collection to
+  wire each dependency in `specmatic.yaml`.
 - Satisfy Backend dependency security schemes in outbound calls even when the
   BFF contract does not declare the same incoming credential. Use a sample
   credential value only to satisfy the mock contract shape.

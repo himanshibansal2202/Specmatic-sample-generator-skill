@@ -61,18 +61,25 @@ Ask each question separately. Wait for the user's answer before asking the next.
 2. Then ask: "What application type? (for example: backend, bff, frontend)"
    - Wait for answer.
 
-3. Then ask: "What language? (for example: javascript, typescript, java, python)"
+3. **If application type = bff**, then ask: "What dependency contracts does
+   your BFF call? Provide spec paths within the same repo. (for example:
+   `io/specmatic/examples/store/openapi/api_order_v5.yaml` for REST backend,
+   `io/specmatic/examples/store/asyncapi/kafka.yaml` for Kafka)"
+   - Wait for answer. Accept one or more spec paths.
+   - These are the contracts Specmatic will mock during BFF tests.
+
+4. Then ask: "What language? (for example: javascript, typescript, java, python)"
    - Wait for answer.
 
-4. Then ask: "What framework? (for example: express, spring-boot, flask)" —
+5. Then ask: "What framework? (for example: express, spring-boot, flask)" —
    examples may be adjusted for the selected application type, protocol, or
    language.
    - Wait for answer.
 
-5. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
+6. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
    - Wait for answer.
 
-6. Then ask: "Where should I create the sample folder? Provide a local path."
+7. Then ask: "Where should I create the sample folder? Provide a local path."
    - Wait for answer.
 
 The **protocol** is inferred from the spec format (OpenAPI → REST, AsyncAPI →
@@ -81,7 +88,7 @@ for the protocol — derive it from the spec they provided.
 
 The **data layer** is always `in-memory` for all generated samples. Do not ask.
 Backend samples keep state in memory. BFF and Frontend samples have no local
-state — their dependencies are auto-discovered from the contract specs.
+state — their dependencies are provided by the user in question 3.
 
 The **contract version** is inferred from the spec filename or content. Do not
 ask unless it cannot be determined.
@@ -192,15 +199,12 @@ Resolve these contract facts before generating source code:
 3. Use the provided spec as the consumed dependency contract for Frontend
    samples unless the user explicitly provides a separate consumer-facing API
    contract.
-4. For BFF samples, discover required dependency contracts from the same
-   repository/domain by comparing role intent, operation compatibility,
-   message/schema shape, transport, naming, and nearby contract structure.
+4. For BFF samples, use the dependency spec paths the user provided in Step 1.
 5. Resolve exactly one system-under-test contract and exactly one contract for
    each required dependency. Write these exact paths into the generated
    `specmatic.yaml`.
-6. If the contract format, system-under-test, or any dependency is ambiguous,
-   stop before generating source code and emit the structured ambiguity JSON
-   described below instead of guessing.
+6. If the contract format or system-under-test is ambiguous, stop before
+   generating source code and ask the user to clarify.
 
 Before fetching from the network, check only approved contract-source locations:
 the current generated sample's own `.specmatic/repos/<repo-name>` cache, an
@@ -210,46 +214,13 @@ contract caches that live inside other generated sample folders.
 Resolve these executable specs by sample type:
 
 - Backend: the user-provided provider/system-under-test contract.
-- BFF: the user-provided system-under-test contract and all dependency
-  contracts required by the BFF architecture. Inspect the user-provided
-  repository/domain for ALL specs the BFF contract implies; this may include
-  HTTP, async, RPC, GraphQL, or SOAP dependencies.
+- BFF: the user-provided system-under-test contract and the dependency spec
+  paths the user listed in Step 1.
 - Frontend: the user-provided contract for the API, service, broker, or endpoint
   consumed by the generated client.
 
-For BFF samples, examine the contract repository's spec structure to discover
-every dependency. The dependency search is scoped to the user-provided
-repo/domain and must be validated by contract compatibility.
-
-Do not rely only on direct `$ref` entries, `servers`, operation descriptions,
-file names, or textual references inside the BFF system-under-test OpenAPI file
-to discover dependencies. BFF dependency discovery must combine the selected
-SUT contract, nearby contract repository structure, parsed contract semantics,
-and operation/message compatibility across all discovered contract formats.
-
-If multiple dependency candidates are plausible, stop with a structured
-ambiguity report instead of silently skipping or selecting a dependency.
-
-All discovered dependencies must be included in the generated `specmatic.yaml`
+All user-provided dependencies must be included in the generated `specmatic.yaml`
 under `dependencies.services` with appropriate `runOptions` for each protocol.
-
-When dependency discovery is ambiguous, stop and report this JSON shape:
-
-```json
-{
-  "dependencyResolutionStatus": "ambiguous",
-  "systemUnderTest": "path/to/bff.yaml",
-  "candidates": [
-    {
-      "role": "backend",
-      "specPath": "path/to/backend.yaml",
-      "detectedSpecFormat": "openapi",
-      "reason": "compatible HTTP operations and backend role naming"
-    }
-  ],
-  "requiredUserInput": "Select the dependency contract path to use."
-}
-```
 
 After resolving the applicable specs, inspect the applicable generation guide,
 `guides/protocol-generation.md`, the Specmatic runtime guidance, and the
@@ -676,9 +647,9 @@ Re-resolve the contract source using the checked-in `specmatic.yaml` contract
 source and spec paths, or the user-provided contract repo/spec path when the
 config is missing or ambiguous. Regenerate `specmatic.yaml` (or
 `specmatic.json` for stacks that require it) with the latest resolved contract
-paths and any dependency updates discovered from the same contract source. If a
-previously resolved dependency is now ambiguous, stop and report the structured
-ambiguity JSON instead of changing app code.
+paths and any dependency updates from the user-provided contract source. If a
+previously resolved dependency is now missing or changed, ask the user to
+confirm before changing app code.
 
 #### 4b: Update Dependencies (when approved)
 
