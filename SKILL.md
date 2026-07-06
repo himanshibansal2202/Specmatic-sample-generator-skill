@@ -61,10 +61,13 @@ Ask each question separately. Wait for the user's answer before asking the next.
 2. Then ask: "What application type? (for example: backend, bff, frontend)"
    - Wait for answer.
 
-3. **If application type = bff**, then ask: "What dependency contracts does
-   your BFF call? Provide spec paths within the same repo. (for example:
-   `io/specmatic/examples/store/openapi/api_order_v5.yaml` for REST backend,
-   `io/specmatic/examples/store/asyncapi/kafka.yaml` for Kafka)"
+3. **If application type = bff**, then ask: "Your BFF calls backend services
+   that Specmatic will mock during tests. Which spec(s) in the same repo
+   define those dependencies?" Then list candidate specs from the contract
+   repo provided in question 1 (exclude the SUT spec itself) and let the user
+   pick. If the repo is not yet cloned, show examples like:
+   `io/specmatic/examples/store/openapi/api_order_v5.yaml` (REST backend),
+   `io/specmatic/examples/store/asyncapi/kafka.yaml` (Kafka).
    - Wait for answer. Accept one or more spec paths.
    - These are the contracts Specmatic will mock during BFF tests.
 
