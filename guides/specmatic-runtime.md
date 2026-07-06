@@ -119,16 +119,18 @@ image, package, or JAR path.
 
 | Mode | When | Runtime artifact | Local/CI prereqs | Key constraint |
 |---|---|---|---|---|
-| `cli` | Run Specmatic as an external executable | `io.specmatic.enterprise:executable-all:<latest>` (Maven Central) | Java 17+ | Invoke `java -jar <jar> test` directly. Do NOT route through a JUnit/`ContractTest`/pytest adapter — that is `native`. |
+| `cli` | Run Specmatic as an external executable | `io.specmatic.enterprise:executable-all:<latest>` (Maven Central) | Java 17+ | Invoke `java -jar <jar> run-suite --config specmatic.yaml` directly. Do NOT route through a JUnit/`ContractTest`/pytest adapter — that is `native`. |
 | `docker-cli` | Run Specmatic as a direct `docker run` | `specmatic/enterprise:<tag>` | Docker, no local Java for Specmatic | Mount root `specmatic.yaml` + contracts/reports; reach the app via host networking / shared network / host alias. |
 | `test-container` | Run Specmatic from Docker inside the test suite | `specmatic/enterprise:<tag>` | Docker, no local Java outside the container | Use the language's Testcontainers dep; stream container logs; fail on non-zero exit. |
 | `native` | Language has an official Enterprise-native test integration | `io.specmatic.enterprise:*` (JVM) or documented Enterprise-native package | Per package (JVM normally JDK/JRE 17+) | Use the official Enterprise API. Reject `native` if only the open-source/public package exists — ask the user for another mode. |
 
-Resolve the official Enterprise executable and run it directly from the sample
-root against the checked-in config. Let Specmatic fetch and cache contracts;
-the sample must not clone or copy the contract repository. Capture output and
-reports, fail on a non-zero exit, and require Java 17+ when the artifact needs
-it.
+For `cli` mode, generate a direct executable entrypoint such as a build-tool
+exec target or `scripts/test.sh` that starts the app, runs
+`java -jar <enterprise-jar> run-suite --config specmatic.yaml`, streams
+Specmatic output, propagates the exit code, and tears down started processes.
+Let Specmatic fetch and cache contracts from the root config; do not clone or
+copy the contract repository. Do not generate a JUnit, pytest, Jest, or
+framework test class whose purpose is to call the CLI.
 
 ### Docker CLI and test-container
 

@@ -583,17 +583,17 @@ Only report "done" when tests are green.
   silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **Honor the selected Specmatic integration mode.** Generate test dependencies,
-  test adapters, README instructions, and CI around `cli`, `docker-cli`,
+  test commands/scripts/adapters, README instructions, and CI around `cli`, `docker-cli`,
   `test-container`, or `native`; do not silently switch modes unless the
   selected mode is impossible for the stack and the user chooses another one.
 - **Enterprise runtime only.** Every integration mode must use an official
   Specmatic Enterprise artifact. Open-source runtimes such as npm `specmatic`,
   bundled npm `specmatic.jar`, or the `specmatic/specmatic` Docker image are
   forbidden generated runtime dependencies.
-- **Keep the test adapter minimal.** Let the selected and verified Specmatic
+- **Keep the test runner minimal.** Let the selected and verified Specmatic
   integration mode determine whether it uses a CLI, direct Docker command,
   Testcontainers-managed Docker container, native library API, or bundled JAR.
-  Test adapters may start apps and mocks, set environment variables, stage
+  Test commands/scripts/adapters may start apps and mocks, set environment variables, stage
   protocol support files such as imported protos, and run Specmatic.
 - **specmatic.yaml structure is protocol-aware.** Resolved contract paths,
   dependency specs, ports, base URLs, broker settings, and run option keys vary

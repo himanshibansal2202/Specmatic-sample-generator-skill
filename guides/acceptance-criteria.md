@@ -36,18 +36,20 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
   applied.
 - [ ] Non-OpenAPI and mock-only samples retain HTML/CTRF reports without
   unsupported API-coverage success criteria.
-- [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
-  specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
-  adapter; Specmatic resolves and caches contracts itself; the sample does not
-  clone the contract repo or generate its own test/coverage report
+- [ ] In `cli` mode, Specmatic is invoked directly, not through a native
+  JUnit/`ContractTest`/pytest adapter; Specmatic resolves and caches contracts
+  itself; the sample does not clone the contract repo or generate its own
+  test/coverage report
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
-- [ ] The generated test adapter uses the selected and verified Specmatic
-  integration mode: `cli`, `docker-cli`, `test-container`, or `native`
-- [ ] The generated test adapter and CI use only official Specmatic Enterprise
-  artifacts: `io.specmatic.enterprise:*`, `specmatic/enterprise:*`, or a
-  documented Enterprise-native language artifact/API. Generated files must not
-  reference `npm exec specmatic`, `npx specmatic`, `specmatic@`,
-  `node_modules/specmatic/specmatic.jar`, or `specmatic/specmatic`.
+- [ ] The generated test command, script, or adapter uses the selected and
+  verified Specmatic integration mode: `cli`, `docker-cli`, `test-container`,
+  or `native`
+- [ ] The generated test command/script/adapter and CI use only official
+  Specmatic Enterprise artifacts: `io.specmatic.enterprise:*`,
+  `specmatic/enterprise:*`, or a documented Enterprise-native language
+  artifact/API. Generated files must not reference `npm exec specmatic`, `npx
+  specmatic`, `specmatic@`, `node_modules/specmatic/specmatic.jar`, or
+  `specmatic/specmatic`.
 - [ ] `.specmatic-sample-manifest.json` records the exact Enterprise runtime
   artifact/version/source. A license initialization message alone is not
   accepted as proof of Enterprise runtime usage.
@@ -74,7 +76,7 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 | Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
 | Source code (controllers/routes/services/resolvers/handlers) | Implements all operations from the contract |
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
-| Contract test file | Adapter that starts app + runs Specmatic through the selected integration mode. Name the test class/function `ContractTest` (e.g., `ContractTest.java`, `contract.test.ts`, `test_contract.py`). |
+| Contract test file or script | Test command, script, or adapter for the selected integration mode |
 | `Dockerfile` | Production container image that builds from source; use a multi-stage build for compiled stacks instead of copying local build outputs from ignored folders |
 | `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, virtualenvs, reports, caches, Specmatic repos, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
@@ -176,7 +178,7 @@ instead of requiring a local Java installation for Specmatic itself.
 
 For `cli`, CI must install or download the verified Enterprise executable JAR
 from an `io.specmatic.enterprise:*` Maven artifact and run it from the
-generated test adapter.
+generated test command or script.
 
 For `native`, CI must install the official Enterprise-native Specmatic test
 dependency for the selected language and run the generated native test class or
