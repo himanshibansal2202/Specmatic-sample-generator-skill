@@ -82,6 +82,23 @@ The discovery URL and filter syntax must come from the allowlisted official
 configuration documentation for the selected runtime, then be validated in the
 generated test run and final API coverage report.
 
+#### Endpoint discovery integration
+
+Configure endpoint discovery only through a mechanism explicitly supported by
+the selected Specmatic runtime and applicable to the generated framework.
+
+- Do not emulate framework-specific discovery endpoints, such as Spring
+  Actuator, in frameworks that do not provide them.
+- The discovery endpoint must expose real application route metadata in the
+  format Specmatic expects. An empty or placeholder response does not satisfy
+  endpoint discovery.
+- Verify from Specmatic output that runtime endpoints were actually discovered.
+  Coverage computed only from executed contract scenarios is not proof of
+  endpoint discovery.
+- If the allowlisted Specmatic documentation does not describe an applicable
+  discovery mechanism, stop and report a Specmatic documentation/runtime gap.
+  Do not invent a compatibility endpoint.
+
 ### Resiliency verification policy
 
 Use the documentation-supported `schemaResiliencyTests` setting during the
