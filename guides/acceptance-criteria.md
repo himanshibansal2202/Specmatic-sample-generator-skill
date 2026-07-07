@@ -28,15 +28,10 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
   runtime report location is recorded in the manifest and used by the README;
   generated files may capture/upload, ignore, or link to that output, but must
   not create custom report HTML, templates, pages, or renderers.
-- [ ] For OpenAPI Backend and BFF samples, endpoint discovery uses a
-  runtime-supported, framework-applicable Specmatic integration and Specmatic
-  output confirms that real application endpoints were discovered. Placeholder
-  endpoints, empty discovery responses, and emulated framework-specific
-  endpoints do not satisfy this criterion. Non-contract infrastructure
-  endpoints are excluded from API coverage using the runtime-accepted OpenAPI
-  `filter` run option, and governance coverage is enforced (`enforce: true`) at
-  the measured final threshold and missed-operation allowance after filtering is
-  applied.
+- [ ] For OpenAPI Backend and BFF samples, endpoint discovery is configured
+  per the framework lookup in `guides/specmatic-runtime.md`, infrastructure
+  paths are filtered, and governance coverage is enforced (`enforce: true`) at
+  the measured final threshold and missed-operation allowance.
 - [ ] Non-OpenAPI and mock-only samples retain HTML/CTRF reports without
   unsupported API-coverage success criteria.
 - [ ] In `cli` mode, Specmatic is invoked directly, not through a native

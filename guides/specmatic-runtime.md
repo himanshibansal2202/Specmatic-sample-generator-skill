@@ -72,32 +72,41 @@ This creates a regression gate without assuming a fixed threshold. API coverage
 governance is not emitted for non-OpenAPI or mock-only samples because the
 official reports documentation supports API coverage configuration for OpenAPI.
 
-For applicable OpenAPI provider samples, expose endpoint discovery. When the
-generated app has non-contract infrastructure paths such as `/health`,
-`/heartbeat`, `/internal/metrics`, `/swagger`, or `/v3/api-docs`, exclude only
-those paths from API coverage with the runtime-accepted OpenAPI `filter` run
-option.
+For applicable OpenAPI provider samples, add endpoint discovery config to the
+SUT `runOptions` using the framework's native mechanism. Exclude generated
+infrastructure paths from coverage with the `filter` run option.
 
-The discovery URL and filter syntax must come from the allowlisted official
-configuration documentation for the selected runtime, then be validated in the
-generated test run and final API coverage report.
+#### Endpoint discovery config (per framework)
 
-#### Endpoint discovery integration
+```json
+{
+  "spring-boot": {
+    "actuatorUrl": "{SUT_BASE_URL}/actuator/mappings",
+    "filter": "PATH!='/actuator/**'"
+  },
+  "fastapi": {
+    "swaggerUrl": "{SUT_BASE_URL}/openapi.json"
+  },
+  "express": null,
+  "ktor": null,
+  "flask": null
+}
+```
 
-Configure endpoint discovery only through a mechanism explicitly supported by
-the selected Specmatic runtime and applicable to the generated framework.
+When the value is `null`, the framework has no native discovery endpoint — omit
+`actuatorUrl`/`swaggerUrl` and coverage governance is based on test scenarios
+only.
 
-- Do not emulate framework-specific discovery endpoints, such as Spring
-  Actuator, in frameworks that do not provide them.
-- The discovery endpoint must expose real application route metadata in the
-  format Specmatic expects. An empty or placeholder response does not satisfy
-  endpoint discovery.
-- Verify from Specmatic output that runtime endpoints were actually discovered.
-  Coverage computed only from executed contract scenarios is not proof of
-  endpoint discovery.
-- If the allowlisted Specmatic documentation does not describe an applicable
-  discovery mechanism, stop and report a Specmatic documentation/runtime gap.
-  Do not invent a compatibility endpoint.
+#### Filter for non-contract endpoints
+
+Regardless of discovery, add a `filter` to the SUT `runOptions` when the
+generated app exposes infrastructure endpoints not in the contract (e.g.,
+`/health`, `/actuator/**`, `/internal/metrics`, `/swagger`, `/v3/api-docs`).
+Without a filter these appear as "Missing in Spec" and reduce coverage.
+Syntax: `"filter": "PATH!='/health,/actuator/**'"` (comma-separated paths).
+
+These are runtime-verified fields (Specmatic Enterprise 1.19.x) not yet in the
+official v3 configuration documentation. Flag to the Specmatic team for docs.
 
 ### Resiliency verification policy
 
