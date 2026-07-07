@@ -65,39 +65,25 @@ default or a sample-specific configured location, verify the produced location,
 record it in the manifest, and use that exact location in the generated README.
 Do not create a sample-owned report renderer.
 
-For OpenAPI Backend and BFF samples, finish verification before writing
-`successCriteria`: set `enforce: true`, `minCoveragePercentage`, and
-`maxMissedOperationsInSpec` from the measured, infra-filtered final report.
-This creates a regression gate without assuming a fixed threshold. API coverage
-governance is not emitted for non-OpenAPI or mock-only samples because the
-official reports documentation supports API coverage configuration for OpenAPI.
+For OpenAPI Backend and BFF samples, configure runtime-supported endpoint
+discovery before the final Specmatic verification run when the selected
+Enterprise runtime and generated framework can support it. Use only the
+selected framework's real OpenAPI, route metadata, or equivalent capability; do
+not emulate discovery endpoints from another framework. If official
+configuration pages are incomplete but the selected Enterprise runtime accepts
+the required discovery fields, use the verified runtime behavior and record the
+documentation/runtime gap in the manifest learnings.
 
-For applicable OpenAPI provider samples, expose endpoint discovery. When the
-generated app has non-contract infrastructure paths such as `/health`,
-`/heartbeat`, `/internal/metrics`, `/swagger`, or `/v3/api-docs`, exclude only
-those paths from API coverage with the runtime-accepted OpenAPI `filter` run
-option.
-
-The discovery URL and filter syntax must come from the allowlisted official
-configuration documentation for the selected runtime, then be validated in the
-generated test run and final API coverage report.
-
-#### Endpoint discovery integration
-
-Configure endpoint discovery only through a mechanism explicitly supported by
-the selected Specmatic runtime and applicable to the generated framework.
-
-- Do not emulate framework-specific discovery endpoints, such as Spring
-  Actuator, in frameworks that do not provide them.
-- The discovery endpoint must expose real application route metadata in the
-  format Specmatic expects. An empty or placeholder response does not satisfy
-  endpoint discovery.
-- Verify from Specmatic output that runtime endpoints were actually discovered.
-  Coverage computed only from executed contract scenarios is not proof of
-  endpoint discovery.
-- If the allowlisted Specmatic documentation does not describe an applicable
-  discovery mechanism, stop and report a Specmatic documentation/runtime gap.
-  Do not invent a compatibility endpoint.
+When the generated app exposes non-contract infrastructure or discovery
+endpoints, exclude only those endpoints from API coverage with the
+runtime-accepted OpenAPI `filter` run option. After the final run confirms that
+Specmatic discovered real application endpoints, write `successCriteria` using
+the measured, filtered report: `enforce: true`, `minCoveragePercentage`, and
+`maxMissedOperationsInSpec`. If endpoint discovery is unsupported for the
+selected runtime/framework, record that in the manifest and omit API coverage
+governance; contract tests must still pass. API coverage governance is not
+emitted for non-OpenAPI or mock-only samples because the official reports
+documentation supports API coverage configuration for OpenAPI.
 
 ### Resiliency verification policy
 
