@@ -31,12 +31,14 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] For OpenAPI Backend and BFF samples, endpoint discovery uses a
   runtime-supported, framework-applicable Specmatic integration and Specmatic
   output confirms that real application endpoints were discovered. Placeholder
-  endpoints, empty discovery responses, and emulated framework-specific
-  endpoints do not satisfy this criterion. Non-contract infrastructure
-  endpoints are excluded from API coverage using the runtime-accepted OpenAPI
-  `filter` run option, and governance coverage is enforced (`enforce: true`) at
-  the measured final threshold and missed-operation allowance after filtering is
-  applied.
+  endpoints, empty discovery responses, and emulated endpoints from another
+  framework do not satisfy this criterion. Non-contract infrastructure or
+  discovery endpoints are excluded from API coverage using the runtime-accepted
+  OpenAPI `filter` run option, and governance coverage is enforced (`enforce:
+  true`) at the measured final threshold and missed-operation allowance after
+  filtering is applied. If verified runtime/framework support is unavailable,
+  the manifest learnings record the discovery limitation while governance
+  remains enforced from the measured final report.
 - [ ] Non-OpenAPI and mock-only samples retain HTML/CTRF reports without
   unsupported API-coverage success criteria.
 - [ ] In `cli` mode, Specmatic is invoked directly, not through a native
@@ -145,8 +147,9 @@ The `.specmatic-sample-manifest.json` must include:
   measured `minCoveragePercentage`, `maxMissedOperationsInSpec`, and
   `enforce: true` values.
 - `coverageExclusionMode`: records how generated non-contract infrastructure
-  endpoints were excluded from API coverage. Use `filter` for OpenAPI
-  Backend/BFF samples with generated infrastructure endpoints.
+  or discovery endpoints were excluded from API coverage. Use `filter` for
+  OpenAPI Backend/BFF samples with generated endpoints that are not contract
+  operations.
 
 ## CI Workflow Must Include
 

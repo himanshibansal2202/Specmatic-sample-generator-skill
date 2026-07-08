@@ -331,13 +331,10 @@ Default port conventions:
 - Every sample must configure Specmatic-owned `html` and `ctrf` reports. Do
   not hard-code a report output path: resolve the selected runtime's configured
   or default output location during verification, record it in the manifest,
-  and use that exact location in the generated README. For OpenAPI Backend and
-  BFF samples, add enforced coverage success criteria only after the final
-  measured coverage report is available; do not apply OpenAPI coverage
-  governance to other protocols or mock-only samples.
-- For OpenAPI Backend and BFF samples, apply the API coverage endpoint
-  discovery and infrastructure-exclusion rules in `guides/specmatic-runtime.md`
-  before the first final verification run.
+  and use that exact location in the generated README.
+- For OpenAPI Backend and BFF samples, apply the report governance,
+  endpoint-discovery, and infrastructure-exclusion workflow in
+  `guides/specmatic-runtime.md` before the final Specmatic verification run.
 
 For a **Backend** sample, use `guides/backend-generation.md` for role behavior. Key differences:
 - The Backend owns local Products and Orders state
