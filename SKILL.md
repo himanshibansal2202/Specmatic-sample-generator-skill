@@ -61,18 +61,28 @@ Ask each question separately. Wait for the user's answer before asking the next.
 2. Then ask: "What application type? (for example: backend, bff, frontend)"
    - Wait for answer.
 
-3. Then ask: "What language? (for example: javascript, typescript, java, python)"
+3. **If application type = bff**, then ask: "Your BFF calls backend services
+   that Specmatic will mock during tests. Which spec(s) in the same repo
+   define those dependencies?" Then list candidate specs from the contract
+   repo provided in question 1 (exclude the SUT spec itself) and let the user
+   pick. If the repo is not yet cloned, show examples like:
+   `io/specmatic/examples/store/openapi/api_order_v5.yaml` (REST backend),
+   `io/specmatic/examples/store/asyncapi/kafka.yaml` (Kafka).
+   - Wait for answer. Accept one or more spec paths.
+   - These are the contracts Specmatic will mock during BFF tests.
+
+4. Then ask: "What language? (for example: javascript, typescript, java, python)"
    - Wait for answer.
 
-4. Then ask: "What framework? (for example: express, spring-boot, flask)" —
+5. Then ask: "What framework? (for example: express, spring-boot, flask)" —
    examples may be adjusted for the selected application type, protocol, or
    language.
    - Wait for answer.
 
-5. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
+6. Then ask: "What Specmatic integration mode? (for example: cli, docker-cli, test-container, native)"
    - Wait for answer.
 
-6. Then ask: "Where should I create the sample folder? Provide a local path."
+7. Then ask: "Where should I create the sample folder? Provide a local path."
    - Wait for answer.
 
 The **protocol** is inferred from the spec format (OpenAPI → REST, AsyncAPI →
@@ -81,7 +91,7 @@ for the protocol — derive it from the spec they provided.
 
 The **data layer** is always `in-memory` for all generated samples. Do not ask.
 Backend samples keep state in memory. BFF and Frontend samples have no local
-state — their dependencies are auto-discovered from the contract specs.
+state — their dependencies are provided by the user in question 3.
 
 The **contract version** is inferred from the spec filename or content. Do not
 ask unless it cannot be determined.
@@ -162,40 +172,42 @@ Source-of-truth order:
 
 1. Passing Specmatic tests is the final definition of correctness.
 2. The executable contract/spec referenced by `specmatic.yaml` is the behavioral source of truth.
-3. Official Specmatic configuration and protocol documentation should be
-   consulted when configuration syntax or contract semantics are unclear.
+3. Official Specmatic configuration and protocol documentation defines the
+   generated configuration structure and syntax. Use only the documentation
+   allowlist and access rules in `guides/specmatic-runtime.md`; use this skill
+   only for generator inputs and verified documentation/runtime gaps.
 4. Local markdown files under `guides/` and `test-data/` are helper summaries. They must not override the executable contract.
 5. Existing generated samples and official sample repositories must not be used
    as references for generation.
 
-Normalize protocol aliases before resolving contracts:
+Resolve contracts from the user-provided contract source. The user-provided
+spec is the primary contract source for generation. For maintenance, recover
+the contract source from the checked-in `specmatic.yaml`; if it is missing or
+ambiguous, ask the user for the contract repo/spec path before changing files.
 
-- `rest` and `openapi` use the OpenAPI spec format.
-- `kafka` and `asyncapi` use the AsyncAPI spec format.
-- `grpc` uses the Protobuf spec format.
-- `graphql` uses the GraphQL SDL spec format.
-- `soap` and `wsdl` use the WSDL spec format.
+Detect the contract format from parsed content first, using file extension only
+as fallback evidence. Use `guides/protocol-generation.md` for the format
+markers and protocol-specific implementation expectations.
 
-Read `config/contract-resolution.yaml` and use the selected protocol plus
-application type to resolve the contract source for the selected sample. The
-contract repository URL is required because Specmatic fetches the executable
-contracts from it. Contract spec paths are resolved the same way for every
-protocol:
+Resolve Specmatic `runOptions`, service wiring, and `specmatic.yaml` structure
+from the applicable allowlisted official Specmatic configuration documentation
+in `guides/specmatic-runtime.md` and verify the selected Enterprise runtime can
+parse and execute the generated config.
 
-1. Inspect filenames under the configured `spec_root` in the contract
-   repository.
-2. Match the selected role's discovery patterns for the selected spec format
-   across all discovered compatible contract versions.
-3. Select the latest compatible discovered version for each required
-   system-under-test or dependency contract role.
-4. Resolve exactly one system-under-test contract and exactly one contract for
-   each required dependency. Write these exact resolved paths into the
-   generated `specmatic.yaml`.
-5. If multiple candidates match the same role/version, fail with a clear error
-   instead of guessing.
-6. If any required system-under-test or dependency contract cannot be resolved
-   from the configured central contract repo, stop before generating source code
-   and ask the user for an explicit contract repo/path to use.
+Resolve these contract facts before generating source code:
+
+1. Read the exact user-provided git repo/spec path or local spec path.
+2. Use the provided spec as the system-under-test contract for Backend and BFF
+   samples.
+3. Use the provided spec as the consumed dependency contract for Frontend
+   samples unless the user explicitly provides a separate consumer-facing API
+   contract.
+4. For BFF samples, use the dependency spec paths the user provided in Step 1.
+5. Resolve exactly one system-under-test contract and exactly one contract for
+   each required dependency. Write these exact paths into the generated
+   `specmatic.yaml`.
+6. If the contract format or system-under-test is ambiguous, stop before
+   generating source code and ask the user to clarify.
 
 Before fetching from the network, check only approved contract-source locations:
 the current generated sample's own `.specmatic/repos/<repo-name>` cache, an
@@ -204,39 +216,13 @@ contract caches that live inside other generated sample folders.
 
 Resolve these executable specs by sample type:
 
-- Backend: provider/system-under-test contract for the selected protocol.
-- BFF: system-under-test contract AND all dependency contracts required by
-  the BFF architecture. Inspect the contract repository for ALL specs that
-  the BFF's system-under-test contract implies — this may include REST backend
-  dependencies AND async dependencies (e.g., Kafka/AsyncAPI). Discover
-  dependencies across ALL protocols, not just the primary selected protocol.
-- Frontend: dependency mock contract for the API, service, broker, or endpoint
+- Backend: the user-provided provider/system-under-test contract.
+- BFF: the user-provided system-under-test contract and the dependency spec
+  paths the user listed in Step 1.
+- Frontend: the user-provided contract for the API, service, broker, or endpoint
   consumed by the generated client.
 
-For BFF samples, examine the contract repository's spec structure to discover
-every dependency. For example, the `specmatic-order-bff-java` reference has:
-- SUT: `product_search_bff_v6.yaml` (REST/OpenAPI)
-- Dependency 1: `api_order_v5.yaml` (REST backend mock)
-- Dependency 2: `kafka.yaml` (AsyncAPI/Kafka mock)
-
-Do not rely only on direct `$ref` entries, `servers`, operation descriptions,
-file names, or textual references inside the BFF system-under-test OpenAPI file
-to discover dependencies. BFF dependency discovery must combine the selected
-SUT contract, the contract repository's role structure, and this skill's role
-mapping across all protocols. As a reference example, the Store BFF contract
-`io/specmatic/examples/store/openapi/product_search_bff_v6.yaml` maps to both a
-REST backend mock (`io/specmatic/examples/store/openapi/api_order_v5.yaml`) and
-an AsyncAPI/Kafka mock (`io/specmatic/examples/store/asyncapi/kafka.yaml`).
-Use this as an example of cross-protocol discovery, not as a hardcoded mapping
-for unrelated samples.
-
-If async specs are present in the same contract domain and the BFF role mapping
-or reference structure names one as a dependency, include it even when the SUT
-OpenAPI file does not reference it directly. If multiple async dependency
-candidates are plausible and the role mapping does not resolve them, stop with
-an explicit ambiguity report instead of silently skipping async dependencies.
-
-All discovered dependencies must be included in the generated `specmatic.yaml`
+All user-provided dependencies must be included in the generated `specmatic.yaml`
 under `dependencies.services` with appropriate `runOptions` for each protocol.
 
 After resolving the applicable specs, inspect the applicable generation guide,
@@ -318,10 +304,12 @@ Dockerfiles, manifests, or README content until these guides have been read for
 the current sample. The README is not a generic setup file — it must be
 generated from `guides/readme-generation.md`.
 
-Use `guides/specmatic-runtime.md` for Specmatic runtime structure and adapter
-behavior for the selected integration mode, then fill generated files with
-resolved contract paths, spec format, run option key, and role-specific
-ports/base URLs/broker settings.
+Use only the applicable allowlisted official Specmatic v3 configuration pages
+from `guides/specmatic-runtime.md` for `specmatic.yaml` structure and syntax.
+Use `guides/specmatic-runtime.md` only for runtime integration behavior,
+generator-owned inputs, report defaults, and verified documentation gaps. Fill
+the documented configuration fields with resolved contract paths, spec format,
+run option key, and role-specific ports/base URLs/broker settings.
 Generate routes/controllers, message handlers, RPC services, GraphQL resolvers,
 SOAP handlers, client calls, schemas, seed data, examples, and adapter
 transformations from the contract facts summary produced in Step 3. Use role
@@ -340,6 +328,13 @@ Default port conventions:
 - All ports, base URLs, broker URLs, and service endpoints must be configurable
   through environment variables consumed by the generated app config and
   checked-in `specmatic.yaml` so tests can avoid occupied resources.
+- Every sample must configure Specmatic-owned `html` and `ctrf` reports. Do
+  not hard-code a report output path: resolve the selected runtime's configured
+  or default output location during verification, record it in the manifest,
+  and use that exact location in the generated README.
+- For OpenAPI Backend and BFF samples, apply the report governance,
+  endpoint-discovery, and infrastructure-exclusion workflow in
+  `guides/specmatic-runtime.md` before the final Specmatic verification run.
 
 For a **Backend** sample, use `guides/backend-generation.md` for role behavior. Key differences:
 - The Backend owns local Products and Orders state
@@ -478,7 +473,8 @@ When modifying `specmatic.yaml` between levels, use your environment's native
 file-editing tools (file write/replace operations). Do not use shell text
 processors like `sed`, `perl`, or `awk` for file modifications.
 
-**First run takes 1-3 minutes** — Specmatic git-clones the central contract repo (~50MB). Subsequent runs are fast (cached in `.specmatic/`).
+**First run may take 1-3 minutes** — Specmatic may clone the user-provided
+contract repo. Subsequent runs are usually faster when cached in `.specmatic/`.
 
 **Timeout guidance:** If the test command runs for more than 5 minutes, something is wrong. Cancel and check:
 - Is the required runtime available? For example, Java 17+ for CLI/JAR or JVM
@@ -541,8 +537,8 @@ Only report "done" when tests are green.
 - **Report-driven fixes only.** On failures, read Specmatic/JUnit/report output and fix the reported contract mismatch rather than adding speculative validation or fallback logic.
 - **Specmatic owns HTML reports.** Do not generate custom HTML test/coverage
   reports, report templates, report pages, or report renderers. Generated
-  samples may configure, capture, upload, ignore, or link to reports produced
-  by Specmatic, but must not synthesize their own report HTML.
+  samples must configure, capture, upload, ignore, or link to Specmatic's HTML
+  and CTRF reports, but must not synthesize their own report HTML.
 - **Never use samples as references.** In generate mode, do not read, inspect, or copy from other
   sample projects, including existing generated sample folders in the
   destination repository or monorepo and official/public sample repositories.
@@ -551,24 +547,24 @@ Only report "done" when tests are green.
   runtime versions. Any other existing sample must not be referred to for code,
   configuration, documentation, dependency choices, or runtime choices. Every
   file must be generated from this skill's `guides/`, `test-data/`,
-  `config/contract-resolution.yaml`, the configured central contract repo,
-  isolated temporary checkouts of that contract repo, official product/protocol
-  documentation when syntax is unclear, or user-provided contract paths only.
+  the user-provided contract source, isolated temporary checkouts of that
+  contract source, allowlisted official product/protocol documentation when
+  syntax is unclear, or user-provided contract paths only.
   Existing samples may target a different stack or contract version and will
   silently corrupt the new sample if used as a reference. In maintain mode, reading the target sample is required.
 - **No request validation middleware is needed.** Specmatic tests the contract (response schema), not your input validation.
 - **Honor the selected Specmatic integration mode.** Generate test dependencies,
-  test adapters, README instructions, and CI around `cli`, `docker-cli`,
+  test commands/scripts/adapters, README instructions, and CI around `cli`, `docker-cli`,
   `test-container`, or `native`; do not silently switch modes unless the
   selected mode is impossible for the stack and the user chooses another one.
 - **Enterprise runtime only.** Every integration mode must use an official
   Specmatic Enterprise artifact. Open-source runtimes such as npm `specmatic`,
   bundled npm `specmatic.jar`, or the `specmatic/specmatic` Docker image are
   forbidden generated runtime dependencies.
-- **Keep the test adapter minimal.** Let the selected and verified Specmatic
+- **Keep the test runner minimal.** Let the selected and verified Specmatic
   integration mode determine whether it uses a CLI, direct Docker command,
   Testcontainers-managed Docker container, native library API, or bundled JAR.
-  Test adapters may start apps and mocks, set environment variables, stage
+  Test commands/scripts/adapters may start apps and mocks, set environment variables, stage
   protocol support files such as imported protos, and run Specmatic.
 - **specmatic.yaml structure is protocol-aware.** Resolved contract paths,
   dependency specs, ports, base URLs, broker settings, and run option keys vary
@@ -578,7 +574,7 @@ Only report "done" when tests are green.
 
 - `guides/` — Role generation notes, Specmatic runtime guidance, and acceptance criteria
 - `test-data/backend-seed-data.md` — Required backend data entries for tests to pass
-- `config/contract-resolution.yaml` — Contract repositories, protocol roots, and runtime discovery patterns
+- user-provided contract source — Executable contract specs and dependency candidates
 
 ---
 
@@ -596,7 +592,11 @@ If the user provides a monorepo path with multiple samples, list the discovered 
 
 ### Step 2: Discover and Read
 
-Scan the provided path for `.specmatic-sample-manifest.json`. Read the manifest to recover the original inputs (application type, protocol, language, framework, data layer, contract source).
+Scan the provided path for `.specmatic-sample-manifest.json`. Read the manifest
+to recover the original inputs it already contains, then read the checked-in
+`specmatic.yaml` to recover contract source and spec paths. If either source is
+missing required information, ask the user for the contract repo/spec path
+before planning maintenance.
 
 If no manifest is found, inform the user and ask if they want to generate a new sample instead.
 
@@ -643,7 +643,13 @@ Apply only the updates the user approved in Step 3.
 
 #### 4a: Update Contract Config (always)
 
-Re-resolve the contract source using `config/contract-resolution.yaml` and the manifest inputs. Regenerate `specmatic.yaml` (or `specmatic.json` for stacks that require it) with the latest resolved contract paths.
+Re-resolve the contract source using the checked-in `specmatic.yaml` contract
+source and spec paths, or the user-provided contract repo/spec path when the
+config is missing or ambiguous. Regenerate `specmatic.yaml` (or
+`specmatic.json` for stacks that require it) with the latest resolved contract
+paths and any dependency updates from the user-provided contract source. If a
+previously resolved dependency is now missing or changed, ask the user to
+confirm before changing app code.
 
 #### 4b: Update Dependencies (when approved)
 

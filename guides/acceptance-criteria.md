@@ -24,29 +24,37 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] The delivered `specmatic.yaml` ships with `schemaResiliencyTests: all`
   (schema resiliency ON), unless documented unresolvable contract-gap failures
   force a lower level recorded in the manifest learnings
-- [ ] Endpoint discovery (actuator / swaggerUI / OpenAPI endpoint) is wired and
-  reachable, and non-contract infra endpoints are filtered, so Specmatic can
-  compute actual coverage (no `Failed to query swaggerUI` / `Actuator is not
-  enabled` / `cannot calculate actual coverage`)
-- [ ] Governance coverage is enforced (`enforce: true`) at a threshold the
-  fully-implemented, infra-filtered sample actually achieves (see
-  `guides/specmatic-runtime.md` for reference baselines)
-- [ ] Specmatic is the only producer of HTML test/coverage reports. Generated
-  files may configure report output, capture/upload artifacts, ignore generated
-  report directories, or link to Specmatic's report path, but must not create
-  custom report HTML, templates, pages, or renderers.
-- [ ] In `cli` mode, Specmatic is invoked directly (e.g. `java -jar
-  specmatic.jar test`), not through a native JUnit/`ContractTest`/pytest
-  adapter; Specmatic resolves and caches contracts itself; the sample does not
-  clone the contract repo or generate its own test/coverage report
+- [ ] Specmatic is configured to generate HTML and CTRF reports. The verified
+  runtime report location is recorded in the manifest and used by the README;
+  generated files may capture/upload, ignore, or link to that output, but must
+  not create custom report HTML, templates, pages, or renderers.
+- [ ] For OpenAPI Backend and BFF samples, endpoint discovery uses a
+  runtime-supported, framework-applicable Specmatic integration and Specmatic
+  output confirms that real application endpoints were discovered. Placeholder
+  endpoints, empty discovery responses, and emulated endpoints from another
+  framework do not satisfy this criterion. Non-contract infrastructure or
+  discovery endpoints are excluded from API coverage using the runtime-accepted
+  OpenAPI `filter` run option, and governance coverage is enforced (`enforce:
+  true`) at the measured final threshold and missed-operation allowance after
+  filtering is applied. If verified runtime/framework support is unavailable,
+  the manifest learnings record the discovery limitation while governance
+  remains enforced from the measured final report.
+- [ ] Non-OpenAPI and mock-only samples retain HTML/CTRF reports without
+  unsupported API-coverage success criteria.
+- [ ] In `cli` mode, Specmatic is invoked directly, not through a native
+  JUnit/`ContractTest`/pytest adapter; Specmatic resolves and caches contracts
+  itself; the sample does not clone the contract repo or generate its own
+  test/coverage report
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
-- [ ] The generated test adapter uses the selected and verified Specmatic
-  integration mode: `cli`, `docker-cli`, `test-container`, or `native`
-- [ ] The generated test adapter and CI use only official Specmatic Enterprise
-  artifacts: `io.specmatic.enterprise:*`, `specmatic/enterprise:*`, or a
-  documented Enterprise-native language artifact/API. Generated files must not
-  reference `npm exec specmatic`, `npx specmatic`, `specmatic@`,
-  `node_modules/specmatic/specmatic.jar`, or `specmatic/specmatic`.
+- [ ] The generated test command, script, or adapter uses the selected and
+  verified Specmatic integration mode: `cli`, `docker-cli`, `test-container`,
+  or `native`
+- [ ] The generated test command/script/adapter and CI use only official
+  Specmatic Enterprise artifacts: `io.specmatic.enterprise:*`,
+  `specmatic/enterprise:*`, or a documented Enterprise-native language
+  artifact/API. Generated files must not reference `npm exec specmatic`, `npx
+  specmatic`, `specmatic@`, `node_modules/specmatic/specmatic.jar`, or
+  `specmatic/specmatic`.
 - [ ] `.specmatic-sample-manifest.json` records the exact Enterprise runtime
   artifact/version/source. A license initialization message alone is not
   accepted as proof of Enterprise runtime usage.
@@ -68,12 +76,12 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 
 | File | Purpose |
 |------|---------|
-| `specmatic.yaml` | Points to central contract repo, defines test config, and contains environment-template runtime values |
+| `specmatic.yaml` | Points to the resolved user-provided contract source, defines test config, and contains environment-template runtime values |
 | Build file (`package.json` / `pom.xml` / `build.gradle` / `requirements.txt`) | Dependencies including Specmatic |
 | Lockfile when produced by the package manager | Enables reproducible installs and CI locked installs |
 | Source code (controllers/routes/services/resolvers/handlers) | Implements all operations from the contract |
 | Data layer (db/store) | In-memory store with seed data when the role needs local state |
-| Contract test file | Adapter that starts app + runs Specmatic through the selected integration mode. Name the test class/function `ContractTest` (e.g., `ContractTest.java`, `contract.test.ts`, `test_contract.py`). |
+| Contract test file or script | Test command, script, or adapter for the selected integration mode |
 | `Dockerfile` | Production container image that builds from source; use a multi-stage build for compiled stacks instead of copying local build outputs from ignored folders |
 | `.dockerignore` when `Dockerfile` is generated | Keeps dependencies, virtualenvs, reports, caches, Specmatic repos, and local files out of image build context |
 | `.github/workflows/ci.yml` | CI pipeline: test + Docker build |
@@ -111,6 +119,13 @@ The `.specmatic-sample-manifest.json` must include:
     "level3_all": { "tests": 0, "passed": 0, "failed": 0 },
     "shipped_level": "all"
   },
+  "reports": {
+    "formats": ["html", "ctrf"],
+    "outputDirectory": "<verified-runtime-report-directory>",
+    "coverageGovernance": null
+  },
+  "infraEndpoints": ["<non-contract infra endpoints generated by the app>"],
+  "coverageExclusionMode": "<filter|null>",
   "learnings": [
     "Brief description of any issue encountered and how it was resolved"
   ]
@@ -127,6 +142,14 @@ The `.specmatic-sample-manifest.json` must include:
 - `learnings`: array of strings documenting issues encountered during
   generation — dependency conflicts, contract gaps, framework quirks, or
   workarounds applied. Empty array if generation was clean.
+- `reports`: records the Specmatic report formats and location. For applicable
+  OpenAPI provider samples, replace `coverageGovernance: null` with the final
+  measured `minCoveragePercentage`, `maxMissedOperationsInSpec`, and
+  `enforce: true` values.
+- `coverageExclusionMode`: records how generated non-contract infrastructure
+  or discovery endpoints were excluded from API coverage. Use `filter` for
+  OpenAPI Backend/BFF samples with generated endpoints that are not contract
+  operations.
 
 ## CI Workflow Must Include
 
@@ -161,7 +184,7 @@ instead of requiring a local Java installation for Specmatic itself.
 
 For `cli`, CI must install or download the verified Enterprise executable JAR
 from an `io.specmatic.enterprise:*` Maven artifact and run it from the
-generated test adapter.
+generated test command or script.
 
 For `native`, CI must install the official Enterprise-native Specmatic test
 dependency for the selected language and run the generated native test class or
