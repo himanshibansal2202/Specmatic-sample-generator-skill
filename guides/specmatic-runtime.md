@@ -79,11 +79,12 @@ endpoints, exclude only those endpoints from API coverage with the
 runtime-accepted OpenAPI `filter` run option. After the final run confirms that
 Specmatic discovered real application endpoints, write `successCriteria` using
 the measured, filtered report: `enforce: true`, `minCoveragePercentage`, and
-`maxMissedOperationsInSpec`. If endpoint discovery is unsupported for the
-selected runtime/framework, record that in the manifest and omit API coverage
-governance; contract tests must still pass. API coverage governance is not
-emitted for non-OpenAPI or mock-only samples because the official reports
-documentation supports API coverage configuration for OpenAPI.
+`maxMissedOperationsInSpec`. If endpoint discovery cannot be configured for
+the selected runtime/framework, record that in the manifest learnings and still
+write OpenAPI coverage governance from the measured, filtered final report.
+API coverage governance is not emitted for non-OpenAPI or mock-only samples
+because the official reports documentation supports API coverage configuration
+for OpenAPI.
 
 ### Resiliency verification policy
 
