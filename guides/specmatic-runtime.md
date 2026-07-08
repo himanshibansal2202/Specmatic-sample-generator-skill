@@ -4,6 +4,15 @@ This guide contains generator policy, integration wiring, and documentation/runt
 The current official Specmatic documentation defines the `specmatic.yaml`
 schema and field syntax. Do not maintain or copy a local schema template here.
 
+## Pinned runtime versions
+
+```
+enterprise_cli_version: 1.19.1
+enterprise_docker_tag: 1.19.1
+```
+
+Use these versions for all generated samples. Do not resolve "latest" dynamically.
+
 ## Documentation-driven configuration
 
 Before creating or refreshing `specmatic.yaml`, read the official v3 pages that
@@ -123,9 +132,9 @@ image, package, or JAR path.
 
 | Mode | When | Runtime artifact | Local/CI prereqs | Key constraint |
 |---|---|---|---|---|
-| `cli` | Run Specmatic as an external executable | `io.specmatic.enterprise:executable-all:<latest>` (Maven Central) | Java 17+ | Invoke `java -jar <jar> run-suite --config specmatic.yaml` directly. Do NOT route through a JUnit/`ContractTest`/pytest adapter — that is `native`. |
-| `docker-cli` | Run Specmatic as a direct `docker run` | `specmatic/enterprise:<tag>` | Docker, no local Java for Specmatic | Mount root `specmatic.yaml` + contracts/reports; reach the app via host networking / shared network / host alias. |
-| `test-container` | Run Specmatic from Docker inside the test suite | `specmatic/enterprise:<tag>` | Docker, no local Java outside the container | Use the language's Testcontainers dep; stream container logs; fail on non-zero exit. |
+| `cli` | Run Specmatic as an external executable | `io.specmatic.enterprise:executable-all` (pinned version above) | Java 17+ | Invoke `java -jar <jar> run-suite --config specmatic.yaml` directly. Do NOT route through a JUnit/`ContractTest`/pytest adapter — that is `native`. |
+| `docker-cli` | Run Specmatic as a direct `docker run` | `specmatic/enterprise` (pinned tag above) | Docker, no local Java for Specmatic | Mount root `specmatic.yaml` + contracts/reports; reach the app via host networking / shared network / host alias. |
+| `test-container` | Run Specmatic from Docker inside the test suite | `specmatic/enterprise` (pinned tag above) | Docker, no local Java outside the container | Use the language's Testcontainers dep; stream container logs; fail on non-zero exit. |
 | `native` | Language has an official Enterprise-native test integration | `io.specmatic.enterprise:*` (JVM) or documented Enterprise-native package | Per package (JVM normally JDK/JRE 17+) | Use the official Enterprise API. Reject `native` if only the open-source/public package exists — ask the user for another mode. |
 
 For `cli` mode, generate a direct executable entrypoint such as a build-tool

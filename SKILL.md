@@ -145,8 +145,9 @@ Apply protocol-specific runtime constraints:
   contract tests.
 - Before generating files, resolve and record the Enterprise runtime artifact
   for the selected integration mode:
-  - `cli`: latest official Enterprise executable artifact, defaulting to
-    `io.specmatic.enterprise:executable-all:<latest>`.
+  - `cli`: official Enterprise executable artifact
+    `io.specmatic.enterprise:executable-all` at the version pinned in
+    `guides/specmatic-runtime.md`.
   - `docker-cli` and `test-container`: official `specmatic/enterprise:<tag>`
     image only.
   - `native`: documented Enterprise-native language artifact/API only.
