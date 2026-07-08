@@ -9,7 +9,6 @@ This is the Claude Code project-skill entrypoint for the portable skill stored a
 
 Before doing anything, read the canonical instructions in `../../../SKILL.md`. Then load only the supporting files needed for the requested operation from:
 
-- `../../../config/contract-resolution.yaml`
 - `../../../guides/`
 - `../../../test-data/`
 
