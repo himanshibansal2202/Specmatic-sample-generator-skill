@@ -37,7 +37,9 @@ Mock every external dependency with Specmatic by default. Use real dependency
 integration only when the user explicitly asks for it, or when the current
 official Specmatic documentation shows that mocking is not supported for the
 selected protocol/runtime combination. Do not add runtime workarounds that
-start real dependencies as the default path for making a sample pass.
+start real dependencies as the default path for making a sample pass; check the
+applicable allowlisted official Specmatic documentation before applying
+runtime, configuration, or test startup fixes.
 
 ## Mode Selection
 
