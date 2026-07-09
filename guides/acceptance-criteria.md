@@ -11,6 +11,8 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
 - [ ] Generated behavior matches the executable contract used by Specmatic
 - [ ] No manual intervention needed after generation
 - [ ] Any mismatch between local guides/test data and the executable contract is resolved in favor of the executable contract
+- [ ] The sample does not require real downstream dependency processes unless
+  the user explicitly selected real dependency integration
 - [ ] No generated files are written at the provided location root except the sample folder itself, unless updating an existing root `.github/workflows/samples-ci.yml`
 - [ ] The sample folder is self-contained and does not require shared generated assets outside the folder
 - [ ] If the destination root has `.github/workflows/samples-ci.yml`, it includes a job for this sample

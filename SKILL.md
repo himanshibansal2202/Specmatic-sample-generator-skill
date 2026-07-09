@@ -26,6 +26,21 @@ Terminology:
   contract repository, such as `api_order_v3.yaml` or
   `product_search_bff_v4.yaml`.
 
+## Global Sample Dependency Policy
+
+Generated projects are runnable samples, not full local integration
+environments. The user should be able to run the sample without already having
+real downstream services, brokers, databases, or third-party systems running on
+their machine.
+
+Mock every external dependency with Specmatic by default. Use real dependency
+integration only when the user explicitly asks for it, or when the current
+official Specmatic documentation shows that mocking is not supported for the
+selected protocol/runtime combination. Do not add runtime workarounds that
+start real dependencies as the default path for making a sample pass; check the
+applicable allowlisted official Specmatic documentation before applying
+runtime, configuration, or test startup fixes.
+
 ## Mode Selection
 
 When the skill is invoked, ask the user:
@@ -224,7 +239,10 @@ Resolve these executable specs by sample type:
   consumed by the generated client.
 
 All user-provided dependencies must be included in the generated `specmatic.yaml`
-under `dependencies.services` with appropriate `runOptions` for each protocol.
+under `dependencies.services` with Specmatic mock `runOptions` derived from the
+current allowlisted official documentation for each protocol. Do not require a
+real dependency process unless the user explicitly selected real dependency
+integration.
 
 After resolving the applicable specs, inspect the applicable generation guide,
 `guides/protocol-generation.md`, the Specmatic runtime guidance, and the

@@ -9,7 +9,6 @@ This is the Codex project-skill entrypoint for the portable skill stored at the 
 
 Before doing anything, read the canonical instructions in `../../../SKILL.md`. Then load only the supporting files needed for the requested operation from:
 
-- `../../../config/contract-resolution.yaml`
 - `../../../guides/`
 - `../../../test-data/`
 

@@ -48,6 +48,11 @@ selected Enterprise runtime. Use the resolved contract source, spec paths,
 service IDs, run-option key, and protocol values from user input and the
 executable contract; those are generator inputs, not a replacement schema.
 
+For dependency services, derive Specmatic mock `runOptions` from the applicable
+allowlisted official documentation before writing the file. Do not fall back to
+starting real dependency infrastructure unless the user explicitly selected real
+dependency integration.
+
 Place the generated `specmatic.yaml` at the sample root. It is the only
 Specmatic configuration source: adapters must not create, copy, relocate, or
 mutate another config file.
