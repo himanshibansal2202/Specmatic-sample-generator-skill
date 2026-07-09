@@ -240,8 +240,10 @@ Resolve these executable specs by sample type:
 
 All user-provided dependencies must be included in the generated `specmatic.yaml`
 under `dependencies.services` with Specmatic mock `runOptions` derived from the
-current allowlisted official documentation for each protocol. Do not require a
-real dependency process unless the user explicitly selected real dependency
+current allowlisted official documentation for each protocol. Do not omit a
+user-provided dependency because the SUT contract does not reference it — the
+user knows their architecture. Do not require a real dependency process unless
+the user explicitly selected real dependency
 integration.
 
 After resolving the applicable specs, inspect the applicable generation guide,
@@ -264,20 +266,24 @@ For AsyncAPI, Protobuf/gRPC, and GraphQL, include the protocol-specific facts
 listed in `guides/protocol-generation.md`.
 
 For BFF and Frontend samples, compare the SUT/consumer contract with each
-dependency contract before generating source code:
+user-provided dependency contract before generating source code:
 
-1. Identify candidate dependency operations by compatible role intent, method,
-   request shape, and response shape.
-2. Record any required adapter behavior: path translation, status translation,
-   request body transformation, response body transformation, query/header
-   filtering or forwarding, and dependency-only security headers.
-3. If multiple dependency operations are equally plausible, or none can satisfy
-   the SUT/consumer operation, fail before generating source code and report the
-   ambiguous operation rather than guessing.
-4. For dependency security schemes, satisfy the dependency contract in the
+1. For request-response dependencies (REST, gRPC, GraphQL, SOAP), map each SUT
+   operation to the dependency operation it calls. Record any required adapter
+   behavior: path translation, status translation, request body transformation,
+   response body transformation, query/header filtering or forwarding, and
+   dependency-only security headers.
+2. If a SUT operation could map to multiple dependency operations equally, stop
+   and ask the user to clarify.
+3. For dependency security schemes, satisfy the dependency contract in the
    generated client even when the SUT/consumer contract does not expose the same
    credential input. Specmatic mocks validate contract shape, not real
    credentials.
+4. For async/pub-sub dependencies (Kafka, JMS, SQS): the app publishes messages
+   as a side effect of handling SUT operations. No SUT-to-dependency operation
+   mapping is required — the Specmatic mock validates the published message
+   shape independently. Wire the dependency, implement the publish call at the
+   appropriate point in the SUT workflow, and let the mock validate it.
 
 If the executable contract contradicts local guide or test-data notes, implement the executable contract and record the discrepancy in the final response.
 
