@@ -96,6 +96,11 @@ the measured, filtered report: `enforce: true`, `minCoveragePercentage`, and
 `maxMissedOperationsInSpec`. If endpoint discovery cannot be configured for
 the selected runtime/framework, record that in the manifest learnings and still
 write OpenAPI coverage governance from the measured, filtered final report.
+After the final successful OpenAPI run, replace placeholder governance values:
+`minCoveragePercentage` is the measured API coverage percentage, and
+`maxMissedOperationsInSpec` is the measured missed-operation count after
+documented WIP or unresolvable contract gaps are accounted for. Do not ship
+`minCoveragePercentage: 0` unless measured API coverage is actually 0.
 API coverage governance is not emitted for non-OpenAPI or mock-only samples
 because the official reports documentation supports API coverage configuration
 for OpenAPI.
@@ -134,6 +139,10 @@ After installing dependencies, verify the selected runtime can parse the
 generated configuration version before changing application behavior. A license
 initialization message is not proof of Enterprise usage: verify the artifact,
 image, package, or JAR path.
+
+Generated wrappers must not fail solely because `SPECMATIC_LICENSE_KEY` is
+unset. Pass it through when present, but let the Specmatic Enterprise runtime
+handle license discovery and license errors.
 
 | Mode | When | Runtime artifact | Local/CI prereqs | Key constraint |
 |---|---|---|---|---|
