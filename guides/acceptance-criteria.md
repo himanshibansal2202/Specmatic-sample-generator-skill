@@ -48,6 +48,8 @@ All checks apply inside the generated sample folder at `<provided-location>/<sam
   itself; the sample does not clone the contract repo or generate its own
   test/coverage report
 - [ ] Consumer samples document and implement the contract-derived mapping between SUT/consumer operations and dependency mock operations
+- [ ] Every configured dependency is either observed during verification or
+  recorded as unobserved in the manifest learnings and final response.
 - [ ] The generated test command, script, or adapter uses the selected and
   verified Specmatic integration mode: `cli`, `docker-cli`, `test-container`,
   or `native`

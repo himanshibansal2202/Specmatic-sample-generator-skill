@@ -212,6 +212,11 @@ test must fail when the boundary breaks, not pass on fabricated data.
 - Synthesize data only for behavior the app's own contract defines (for example a
   BFF monitor/aggregation endpoint).
 
+- Do not silently swallow configured dependency interaction errors. Verify the
+  interaction against the Specmatic mock/stub; if it cannot be verified, record
+  a manifest learning and final-response warning instead of treating the
+  dependency as verified.
+
 Enterprise `1.19.0` caveat: consuming a dependency mock body can stall on some
 default HTTP clients (seen with the Spring Boot 4.1.0 JDK client); use one that
 consumes the body, such as Apache HttpClient 5, rather than fabricating it.
