@@ -56,11 +56,13 @@ the contract does not define.
 ## Endpoint Mapping
 - Implement BFF endpoints from the BFF system-under-test contract, then map
   those calls to Backend dependency endpoints from the Backend mock contract.
-- Before coding the BFF adapter, build a comparison table across all executable
-  dependency contracts that records each BFF workflow, its dependency
-  operation/message, and any required path/topic/method/action, status/error,
-  request body/message, response body/message, query/header/metadata, or
-  security transformation.
+- Before coding the BFF adapter, build a blocking comparison table across all
+  executable dependency contracts. Do not write adapter code until every BFF
+  workflow row records its dependency operation/message, path/topic/method/action
+  mapping, SUT response statuses, dependency response statuses, status
+  translation, request body/message transformation, response body/message
+  transformation, query/header/metadata forwarding, security transformation,
+  and async publish/send failure handling.
 - Use the dependency spec paths the user provided during input collection to
   wire each dependency in `specmatic.yaml`.
 - Satisfy Backend dependency security schemes in outbound calls even when the
